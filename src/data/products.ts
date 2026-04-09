@@ -1,0 +1,256 @@
+export interface Product {
+  id: string;
+  name: string;
+  price: number;
+  originalPrice?: number;
+  category: 'tshirts' | 'jubba' | 'panjabi' | 'attar';
+  image: string;
+  images?: string[];
+  description: string;
+  sizes?: string[];
+  colors?: string[];
+  rating: number;
+  reviews: number;
+  badge?: string;
+  inStock: boolean;
+}
+
+export const products: Product[] = [
+  // T-Shirts
+  {
+    id: 'ts-001',
+    name: 'Classic Black Premium Tee',
+    price: 1290,
+    originalPrice: 1590,
+    category: 'tshirts',
+    image: '/placeholder.svg',
+    description: 'Premium cotton t-shirt with a minimal design. Ultra-soft fabric with a tailored fit for everyday luxury.',
+    sizes: ['S', 'M', 'L', 'XL', 'XXL'],
+    colors: ['Black', 'White', 'Navy'],
+    rating: 4.8,
+    reviews: 124,
+    badge: 'Best Seller',
+    inStock: true,
+  },
+  {
+    id: 'ts-002',
+    name: 'Essential White Crew Neck',
+    price: 1190,
+    category: 'tshirts',
+    image: '/placeholder.svg',
+    description: 'Clean white crew neck made from organic cotton. A wardrobe essential with a premium finish.',
+    sizes: ['S', 'M', 'L', 'XL'],
+    colors: ['White', 'Cream'],
+    rating: 4.6,
+    reviews: 89,
+    inStock: true,
+  },
+  {
+    id: 'ts-003',
+    name: 'Charcoal Henley Tee',
+    price: 1490,
+    originalPrice: 1790,
+    category: 'tshirts',
+    image: '/placeholder.svg',
+    description: 'Sophisticated henley design in premium charcoal. Perfect blend of casual and refined style.',
+    sizes: ['M', 'L', 'XL', 'XXL'],
+    colors: ['Charcoal', 'Olive', 'Brown'],
+    rating: 4.7,
+    reviews: 67,
+    badge: 'New',
+    inStock: true,
+  },
+  {
+    id: 'ts-004',
+    name: 'Olive V-Neck Premium',
+    price: 1390,
+    category: 'tshirts',
+    image: '/placeholder.svg',
+    description: 'V-neck silhouette in premium olive fabric. Understated elegance for the modern man.',
+    sizes: ['S', 'M', 'L', 'XL'],
+    colors: ['Olive', 'Black', 'Navy'],
+    rating: 4.5,
+    reviews: 45,
+    inStock: true,
+  },
+  // Jubba/Thobe
+  {
+    id: 'jb-001',
+    name: 'Royal White Emirati Thobe',
+    price: 4990,
+    originalPrice: 5990,
+    category: 'jubba',
+    image: '/placeholder.svg',
+    description: 'Exquisitely crafted Emirati-style thobe in pristine white. Features premium cotton blend with hand-finished embroidery.',
+    sizes: ['52', '54', '56', '58', '60'],
+    colors: ['White', 'Off-White'],
+    rating: 4.9,
+    reviews: 203,
+    badge: 'Best Seller',
+    inStock: true,
+  },
+  {
+    id: 'jb-002',
+    name: 'Black Moroccan Jubba',
+    price: 5490,
+    category: 'jubba',
+    image: '/placeholder.svg',
+    description: 'Moroccan-inspired jubba in rich black with intricate collar detailing. Premium fabric with a flowing silhouette.',
+    sizes: ['52', '54', '56', '58'],
+    colors: ['Black', 'Dark Grey'],
+    rating: 4.8,
+    reviews: 156,
+    badge: 'Premium',
+    inStock: true,
+  },
+  {
+    id: 'jb-003',
+    name: 'Cream Saudi Thobe',
+    price: 4490,
+    category: 'jubba',
+    image: '/placeholder.svg',
+    description: 'Classic Saudi-style thobe in elegant cream. Perfect for daily wear with timeless sophistication.',
+    sizes: ['54', '56', '58', '60'],
+    colors: ['Cream', 'Beige'],
+    rating: 4.7,
+    reviews: 98,
+    inStock: true,
+  },
+  {
+    id: 'jb-004',
+    name: 'Navy Blue Designer Jubba',
+    price: 6290,
+    originalPrice: 7490,
+    category: 'jubba',
+    image: '/placeholder.svg',
+    description: 'Designer jubba in deep navy with gold-tone buttons. A statement piece for special occasions.',
+    sizes: ['52', '54', '56', '58'],
+    colors: ['Navy', 'Royal Blue'],
+    rating: 4.9,
+    reviews: 72,
+    badge: 'New',
+    inStock: true,
+  },
+  // Panjabi
+  {
+    id: 'pj-001',
+    name: 'Golden Silk Panjabi',
+    price: 3990,
+    originalPrice: 4990,
+    category: 'panjabi',
+    image: '/placeholder.svg',
+    description: 'Luxurious silk panjabi with golden thread embroidery. Ideal for weddings and festive occasions.',
+    sizes: ['38', '40', '42', '44', '46'],
+    colors: ['Gold', 'Champagne'],
+    rating: 4.9,
+    reviews: 187,
+    badge: 'Best Seller',
+    inStock: true,
+  },
+  {
+    id: 'pj-002',
+    name: 'Classic White Cotton Panjabi',
+    price: 2490,
+    category: 'panjabi',
+    image: '/placeholder.svg',
+    description: 'Timeless white panjabi in premium cotton. Clean lines with subtle button detailing.',
+    sizes: ['38', '40', '42', '44'],
+    colors: ['White', 'Off-White'],
+    rating: 4.6,
+    reviews: 134,
+    inStock: true,
+  },
+  {
+    id: 'pj-003',
+    name: 'Embroidered Navy Panjabi',
+    price: 3490,
+    category: 'panjabi',
+    image: '/placeholder.svg',
+    description: 'Navy panjabi with exquisite embroidery on collar and cuffs. A blend of tradition and modernity.',
+    sizes: ['40', '42', '44', '46'],
+    colors: ['Navy', 'Black'],
+    rating: 4.7,
+    reviews: 91,
+    badge: 'New',
+    inStock: true,
+  },
+  {
+    id: 'pj-004',
+    name: 'Sage Green Semi-Silk Panjabi',
+    price: 3290,
+    category: 'panjabi',
+    image: '/placeholder.svg',
+    description: 'Elegant semi-silk panjabi in sage green. Lightweight and perfect for semi-formal gatherings.',
+    sizes: ['38', '40', '42', '44'],
+    colors: ['Sage Green', 'Mint'],
+    rating: 4.5,
+    reviews: 56,
+    inStock: true,
+  },
+  // Attar
+  {
+    id: 'at-001',
+    name: 'Oud Al Majestic',
+    price: 2990,
+    originalPrice: 3490,
+    category: 'attar',
+    image: '/placeholder.svg',
+    description: 'Premium oud-based attar with deep woody notes. A signature scent of timeless masculinity.',
+    rating: 4.9,
+    reviews: 312,
+    badge: 'Best Seller',
+    inStock: true,
+  },
+  {
+    id: 'at-002',
+    name: 'Rose Musk Deluxe',
+    price: 1990,
+    category: 'attar',
+    image: '/placeholder.svg',
+    description: 'Delicate rose combined with white musk. An enchanting fragrance for daily elegance.',
+    rating: 4.7,
+    reviews: 198,
+    inStock: true,
+  },
+  {
+    id: 'at-003',
+    name: 'Amber Noir Collection',
+    price: 3490,
+    category: 'attar',
+    image: '/placeholder.svg',
+    description: 'Rich amber blended with dark spices. An intoxicating evening fragrance for the connoisseur.',
+    rating: 4.8,
+    reviews: 145,
+    badge: 'Premium',
+    inStock: true,
+  },
+  {
+    id: 'at-004',
+    name: 'Sandal Supreme',
+    price: 2490,
+    originalPrice: 2990,
+    category: 'attar',
+    image: '/placeholder.svg',
+    description: 'Pure sandalwood attar with creamy, warm undertones. A classic fragrance redefined.',
+    rating: 4.6,
+    reviews: 87,
+    badge: 'New',
+    inStock: true,
+  },
+];
+
+export const getProductsByCategory = (category: Product['category']) =>
+  products.filter((p) => p.category === category);
+
+export const getProductById = (id: string) =>
+  products.find((p) => p.id === id);
+
+export const getFeaturedProducts = () =>
+  products.filter((p) => p.badge === 'Best Seller');
+
+export const categories = [
+  { slug: 'tshirts', name: 'T-Shirts', description: 'Premium casual wear' },
+  { slug: 'jubba', name: 'Jubba / Thobe', description: 'Elegant traditional wear' },
+  { slug: 'panjabi', name: 'Panjabi', description: 'Refined ethnic fashion' },
+  { slug: 'attar', name: 'Attar', description: 'Luxury fragrances' },
+] as const;
