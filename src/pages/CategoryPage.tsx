@@ -1,9 +1,9 @@
-import { useState, useMemo } from 'react';
-import { useParams } from 'react-router-dom';
-import { getProductsByCategory, categories } from '@/data/products';
+import { useState, useMemo, useEffect, useCallback } from 'react';
+import { useParams, Link } from 'react-router-dom';
+import { getProductsByCategory, categories, Product } from '@/data/products';
 import ProductCard from '@/components/ProductCard';
-import { SlidersHorizontal, X } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { SlidersHorizontal, X, ChevronLeft, ChevronRight } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 const priceRanges = [
   { label: 'All', min: 0, max: Infinity },
@@ -12,27 +12,113 @@ const priceRanges = [
   { label: 'Over ৳4,000', min: 4000, max: Infinity },
 ];
 
+const CategoryBanner = ({ products, categoryName }: { products: Product[]; categoryName: string }) => {
+  const [current, setCurrent] = useState(0);
+  const bannerProducts = products.slice(0, 4);
+
+  const next = useCallback(() => {
+    setCurrent((p) => (p + 1) % bannerProducts.length);
+  }, [bannerProducts.length]);
+
+  useEffect(() => {
+    const timer = setInterval(next, 4000);
+    return () => clearInterval(timer);
+  }, [next]);
+
+  if (bannerProducts.length === 0) return null;
+
+  return (
+    <div className="relative h-[280px] lg:h-[360px] rounded-2xl overflow-hidden mb-10 shadow-premium-lg">
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={current}
+          initial={{ opacity: 0, x: 60 }}
+          animate={{ opacity: 1, x: 0 }}
+          exit={{ opacity: 0, x: -60 }}
+          transition={{ duration: 0.5 }}
+          className="absolute inset-0"
+        >
+          <div className="absolute inset-0 gradient-burgundy" />
+          <div className="absolute inset-0 flex items-center">
+            <div className="container mx-auto px-6 lg:px-10 flex items-center justify-between">
+              <div className="max-w-md">
+                <p className="text-xs font-body tracking-[0.3em] uppercase text-accent mb-2">{categoryName}</p>
+                <h2 className="text-2xl lg:text-4xl font-heading font-bold text-primary-foreground mb-2">
+                  {bannerProducts[current].name}
+                </h2>
+                <p className="text-primary-foreground/60 text-sm font-body line-clamp-2 mb-4">
+                  {bannerProducts[current].description}
+                </p>
+                <div className="flex items-center gap-4">
+                  <span className="text-2xl font-heading font-bold text-accent">
+                    ৳{bannerProducts[current].price.toLocaleString()}
+                  </span>
+                  <Link
+                    to={`/product/${bannerProducts[current].id}`}
+                    className="btn-gold px-6 py-2.5 text-xs font-body tracking-widest uppercase font-semibold"
+                  >
+                    Shop Now
+                  </Link>
+                </div>
+              </div>
+              <div className="hidden lg:block w-48 h-48 rounded-2xl bg-primary-foreground/10 border border-primary-foreground/10" />
+            </div>
+          </div>
+        </motion.div>
+      </AnimatePresence>
+
+      {/* Controls */}
+      <div className="absolute bottom-4 right-4 flex items-center gap-2">
+        <button
+          onClick={() => setCurrent((p) => (p - 1 + bannerProducts.length) % bannerProducts.length)}
+          className="w-9 h-9 rounded-full glass-dark flex items-center justify-center text-primary-foreground hover:bg-accent hover:text-accent-foreground transition-all"
+        >
+          <ChevronLeft size={16} />
+        </button>
+        <div className="flex gap-1.5">
+          {bannerProducts.map((_, i) => (
+            <button key={i} onClick={() => setCurrent(i)}
+              className={`h-1.5 rounded-full transition-all ${i === current ? 'w-6 bg-accent' : 'w-3 bg-primary-foreground/30'}`}
+            />
+          ))}
+        </div>
+        <button
+          onClick={next}
+          className="w-9 h-9 rounded-full glass-dark flex items-center justify-center text-primary-foreground hover:bg-accent hover:text-accent-foreground transition-all"
+        >
+          <ChevronRight size={16} />
+        </button>
+      </div>
+    </div>
+  );
+};
+
 const CategoryPage = () => {
   const { category } = useParams<{ category: string }>();
   const [priceFilter, setPriceFilter] = useState(0);
   const [showFilters, setShowFilters] = useState(false);
 
   const cat = categories.find((c) => c.slug === category);
-  const products = getProductsByCategory(category as any);
+  const allProducts = getProductsByCategory(category as any);
 
   const filtered = useMemo(() => {
     const range = priceRanges[priceFilter];
-    return products.filter((p) => p.price >= range.min && p.price < range.max);
-  }, [products, priceFilter]);
+    return allProducts.filter((p) => p.price >= range.min && p.price < range.max);
+  }, [allProducts, priceFilter]);
 
-  if (!cat) return <div className="container mx-auto px-4 py-20 text-center">Category not found</div>;
+  if (!cat) return <div className="container mx-auto px-4 py-20 text-center font-body">Category not found</div>;
 
   return (
     <main className="container mx-auto px-4 lg:px-8 py-8 lg:py-12">
+      {/* Dynamic Banner */}
+      <CategoryBanner products={allProducts} categoryName={cat.name} />
+
       {/* Header */}
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="text-center mb-10">
-        <p className="text-xs font-body tracking-[0.3em] uppercase text-accent mb-2">Collection</p>
-        <h1 className="text-3xl lg:text-4xl font-heading font-semibold">{cat.name}</h1>
+        <p className="text-xs font-body tracking-[0.3em] uppercase text-accent mb-2 flex items-center justify-center gap-3">
+          <span className="w-6 h-px bg-accent" /> Collection <span className="w-6 h-px bg-accent" />
+        </p>
+        <h1 className="text-3xl lg:text-4xl font-heading font-bold">{cat.name}</h1>
         <p className="text-sm text-muted-foreground font-body mt-2">{cat.description}</p>
       </motion.div>
 
@@ -41,33 +127,44 @@ const CategoryPage = () => {
         <p className="text-sm text-muted-foreground font-body">{filtered.length} products</p>
         <button
           onClick={() => setShowFilters(!showFilters)}
-          className="flex items-center gap-2 text-sm font-body tracking-wider uppercase text-foreground hover:text-accent transition-colors"
+          className="flex items-center gap-2 text-sm font-body tracking-wider uppercase text-foreground hover:text-primary transition-colors px-4 py-2 rounded-xl hover:bg-secondary"
         >
           <SlidersHorizontal size={16} /> Filters
         </button>
       </div>
 
-      {showFilters && (
-        <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} className="mb-8 p-4 bg-secondary overflow-hidden">
-          <div className="flex items-center justify-between mb-3">
-            <h3 className="text-xs font-body tracking-widest uppercase">Price Range</h3>
-            <button onClick={() => setShowFilters(false)}><X size={16} /></button>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            {priceRanges.map((range, i) => (
-              <button
-                key={i}
-                onClick={() => setPriceFilter(i)}
-                className={`px-4 py-2 text-xs font-body tracking-wider border transition-colors ${
-                  priceFilter === i ? 'bg-primary text-primary-foreground border-primary' : 'border-border hover:border-accent'
-                }`}
-              >
-                {range.label}
+      <AnimatePresence>
+        {showFilters && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            className="mb-8 p-5 glass rounded-2xl overflow-hidden"
+          >
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-xs font-body tracking-widest uppercase font-medium">Price Range</h3>
+              <button onClick={() => setShowFilters(false)} className="p-1 rounded-lg hover:bg-secondary transition-colors">
+                <X size={16} />
               </button>
-            ))}
-          </div>
-        </motion.div>
-      )}
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {priceRanges.map((range, i) => (
+                <button
+                  key={i}
+                  onClick={() => setPriceFilter(i)}
+                  className={`px-5 py-2.5 text-xs font-body tracking-wider rounded-xl border transition-all duration-300 ${
+                    priceFilter === i
+                      ? 'bg-primary text-primary-foreground border-primary shadow-premium'
+                      : 'border-border hover:border-accent hover:bg-secondary'
+                  }`}
+                >
+                  {range.label}
+                </button>
+              ))}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Product Grid */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
