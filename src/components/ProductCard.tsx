@@ -32,13 +32,13 @@ const ProductCard = ({ product, index = 0 }: { product: Product; index?: number 
           )}
 
           {/* Hover overlay */}
-          <div className="absolute inset-0 bg-foreground/0 group-hover:bg-foreground/20 transition-all duration-500 flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100">
+          <div className="absolute inset-0 bg-primary/0 group-hover:bg-primary/20 transition-all duration-500 flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100">
             <button
               onClick={(e) => {
                 e.preventDefault();
                 addItem(product);
               }}
-              className="bg-background/95 backdrop-blur-sm text-foreground p-3 rounded-xl hover:bg-accent hover:text-accent-foreground transition-all duration-200 shadow-premium"
+              className="bg-background/95 backdrop-blur-sm text-foreground p-3 rounded-xl hover:bg-primary hover:text-primary-foreground transition-all duration-200 shadow-premium"
               title="Add to Cart"
             >
               <ShoppingBag size={18} />
@@ -58,7 +58,7 @@ const ProductCard = ({ product, index = 0 }: { product: Product; index?: number 
           </button>
 
           {/* Gold border glow on hover */}
-          <div className="absolute inset-0 rounded-2xl border-2 border-transparent group-hover:border-accent/30 transition-all duration-500 pointer-events-none" />
+          <div className="absolute inset-0 rounded-2xl border-2 border-transparent group-hover:border-accent/40 transition-all duration-500 pointer-events-none" />
         </div>
       </Link>
       <div className="mt-4 px-1">

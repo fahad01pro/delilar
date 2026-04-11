@@ -3,7 +3,8 @@ export interface Product {
   name: string;
   price: number;
   originalPrice?: number;
-  category: 'tshirts' | 'jubba' | 'panjabi' | 'attar';
+  category: 'tshirts' | 'jubba' | 'panjabi' | 'attar' | 'eid' | 'accessories';
+  subcategory?: string;
   image: string;
   images?: string[];
   description: string;
@@ -237,6 +238,119 @@ export const products: Product[] = [
     badge: 'New',
     inStock: true,
   },
+  // Eid Collection
+  {
+    id: 'eid-001',
+    name: 'Eid Premium White Jubba Set',
+    price: 7990,
+    originalPrice: 9490,
+    category: 'eid',
+    image: '/placeholder.svg',
+    description: 'Complete Eid outfit — premium white jubba with matching cap and attar. Celebrate in luxury.',
+    sizes: ['52', '54', '56', '58'],
+    colors: ['White', 'Off-White'],
+    rating: 4.9,
+    reviews: 245,
+    badge: 'Eid Special',
+    inStock: true,
+  },
+  {
+    id: 'eid-002',
+    name: 'Eid Golden Panjabi',
+    price: 5490,
+    originalPrice: 6490,
+    category: 'eid',
+    image: '/placeholder.svg',
+    description: 'Festive golden panjabi with hand-crafted embroidery. The perfect statement piece for Eid.',
+    sizes: ['38', '40', '42', '44', '46'],
+    colors: ['Gold', 'Champagne', 'Ivory'],
+    rating: 4.8,
+    reviews: 178,
+    badge: 'Eid Special',
+    inStock: true,
+  },
+  {
+    id: 'eid-003',
+    name: 'Eid Luxury Attar Gift Box',
+    price: 4990,
+    category: 'eid',
+    image: '/placeholder.svg',
+    description: 'Curated gift box with 3 signature attars. A premium Eid gift for the fragrance connoisseur.',
+    rating: 4.9,
+    reviews: 134,
+    badge: 'Gift Set',
+    inStock: true,
+  },
+  {
+    id: 'eid-004',
+    name: 'Eid Black Moroccan Thobe',
+    price: 6990,
+    originalPrice: 8290,
+    category: 'eid',
+    image: '/placeholder.svg',
+    description: 'Limited edition Moroccan thobe with intricate gold embroidery. Designed for Eid celebrations.',
+    sizes: ['52', '54', '56', '58', '60'],
+    colors: ['Black', 'Charcoal'],
+    rating: 4.9,
+    reviews: 89,
+    badge: 'Limited Edition',
+    inStock: true,
+  },
+  // Accessories
+  {
+    id: 'acc-001',
+    name: 'Premium White Kufi Cap',
+    price: 790,
+    originalPrice: 990,
+    category: 'accessories',
+    subcategory: 'cap',
+    image: '/placeholder.svg',
+    description: 'Hand-stitched kufi cap in premium cotton. Lightweight and breathable for daily wear.',
+    sizes: ['S', 'M', 'L'],
+    colors: ['White', 'Black', 'Navy'],
+    rating: 4.7,
+    reviews: 234,
+    badge: 'Best Seller',
+    inStock: true,
+  },
+  {
+    id: 'acc-002',
+    name: 'Classic Kafiya — Red & White',
+    price: 1290,
+    category: 'accessories',
+    subcategory: 'kafiya',
+    image: '/placeholder.svg',
+    description: 'Traditional kafiya in premium cotton weave. Classic red and white pattern.',
+    rating: 4.6,
+    reviews: 156,
+    inStock: true,
+  },
+  {
+    id: 'acc-003',
+    name: 'Royal Pagri — Golden Thread',
+    price: 2490,
+    originalPrice: 2990,
+    category: 'accessories',
+    subcategory: 'pagri',
+    image: '/placeholder.svg',
+    description: 'Majestic pagri with golden thread detailing. Perfect for weddings and special occasions.',
+    rating: 4.8,
+    reviews: 67,
+    badge: 'Premium',
+    inStock: true,
+  },
+  {
+    id: 'acc-004',
+    name: 'Wooden Miswak Holder',
+    price: 490,
+    category: 'accessories',
+    subcategory: 'others',
+    image: '/placeholder.svg',
+    description: 'Handcrafted wooden miswak holder. A perfect blend of utility and elegance.',
+    rating: 4.5,
+    reviews: 89,
+    inStock: true,
+  },
 ];
 
 export const getProductsByCategory = (category: Product['category']) =>
@@ -248,9 +362,14 @@ export const getProductById = (id: string) =>
 export const getFeaturedProducts = () =>
   products.filter((p) => p.badge === 'Best Seller');
 
+export const getEidProducts = () =>
+  products.filter((p) => p.category === 'eid');
+
 export const categories = [
+  { slug: 'eid', name: 'Eid Collection', description: 'Exclusive Eid celebration wear' },
   { slug: 'tshirts', name: 'T-Shirts', description: 'Premium casual wear' },
   { slug: 'jubba', name: 'Jubba / Thobe', description: 'Elegant traditional wear' },
   { slug: 'panjabi', name: 'Panjabi', description: 'Refined ethnic fashion' },
   { slug: 'attar', name: 'Attar', description: 'Luxury fragrances' },
+  { slug: 'accessories', name: 'Accessories', description: 'Premium accessories' },
 ] as const;

@@ -3,7 +3,7 @@ import { Mail, Phone, MapPin, Instagram, Facebook, Youtube } from 'lucide-react'
 
 const Footer = () => {
   return (
-    <footer className="gradient-dark text-primary-foreground">
+    <footer className="bg-primary text-primary-foreground">
       {/* Newsletter */}
       <div className="border-b border-primary-foreground/10">
         <div className="container mx-auto px-4 lg:px-8 py-14 text-center">
@@ -14,9 +14,9 @@ const Footer = () => {
             <input
               type="email"
               placeholder="Your email address"
-              className="flex-1 bg-primary-foreground/10 text-primary-foreground text-sm px-5 py-3.5 outline-none border border-primary-foreground/20 rounded-l-xl placeholder:text-primary-foreground/30 font-body focus:border-accent transition-colors"
+              className="flex-1 bg-primary-foreground/10 text-primary-foreground text-sm px-5 py-3.5 outline-none border border-primary-foreground/15 rounded-l-xl placeholder:text-primary-foreground/30 font-body focus:border-accent transition-colors"
             />
-            <button className="btn-gold px-8 py-3.5 text-sm font-body tracking-wider uppercase rounded-l-none rounded-r-xl font-semibold">
+            <button className="bg-accent text-foreground px-8 py-3.5 text-sm font-body tracking-wider uppercase rounded-l-none rounded-r-xl font-semibold hover:shadow-[0_0_20px_hsl(43_72%_52%/0.4)] transition-all duration-300">
               Join
             </button>
           </div>
@@ -28,17 +28,17 @@ const Footer = () => {
           {/* Brand */}
           <div>
             <div className="flex items-center gap-2 mb-4">
-              <div className="w-8 h-8 rounded-full gradient-gold flex items-center justify-center">
+              <div className="w-8 h-8 rounded-full bg-accent flex items-center justify-center">
                 <span className="text-xs font-heading font-bold text-foreground">D</span>
               </div>
-              <h3 className="text-2xl font-heading font-bold tracking-wider">DELILAR</h3>
+              <h3 className="text-2xl font-heading font-bold tracking-[0.15em]">DELILAR</h3>
             </div>
             <p className="text-primary-foreground/50 text-sm leading-relaxed font-body">
               Premium Islamic fashion & luxury attar. Crafted for the modern man who values tradition and style.
             </p>
             <div className="flex gap-3 mt-5">
               {[Instagram, Facebook, Youtube].map((Icon, i) => (
-                <a key={i} href="#" className="w-10 h-10 rounded-xl bg-primary-foreground/10 flex items-center justify-center hover:bg-accent hover:text-accent-foreground transition-all duration-300">
+                <a key={i} href="#" className="w-10 h-10 rounded-xl bg-primary-foreground/10 flex items-center justify-center hover:bg-accent hover:text-foreground transition-all duration-300">
                   <Icon size={16} />
                 </a>
               ))}
@@ -50,11 +50,12 @@ const Footer = () => {
             <h4 className="text-sm font-body tracking-widest uppercase mb-5 text-accent font-medium">Quick Links</h4>
             <ul className="space-y-3">
               {[
+                { label: 'Eid Collection', href: '/eid' },
                 { label: 'T-Shirts', href: '/tshirts' },
                 { label: 'Jubba / Thobe', href: '/jubba' },
                 { label: 'Panjabi', href: '/panjabi' },
                 { label: 'Attar', href: '/attar' },
-                { label: 'About Us', href: '/about' },
+                { label: 'Accessories', href: '/accessories' },
               ].map((item) => (
                 <li key={item.label}>
                   <Link to={item.href} className="text-sm text-primary-foreground/50 hover:text-accent transition-colors font-body">
@@ -69,7 +70,7 @@ const Footer = () => {
           <div>
             <h4 className="text-sm font-body tracking-widest uppercase mb-5 text-accent font-medium">Policies</h4>
             <ul className="space-y-3">
-              {['Privacy Policy', 'Return Policy', 'Terms & Conditions', 'Shipping Info'].map((item) => (
+              {['Privacy Policy', 'Return Policy', 'Terms & Conditions', 'Shipping Info', 'About Us'].map((item) => (
                 <li key={item}>
                   <span className="text-sm text-primary-foreground/50 hover:text-accent transition-colors cursor-pointer font-body">
                     {item}
