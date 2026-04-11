@@ -1,16 +1,16 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowRight, Star, Truck, Shield, RotateCcw, ChevronLeft, ChevronRight } from 'lucide-react';
+import { ArrowRight, Star, Truck, Shield, RotateCcw, ChevronLeft, ChevronRight, Sparkles } from 'lucide-react';
 import heroImage from '@/assets/hero-main.jpg';
 import catTshirts from '@/assets/category-tshirts.jpg';
 import catJubba from '@/assets/category-jubba.jpg';
 import catPanjabi from '@/assets/category-panjabi.jpg';
 import catAttar from '@/assets/category-attar.jpg';
 import ProductCard from '@/components/ProductCard';
-import { getFeaturedProducts, products } from '@/data/products';
+import { getFeaturedProducts, getEidProducts, products } from '@/data/products';
 
-const categories = [
+const homeCategories = [
   { name: 'T-Shirts', slug: '/tshirts', image: catTshirts, desc: 'Premium casual wear for the modern man' },
   { name: 'Jubba / Thobe', slug: '/jubba', image: catJubba, desc: 'Elegant traditional garments' },
   { name: 'Panjabi', slug: '/panjabi', image: catPanjabi, desc: 'Refined ethnic fashion' },
@@ -28,11 +28,11 @@ const heroSlides = [
   },
   {
     image: catJubba,
-    subtitle: 'New Arrivals',
-    title: 'The Royal',
-    highlight: 'Collection',
-    desc: 'Exquisitely crafted Jubba & Thobe for every occasion. Premium fabrics, timeless design.',
-    cta: { label: 'Explore Jubba', href: '/jubba' },
+    subtitle: 'Eid Collection 2026',
+    title: 'Celebrate in',
+    highlight: 'Luxury',
+    desc: 'Exclusive Eid outfits — premium jubba sets, golden panjabi, and luxury attar gift boxes.',
+    cta: { label: 'Shop Eid', href: '/eid' },
   },
   {
     image: catAttar,
@@ -52,6 +52,7 @@ const testimonials = [
 
 const Index = () => {
   const featured = getFeaturedProducts();
+  const eidProducts = getEidProducts();
   const [currentSlide, setCurrentSlide] = useState(0);
 
   const nextSlide = useCallback(() => {
@@ -70,13 +71,13 @@ const Index = () => {
   return (
     <main>
       {/* Hero Slider */}
-      <section className="relative h-[85vh] lg:h-[92vh] overflow-hidden">
+      <section className="relative h-[80vh] lg:h-[90vh] overflow-hidden">
         <AnimatePresence mode="wait">
           <motion.div
             key={currentSlide}
-            initial={{ opacity: 0, scale: 1.1 }}
+            initial={{ opacity: 0, scale: 1.08 }}
             animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.95 }}
+            exit={{ opacity: 0, scale: 0.96 }}
             transition={{ duration: 0.8 }}
             className="absolute inset-0"
           >
@@ -87,7 +88,7 @@ const Index = () => {
               width={1920}
               height={1080}
             />
-            <div className="absolute inset-0 bg-gradient-to-r from-foreground/80 via-foreground/50 to-foreground/20" />
+            <div className="absolute inset-0 bg-gradient-to-r from-primary/90 via-primary/60 to-primary/30" />
           </motion.div>
         </AnimatePresence>
 
@@ -101,13 +102,13 @@ const Index = () => {
               transition={{ duration: 0.6, delay: 0.2 }}
               className="max-w-xl"
             >
-              <p className="text-gold text-xs font-body tracking-[0.3em] uppercase mb-4 flex items-center gap-2">
+              <p className="text-accent text-xs font-body tracking-[0.3em] uppercase mb-4 flex items-center gap-2">
                 <span className="w-8 h-px bg-accent" />
                 {heroSlides[currentSlide].subtitle}
               </p>
               <h2 className="text-4xl md:text-5xl lg:text-7xl font-heading font-bold text-primary-foreground leading-tight mb-6">
                 {heroSlides[currentSlide].title} <br />
-                <span className="text-gold italic">{heroSlides[currentSlide].highlight}</span>
+                <span className="text-accent italic">{heroSlides[currentSlide].highlight}</span>
               </h2>
               <p className="text-primary-foreground/60 font-body text-sm md:text-base leading-relaxed mb-8 max-w-md">
                 {heroSlides[currentSlide].desc}
@@ -115,7 +116,7 @@ const Index = () => {
               <div className="flex flex-wrap gap-4">
                 <Link
                   to={heroSlides[currentSlide].cta.href}
-                  className="btn-gold px-8 py-4 text-sm font-body tracking-widest uppercase inline-flex items-center gap-2 font-semibold"
+                  className="bg-accent text-foreground px-8 py-4 text-sm font-body tracking-widest uppercase inline-flex items-center gap-2 font-semibold rounded-xl hover:shadow-[0_0_30px_hsl(43_72%_52%/0.5)] hover:-translate-y-0.5 transition-all duration-300"
                 >
                   {heroSlides[currentSlide].cta.label} <ArrowRight size={16} />
                 </Link>
@@ -133,9 +134,9 @@ const Index = () => {
           <div className="absolute bottom-8 right-4 lg:right-8 flex items-center gap-3">
             <button
               onClick={prevSlide}
-              className="w-12 h-12 rounded-full glass-dark flex items-center justify-center text-primary-foreground hover:bg-accent hover:text-accent-foreground transition-all duration-300"
+              className="w-11 h-11 rounded-full bg-primary-foreground/10 backdrop-blur-md border border-primary-foreground/15 flex items-center justify-center text-primary-foreground hover:bg-accent hover:text-foreground hover:border-accent transition-all duration-300"
             >
-              <ChevronLeft size={20} />
+              <ChevronLeft size={18} />
             </button>
             <div className="flex gap-2">
               {heroSlides.map((_, i) => (
@@ -150,16 +151,16 @@ const Index = () => {
             </div>
             <button
               onClick={nextSlide}
-              className="w-12 h-12 rounded-full glass-dark flex items-center justify-center text-primary-foreground hover:bg-accent hover:text-accent-foreground transition-all duration-300"
+              className="w-11 h-11 rounded-full bg-primary-foreground/10 backdrop-blur-md border border-primary-foreground/15 flex items-center justify-center text-primary-foreground hover:bg-accent hover:text-foreground hover:border-accent transition-all duration-300"
             >
-              <ChevronRight size={20} />
+              <ChevronRight size={18} />
             </button>
           </div>
         </div>
       </section>
 
       {/* Trust Bar */}
-      <section className="bg-primary py-5">
+      <section className="bg-primary py-4">
         <div className="container mx-auto px-4 flex flex-wrap justify-center gap-8 md:gap-16">
           {[
             { icon: Truck, label: 'Free Shipping 5,000+' },
@@ -168,20 +169,55 @@ const Index = () => {
             { icon: Star, label: 'Top Rated' },
           ].map(({ icon: Icon, label }) => (
             <div key={label} className="flex items-center gap-2.5 text-primary-foreground/80">
-              <Icon size={18} className="text-accent" />
-              <span className="text-xs font-body tracking-wider uppercase">{label}</span>
+              <Icon size={16} className="text-accent" />
+              <span className="text-[10px] font-body tracking-wider uppercase">{label}</span>
             </div>
           ))}
         </div>
       </section>
 
+      {/* Eid Collection */}
+      {eidProducts.length > 0 && (
+        <section className="bg-primary/5 py-16 lg:py-24">
+          <div className="container mx-auto px-4 lg:px-8">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              className="text-center mb-12"
+            >
+              <p className="text-xs font-body tracking-[0.3em] uppercase text-accent mb-3 flex items-center justify-center gap-3">
+                <Sparkles size={14} className="text-accent" /> Eid Collection 2026 <Sparkles size={14} className="text-accent" />
+              </p>
+              <h2 className="text-3xl lg:text-5xl font-heading font-bold">Celebrate in Style</h2>
+              <p className="text-sm text-muted-foreground font-body mt-3 max-w-lg mx-auto">
+                Exclusive Eid outfits and gift sets designed for the festive season.
+              </p>
+            </motion.div>
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
+              {eidProducts.map((product, i) => (
+                <ProductCard key={product.id} product={product} index={i} />
+              ))}
+            </div>
+            <div className="text-center mt-10">
+              <Link
+                to="/eid"
+                className="bg-primary text-primary-foreground px-10 py-4 text-sm font-body tracking-widest uppercase inline-flex items-center gap-2 rounded-xl font-semibold hover:shadow-[0_0_30px_hsl(345_65%_18%/0.4)] hover:-translate-y-0.5 transition-all duration-300"
+              >
+                View Eid Collection <ArrowRight size={14} />
+              </Link>
+            </div>
+          </div>
+        </section>
+      )}
+
       {/* Categories */}
-      <section className="container mx-auto px-4 lg:px-8 py-16 lg:py-28">
+      <section className="container mx-auto px-4 lg:px-8 py-16 lg:py-24">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          className="text-center mb-14"
+          className="text-center mb-12"
         >
           <p className="text-xs font-body tracking-[0.3em] uppercase text-accent mb-3 flex items-center justify-center gap-3">
             <span className="w-8 h-px bg-accent" /> Collections <span className="w-8 h-px bg-accent" />
@@ -189,7 +225,7 @@ const Index = () => {
           <h2 className="text-3xl lg:text-5xl font-heading font-bold">Shop by Category</h2>
         </motion.div>
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
-          {categories.map((cat, i) => (
+          {homeCategories.map((cat, i) => (
             <motion.div
               key={cat.slug}
               initial={{ opacity: 0, y: 30 }}
@@ -197,7 +233,7 @@ const Index = () => {
               viewport={{ once: true }}
               transition={{ delay: i * 0.12 }}
             >
-              <Link to={cat.slug} className="group block relative aspect-[3/4] overflow-hidden rounded-2xl shadow-premium glow-gold-hover transition-all duration-500">
+              <Link to={cat.slug} className="group block relative aspect-[3/4] overflow-hidden rounded-2xl shadow-premium transition-all duration-500 hover:shadow-premium-lg">
                 <img
                   src={cat.image}
                   alt={cat.name}
@@ -206,7 +242,8 @@ const Index = () => {
                   width={800}
                   height={1024}
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-foreground/80 via-foreground/20 to-transparent" />
+                <div className="absolute inset-0 bg-gradient-to-t from-primary/90 via-primary/30 to-transparent" />
+                <div className="absolute inset-0 border-2 border-transparent group-hover:border-accent/40 rounded-2xl transition-all duration-500 pointer-events-none" />
                 <div className="absolute bottom-0 left-0 right-0 p-5 lg:p-6">
                   <h3 className="text-lg lg:text-xl font-heading font-bold text-primary-foreground">{cat.name}</h3>
                   <p className="text-xs text-primary-foreground/60 font-body mt-1 hidden lg:block">{cat.desc}</p>
@@ -221,13 +258,13 @@ const Index = () => {
       </section>
 
       {/* Featured Products */}
-      <section className="bg-secondary/50 py-16 lg:py-28">
+      <section className="bg-secondary/50 py-16 lg:py-24">
         <div className="container mx-auto px-4 lg:px-8">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="text-center mb-14"
+            className="text-center mb-12"
           >
             <p className="text-xs font-body tracking-[0.3em] uppercase text-accent mb-3 flex items-center justify-center gap-3">
               <span className="w-8 h-px bg-accent" /> Curated <span className="w-8 h-px bg-accent" />
@@ -239,10 +276,10 @@ const Index = () => {
               <ProductCard key={product.id} product={product} index={i} />
             ))}
           </div>
-          <div className="text-center mt-12">
+          <div className="text-center mt-10">
             <Link
               to="/tshirts"
-              className="btn-primary px-10 py-4 text-sm font-body tracking-widest uppercase inline-flex items-center gap-2"
+              className="bg-primary text-primary-foreground px-10 py-4 text-sm font-body tracking-widest uppercase inline-flex items-center gap-2 rounded-xl font-semibold hover:shadow-[0_0_30px_hsl(345_65%_18%/0.4)] hover:-translate-y-0.5 transition-all duration-300"
             >
               View All Products <ArrowRight size={14} />
             </Link>
@@ -251,12 +288,12 @@ const Index = () => {
       </section>
 
       {/* Testimonials */}
-      <section className="container mx-auto px-4 lg:px-8 py-16 lg:py-28">
+      <section className="container mx-auto px-4 lg:px-8 py-16 lg:py-24">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          className="text-center mb-14"
+          className="text-center mb-12"
         >
           <p className="text-xs font-body tracking-[0.3em] uppercase text-accent mb-3 flex items-center justify-center gap-3">
             <span className="w-8 h-px bg-accent" /> Testimonials <span className="w-8 h-px bg-accent" />
@@ -271,7 +308,7 @@ const Index = () => {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ delay: i * 0.15 }}
-              className="glass p-6 lg:p-8 rounded-2xl shadow-premium hover:shadow-premium-lg transition-all duration-300 group hover:-translate-y-1"
+              className="glass p-6 lg:p-8 rounded-2xl shadow-premium hover:shadow-premium-lg transition-all duration-300 group hover:-translate-y-1 border border-transparent hover:border-accent/20"
             >
               <div className="flex gap-0.5 mb-4">
                 {Array.from({ length: 5 }).map((_, j) => (
@@ -286,8 +323,8 @@ const Index = () => {
       </section>
 
       {/* CTA Banner */}
-      <section className="gradient-dark py-20 lg:py-32 relative overflow-hidden">
-        <div className="absolute inset-0 opacity-10">
+      <section className="bg-primary py-20 lg:py-28 relative overflow-hidden">
+        <div className="absolute inset-0 opacity-15">
           <div className="absolute top-10 left-10 w-40 h-40 rounded-full bg-accent blur-[100px]" />
           <div className="absolute bottom-10 right-10 w-60 h-60 rounded-full bg-accent blur-[120px]" />
         </div>
@@ -297,18 +334,18 @@ const Index = () => {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
           >
-            <p className="text-xs font-body tracking-[0.3em] uppercase text-gold mb-3 flex items-center justify-center gap-3">
+            <p className="text-xs font-body tracking-[0.3em] uppercase text-accent mb-3 flex items-center justify-center gap-3">
               <span className="w-8 h-px bg-accent" /> Limited Collection <span className="w-8 h-px bg-accent" />
             </p>
             <h2 className="text-3xl lg:text-6xl font-heading font-bold text-primary-foreground mb-4">
-              Discover the Art of <span className="italic text-gold">Fragrance</span>
+              Discover the Art of <span className="italic text-accent">Fragrance</span>
             </h2>
             <p className="text-primary-foreground/50 font-body text-sm max-w-lg mx-auto mb-10">
               Our exclusive attar collection is crafted from the finest natural ingredients, offering scents that last all day.
             </p>
             <Link
               to="/attar"
-              className="btn-gold px-12 py-4 text-sm font-body tracking-widest uppercase inline-flex items-center gap-2 font-semibold"
+              className="bg-accent text-foreground px-12 py-4 text-sm font-body tracking-widest uppercase inline-flex items-center gap-2 font-semibold rounded-xl hover:shadow-[0_0_30px_hsl(43_72%_52%/0.5)] hover:-translate-y-0.5 transition-all duration-300"
             >
               Explore Attar <ArrowRight size={16} />
             </Link>
