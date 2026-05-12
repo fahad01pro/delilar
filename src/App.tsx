@@ -4,8 +4,11 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { CartProvider } from "@/context/CartContext";
+import { AuthProvider } from "@/context/AuthContext";
 import { WishlistProvider } from "@/context/WishlistContext";
+import AuthModal from "@/components/AuthModal";
 import Wishlist from "./pages/Wishlist";
+import Account from "./pages/Account";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import CartDrawer from "@/components/CartDrawer";
@@ -22,27 +25,31 @@ const queryClient = new QueryClient();
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
-      <CartProvider>
-        <WishlistProvider>
-          <Toaster />
-          <Sonner />
-          <BrowserRouter>
-            <Navbar />
-            <CartDrawer />
-            <Routes>
-              <Route path="/" element={<Index />} />
-              <Route path="/wishlist" element={<Wishlist />} />
-              <Route path="/cart" element={<CartPage />} />
-              <Route path="/about" element={<About />} />
-              <Route path="/contact" element={<Contact />} />
-              <Route path="/product/:id" element={<ProductDetail />} />
-              <Route path="/:category" element={<CategoryPage />} />
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-            <Footer />
-          </BrowserRouter>
-        </WishlistProvider>
-      </CartProvider>
+      <BrowserRouter>
+        <AuthProvider>
+          <CartProvider>
+            <WishlistProvider>
+              <Toaster />
+              <Sonner />
+              <Navbar />
+              <CartDrawer />
+              <AuthModal />
+              <Routes>
+                <Route path="/" element={<Index />} />
+                <Route path="/account" element={<Account />} />
+                <Route path="/wishlist" element={<Wishlist />} />
+                <Route path="/cart" element={<CartPage />} />
+                <Route path="/about" element={<About />} />
+                <Route path="/contact" element={<Contact />} />
+                <Route path="/product/:id" element={<ProductDetail />} />
+                <Route path="/:category" element={<CategoryPage />} />
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+              <Footer />
+            </WishlistProvider>
+          </CartProvider>
+        </AuthProvider>
+      </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
 );
