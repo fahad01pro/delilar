@@ -106,8 +106,21 @@ const Navbar = () => {
               >
                 <Search size={18} />
               </button>
-              <Link to="/wishlist" className="p-2.5 rounded-xl text-primary-foreground/70 hover:text-accent hover:bg-primary-foreground/10 transition-all duration-200 hidden sm:flex">
-                <Heart size={18} />
+              <Link
+                to="/wishlist"
+                className="p-2.5 rounded-xl text-primary-foreground/80 hover:text-accent hover:bg-primary-foreground/10 transition-all duration-200 hidden sm:flex relative"
+                aria-label="Wishlist"
+              >
+                <Heart size={18} className={wishlistCount > 0 ? 'fill-accent text-accent' : ''} />
+                {wishlistCount > 0 && (
+                  <motion.span
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    className="absolute -top-0.5 -right-0.5 rounded-full bg-accent text-foreground text-[9px] font-bold flex items-center justify-center min-w-[18px] min-h-[18px] px-1"
+                  >
+                    {wishlistCount}
+                  </motion.span>
+                )}
               </Link>
               <Link to="/account" className="p-2.5 rounded-xl text-primary-foreground/70 hover:text-accent hover:bg-primary-foreground/10 transition-all duration-200 hidden sm:flex">
                 <User size={18} />
