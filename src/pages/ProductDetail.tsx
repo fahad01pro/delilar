@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { getProductById, getProductsByCategory } from '@/data/products';
 import { useCart } from '@/context/CartContext';
+import { useWishlist } from '@/context/WishlistContext';
 import { Star, Minus, Plus, Truck, RotateCcw, Shield, Heart, Share2 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import ProductCard from '@/components/ProductCard';
@@ -10,6 +11,7 @@ const ProductDetail = () => {
   const { id } = useParams<{ id: string }>();
   const product = getProductById(id || '');
   const { addItem } = useCart();
+  const { toggle: toggleWish, has: hasWish } = useWishlist();
   const [selectedSize, setSelectedSize] = useState('');
   const [selectedColor, setSelectedColor] = useState('');
   const [quantity, setQuantity] = useState(1);
@@ -142,20 +144,30 @@ const ProductDetail = () => {
           <div className="flex gap-3 mb-4">
             <button
               onClick={handleAddToCart}
-              className="flex-1 btn-primary py-4 text-sm font-body tracking-widest uppercase font-semibold"
+              disabled={!product.inStock}
+              className="flex-1 btn-primary py-4 text-sm font-body tracking-widest uppercase font-semibold disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0"
             >
-              Add to Cart
+              {product.inStock ? 'Add to Cart' : 'Out of Stock'}
             </button>
             <button
               onClick={handleAddToCart}
-              className="flex-1 btn-gold py-4 text-sm font-body tracking-widest uppercase font-semibold"
+              disabled={!product.inStock}
+              className="flex-1 btn-gold py-4 text-sm font-body tracking-widest uppercase font-semibold disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0"
             >
               Buy Now
             </button>
           </div>
           <div className="flex gap-2 mb-8">
-            <button className="flex items-center gap-2 px-4 py-2.5 text-xs font-body text-muted-foreground hover:text-foreground border border-border rounded-xl hover:bg-secondary transition-all">
-              <Heart size={14} /> Wishlist
+            <button
+              onClick={() => toggleWish(product)}
+              className={`flex items-center gap-2 px-4 py-2.5 text-xs font-body border rounded-xl transition-all ${
+                hasWish(product.id)
+                  ? 'bg-primary text-primary-foreground border-primary'
+                  : 'text-muted-foreground hover:text-foreground border-border hover:bg-secondary'
+              }`}
+            >
+              <Heart size={14} className={hasWish(product.id) ? 'fill-current' : ''} />
+              {hasWish(product.id) ? 'In Wishlist' : 'Wishlist'}
             </button>
             <button className="flex items-center gap-2 px-4 py-2.5 text-xs font-body text-muted-foreground hover:text-foreground border border-border rounded-xl hover:bg-secondary transition-all">
               <Share2 size={14} /> Share
