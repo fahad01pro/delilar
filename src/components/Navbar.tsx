@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Search, ShoppingBag, User, Menu, X, Heart, ChevronDown } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
+import { useWishlist } from '@/context/WishlistContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import MegaMenu from './MegaMenu';
 
@@ -12,6 +13,8 @@ const mobileNavLinks = [
     label: 'Mens',
     children: [
       { label: 'T-Shirts', href: '/tshirts' },
+      { label: 'Shirts', href: '/shirts' },
+      { label: 'Pants', href: '/pants' },
       { label: 'Jubba / Thobe', href: '/jubba' },
       { label: 'Panjabi', href: '/panjabi' },
     ],
@@ -22,6 +25,8 @@ const mobileNavLinks = [
       { label: 'Cap', href: '/accessories?sub=cap' },
       { label: 'Kafiya', href: '/accessories?sub=kafiya' },
       { label: 'Pagri', href: '/accessories?sub=pagri' },
+      { label: 'Bags', href: '/accessories?sub=bags' },
+      { label: 'Wallets', href: '/accessories?sub=wallets' },
       { label: 'Others', href: '/accessories?sub=others' },
     ],
   },
