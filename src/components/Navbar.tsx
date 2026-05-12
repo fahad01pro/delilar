@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Search, ShoppingBag, User, Menu, X, Heart, ChevronDown } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
+import { useWishlist } from '@/context/WishlistContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import MegaMenu from './MegaMenu';
 
@@ -12,6 +13,8 @@ const mobileNavLinks = [
     label: 'Mens',
     children: [
       { label: 'T-Shirts', href: '/tshirts' },
+      { label: 'Shirts', href: '/shirts' },
+      { label: 'Pants', href: '/pants' },
       { label: 'Jubba / Thobe', href: '/jubba' },
       { label: 'Panjabi', href: '/panjabi' },
     ],
@@ -22,6 +25,8 @@ const mobileNavLinks = [
       { label: 'Cap', href: '/accessories?sub=cap' },
       { label: 'Kafiya', href: '/accessories?sub=kafiya' },
       { label: 'Pagri', href: '/accessories?sub=pagri' },
+      { label: 'Bags', href: '/accessories?sub=bags' },
+      { label: 'Wallets', href: '/accessories?sub=wallets' },
       { label: 'Others', href: '/accessories?sub=others' },
     ],
   },
@@ -36,10 +41,11 @@ const Navbar = () => {
   const [scrolled, setScrolled] = useState(false);
   const [expandedMobile, setExpandedMobile] = useState<string | null>(null);
   const { totalItems, setIsCartOpen } = useCart();
+  const { count: wishlistCount } = useWishlist();
   const location = useLocation();
 
   useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 50);
+    const onScroll = () => setScrolled(window.scrollY > 30);
     window.addEventListener('scroll', onScroll);
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
@@ -51,11 +57,14 @@ const Navbar = () => {
   return (
     <>
       <header
-        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${
+        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 border-b ${
           scrolled
-            ? 'bg-primary/95 backdrop-blur-xl shadow-premium-lg'
-            : 'bg-primary'
+            ? 'bg-[hsl(var(--burgundy-dark)/0.88)] backdrop-blur-2xl backdrop-saturate-150 border-accent/15 shadow-[0_8px_32px_hsl(var(--charcoal)/0.25)]'
+            : 'bg-[hsl(var(--burgundy)/0.78)] backdrop-blur-xl backdrop-saturate-150 border-primary-foreground/10 shadow-[0_4px_24px_hsl(var(--charcoal)/0.18)]'
         }`}
+        style={{
+          WebkitBackdropFilter: 'blur(24px) saturate(150%)',
+        }}
       >
         {/* Top bar */}
         <div className="bg-foreground py-1.5">
@@ -97,8 +106,21 @@ const Navbar = () => {
               >
                 <Search size={18} />
               </button>
-              <Link to="/wishlist" className="p-2.5 rounded-xl text-primary-foreground/70 hover:text-accent hover:bg-primary-foreground/10 transition-all duration-200 hidden sm:flex">
-                <Heart size={18} />
+              <Link
+                to="/wishlist"
+                className="p-2.5 rounded-xl text-primary-foreground/80 hover:text-accent hover:bg-primary-foreground/10 transition-all duration-200 hidden sm:flex relative"
+                aria-label="Wishlist"
+              >
+                <Heart size={18} className={wishlistCount > 0 ? 'fill-accent text-accent' : ''} />
+                {wishlistCount > 0 && (
+                  <motion.span
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    className="absolute -top-0.5 -right-0.5 rounded-full bg-accent text-foreground text-[9px] font-bold flex items-center justify-center min-w-[18px] min-h-[18px] px-1"
+                  >
+                    {wishlistCount}
+                  </motion.span>
+                )}
               </Link>
               <Link to="/account" className="p-2.5 rounded-xl text-primary-foreground/70 hover:text-accent hover:bg-primary-foreground/10 transition-all duration-200 hidden sm:flex">
                 <User size={18} />

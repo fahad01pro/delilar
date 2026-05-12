@@ -1,7 +1,7 @@
 import { useState, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronDown, Shirt, Crown, Sparkles, Droplets, Star, CircleDot } from 'lucide-react';
+import { ChevronDown, Shirt, Crown, Sparkles, Droplets, Star, CircleDot, Briefcase, Wallet } from 'lucide-react';
 import { products } from '@/data/products';
 
 interface MenuCategory {
@@ -30,6 +30,8 @@ const menuItems: MenuCategory[] = [
     label: 'Mens',
     children: [
       { label: 'T-Shirts', href: '/tshirts', icon: <Shirt size={16} /> },
+      { label: 'Shirts', href: '/shirts', icon: <Shirt size={16} /> },
+      { label: 'Pants', href: '/pants', icon: <CircleDot size={16} /> },
       { label: 'Jubba / Thobe', href: '/jubba', icon: <Crown size={16} /> },
       { label: 'Panjabi', href: '/panjabi', icon: <Sparkles size={16} /> },
     ],
@@ -40,6 +42,8 @@ const menuItems: MenuCategory[] = [
       { label: 'Cap', href: '/accessories?sub=cap', icon: <CircleDot size={16} /> },
       { label: 'Kafiya', href: '/accessories?sub=kafiya', icon: <CircleDot size={16} /> },
       { label: 'Pagri', href: '/accessories?sub=pagri', icon: <CircleDot size={16} /> },
+      { label: 'Bags', href: '/accessories?sub=bags', icon: <Briefcase size={16} /> },
+      { label: 'Wallets', href: '/accessories?sub=wallets', icon: <Wallet size={16} /> },
       { label: 'Others', href: '/accessories?sub=others', icon: <CircleDot size={16} /> },
     ],
   },
