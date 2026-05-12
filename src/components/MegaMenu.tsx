@@ -114,7 +114,8 @@ const MegaMenu = () => {
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 exit={{ opacity: 0, y: 8, scale: 0.98 }}
                 transition={{ duration: 0.25 }}
-                className="absolute top-full left-1/2 -translate-x-1/2 mt-2 min-w-[420px] bg-background/98 backdrop-blur-2xl border border-border/50 rounded-2xl shadow-premium-lg overflow-hidden z-50"
+                className="absolute top-full left-1/2 -translate-x-1/2 mt-3 min-w-[460px] rounded-2xl overflow-hidden z-50 border border-accent/20 shadow-[0_24px_60px_-12px_hsl(var(--charcoal)/0.55),0_0_0_1px_hsl(var(--accent)/0.08)] bg-background"
+                style={{ backdropFilter: 'blur(28px) saturate(180%)', WebkitBackdropFilter: 'blur(28px) saturate(180%)' }}
                 onMouseEnter={() => handleEnter(item.label)}
                 onMouseLeave={handleLeave}
               >
