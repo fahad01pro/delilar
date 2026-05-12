@@ -41,10 +41,11 @@ const Navbar = () => {
   const [scrolled, setScrolled] = useState(false);
   const [expandedMobile, setExpandedMobile] = useState<string | null>(null);
   const { totalItems, setIsCartOpen } = useCart();
+  const { count: wishlistCount } = useWishlist();
   const location = useLocation();
 
   useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 50);
+    const onScroll = () => setScrolled(window.scrollY > 30);
     window.addEventListener('scroll', onScroll);
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
@@ -56,11 +57,14 @@ const Navbar = () => {
   return (
     <>
       <header
-        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${
+        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 border-b ${
           scrolled
-            ? 'bg-primary/95 backdrop-blur-xl shadow-premium-lg'
-            : 'bg-primary'
+            ? 'bg-[hsl(var(--burgundy-dark)/0.88)] backdrop-blur-2xl backdrop-saturate-150 border-accent/15 shadow-[0_8px_32px_hsl(var(--charcoal)/0.25)]'
+            : 'bg-[hsl(var(--burgundy)/0.78)] backdrop-blur-xl backdrop-saturate-150 border-primary-foreground/10 shadow-[0_4px_24px_hsl(var(--charcoal)/0.18)]'
         }`}
+        style={{
+          WebkitBackdropFilter: 'blur(24px) saturate(150%)',
+        }}
       >
         {/* Top bar */}
         <div className="bg-foreground py-1.5">
