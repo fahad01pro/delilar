@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Search, ShoppingBag, User, Menu, X, Heart, ChevronDown } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
 import { useWishlist } from '@/context/WishlistContext';
+import { useAuth } from '@/context/AuthContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import MegaMenu from './MegaMenu';
 
@@ -42,7 +43,14 @@ const Navbar = () => {
   const [expandedMobile, setExpandedMobile] = useState<string | null>(null);
   const { totalItems, setIsCartOpen } = useCart();
   const { count: wishlistCount } = useWishlist();
+  const { user, openAuthModal } = useAuth();
   const location = useLocation();
+  const navigate = useNavigate();
+
+  const handleProtected = (target: string, msg: string) => {
+    if (user) navigate(target);
+    else openAuthModal(msg);
+  };
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 30);
@@ -106,8 +114,8 @@ const Navbar = () => {
               >
                 <Search size={18} />
               </button>
-              <Link
-                to="/wishlist"
+              <button
+                onClick={() => handleProtected('/wishlist', 'Please sign in to save items to your wishlist.')}
                 className="p-2.5 rounded-xl text-primary-foreground/80 hover:text-accent hover:bg-primary-foreground/10 transition-all duration-200 hidden sm:flex relative"
                 aria-label="Wishlist"
               >
@@ -121,10 +129,14 @@ const Navbar = () => {
                     {wishlistCount}
                   </motion.span>
                 )}
-              </Link>
-              <Link to="/account" className="p-2.5 rounded-xl text-primary-foreground/70 hover:text-accent hover:bg-primary-foreground/10 transition-all duration-200 hidden sm:flex">
+              </button>
+              <button
+                onClick={() => handleProtected('/account', 'Sign in to access your dashboard.')}
+                className="p-2.5 rounded-xl text-primary-foreground/70 hover:text-accent hover:bg-primary-foreground/10 transition-all duration-200 hidden sm:flex"
+                aria-label="Account"
+              >
                 <User size={18} />
-              </Link>
+              </button>
               <button
                 onClick={() => setIsCartOpen(true)}
                 className="p-2.5 rounded-xl text-primary-foreground/70 hover:text-accent hover:bg-primary-foreground/10 transition-all duration-200 relative"
