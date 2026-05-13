@@ -248,18 +248,76 @@ const Account = () => {
           <motion.div key={tab} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="bg-card/50 border border-border/50 rounded-2xl p-6 lg:p-8 shadow-premium">
             {tab === 'profile' && (
               <div>
-                <h2 className="text-xl font-heading font-semibold text-foreground mb-1">Profile Information</h2>
-                <p className="text-xs font-body text-muted-foreground mb-6">Manage your personal details and shipping address.</p>
-                <div className="grid sm:grid-cols-2 gap-4">
-                  <Field icon={User} label="Full Name" value={profile.full_name || ''} onChange={(v) => setProfile({ ...profile, full_name: v })} />
-                  <Field icon={Mail} label="Email" value={profile.email || ''} onChange={(v) => setProfile({ ...profile, email: v })} type="email" />
-                  <Field icon={Phone} label="Phone" value={profile.phone || ''} onChange={(v) => setProfile({ ...profile, phone: v })} />
-                  <Field icon={MapPin} label="City" value={profile.city || ''} onChange={(v) => setProfile({ ...profile, city: v })} />
-                  <div className="sm:col-span-2">
-                    <Field icon={MapPin} label="Address" value={profile.address || ''} onChange={(v) => setProfile({ ...profile, address: v })} />
+                <h2 className="text-xl font-heading font-semibold text-foreground mb-1">Profile & Shipping Information</h2>
+                <p className="text-xs font-body text-muted-foreground mb-8">Complete your details so we can deliver your order anywhere in Bangladesh.</p>
+
+                {/* Personal */}
+                <div className="mb-8">
+                  <p className="text-[10px] font-body tracking-[0.3em] uppercase text-accent mb-3">Personal Details</p>
+                  <div className="grid sm:grid-cols-2 gap-4">
+                    <Field icon={User} label="Full Name" required value={profile.full_name || ''} onChange={(v) => setProfile({ ...profile, full_name: v })} />
+                    <Field icon={Mail} label="Email Address" required type="email" value={profile.email || ''} onChange={(v) => setProfile({ ...profile, email: v })} />
+                    <Field icon={Phone} label="Primary Mobile Number" required placeholder="01XXXXXXXXX" value={profile.phone || ''} onChange={(v) => setProfile({ ...profile, phone: sanitizePhone(v) })} />
+                    <div>
+                      <Field icon={PhoneCall} label="Secondary Mobile Number (optional)" placeholder="01XXXXXXXXX" value={profile.secondary_phone || ''} onChange={(v) => setProfile({ ...profile, secondary_phone: sanitizePhone(v) })} />
+                      <p className="mt-1.5 text-[11px] font-body text-muted-foreground flex items-start gap-1.5">
+                        <Info size={11} className="mt-0.5 shrink-0 text-accent" />
+                        Used if we cannot reach you on the primary number during delivery.
+                      </p>
+                    </div>
                   </div>
                 </div>
-                <button onClick={saveProfile} disabled={saving} className="mt-6 btn-primary px-7 py-3 text-xs tracking-[0.25em] uppercase font-body flex items-center gap-2">
+
+                {/* Shipping */}
+                <div>
+                  <p className="text-[10px] font-body tracking-[0.3em] uppercase text-accent mb-3">Shipping Address</p>
+                  <div className="grid sm:grid-cols-2 gap-4">
+                    <SelectField
+                      icon={Building2}
+                      label="District"
+                      required
+                      value={profile.district || ''}
+                      onChange={(v) => setProfile({ ...profile, district: v, upazila: '' })}
+                      options={BD_DISTRICTS}
+                      placeholder="Select your district"
+                    />
+                    <SelectField
+                      icon={MapPin}
+                      label="Upazila / Sub-district"
+                      required
+                      disabled={!profile.district}
+                      value={profile.upazila || ''}
+                      onChange={(v) => setProfile({ ...profile, upazila: v })}
+                      options={profile.district ? BD_LOCATIONS[profile.district] || [] : []}
+                      placeholder={profile.district ? 'Select your upazila' : 'Select a district first'}
+                    />
+                    <Field icon={Home} label="Village / Area" required value={profile.village || ''} onChange={(v) => setProfile({ ...profile, village: v })} />
+                    <div>
+                      <Field icon={Hash} label="House Number" required value={profile.house_number || ''} onChange={(v) => setProfile({ ...profile, house_number: v })} />
+                      <p className="mt-1.5 text-[11px] font-body text-muted-foreground flex items-start gap-1.5">
+                        <Info size={11} className="mt-0.5 shrink-0 text-accent" />
+                        If you don't have a house number, write "No".
+                      </p>
+                    </div>
+                    <div className="sm:col-span-2">
+                      <TextareaField
+                        icon={MapPin}
+                        label="Full Detailed Address"
+                        required
+                        rows={3}
+                        placeholder="Road, landmark, nearest mosque/market, postal code…"
+                        value={profile.detailed_address || ''}
+                        onChange={(v) => setProfile({ ...profile, detailed_address: v })}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <button
+                  onClick={saveProfile}
+                  disabled={saving || !requiredOk()}
+                  className="mt-8 btn-primary px-8 py-3.5 text-xs tracking-[0.25em] uppercase font-body flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
                   {saving && <Loader2 size={14} className="animate-spin" />} Save Changes
                 </button>
               </div>
