@@ -423,16 +423,64 @@ const Account = () => {
   );
 };
 
-const Field = ({ icon: Icon, label, value, onChange, type = 'text' }: any) => (
-  <div className="relative">
-    <Icon size={14} className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" />
-    <input
-      type={type}
-      value={value}
-      onChange={(e) => onChange(e.target.value)}
-      placeholder={label}
-      className="w-full bg-background border border-border/60 rounded-xl pl-11 pr-4 py-3 text-sm font-body text-foreground outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 transition-all"
-    />
+const FieldLabel = ({ children, required }: { children: React.ReactNode; required?: boolean }) => (
+  <label className="block text-[11px] font-body tracking-[0.18em] uppercase text-foreground/70 mb-1.5">
+    {children}{required && <span className="text-primary ml-1">*</span>}
+  </label>
+);
+
+const Field = ({ icon: Icon, label, value, onChange, type = 'text', placeholder, required }: any) => (
+  <div>
+    <FieldLabel required={required}>{label}</FieldLabel>
+    <div className="relative group">
+      <Icon size={14} className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground group-focus-within:text-accent transition-colors" />
+      <input
+        type={type}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder ?? label}
+        className="w-full bg-background border border-border/60 rounded-xl pl-11 pr-4 py-3 text-sm font-body text-foreground outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 hover:border-accent/40 transition-all"
+      />
+    </div>
+  </div>
+);
+
+const SelectField = ({ icon: Icon, label, value, onChange, options, placeholder, required, disabled }: any) => (
+  <div>
+    <FieldLabel required={required}>{label}</FieldLabel>
+    <div className="relative group">
+      <Icon size={14} className={`absolute left-4 top-1/2 -translate-y-1/2 transition-colors ${disabled ? 'text-muted-foreground/40' : 'text-muted-foreground group-focus-within:text-accent'}`} />
+      <select
+        value={value}
+        disabled={disabled}
+        onChange={(e) => onChange(e.target.value)}
+        className="w-full appearance-none bg-background border border-border/60 rounded-xl pl-11 pr-10 py-3 text-sm font-body text-foreground outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 hover:border-accent/40 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+      >
+        <option value="">{placeholder}</option>
+        {options.map((o: string) => (
+          <option key={o} value={o}>{o}</option>
+        ))}
+      </select>
+      <svg className={`absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none ${disabled ? 'text-muted-foreground/40' : 'text-muted-foreground'}`} width="12" height="12" viewBox="0 0 12 12" fill="none">
+        <path d="M3 4.5L6 7.5L9 4.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+    </div>
+  </div>
+);
+
+const TextareaField = ({ icon: Icon, label, value, onChange, placeholder, required, rows = 3 }: any) => (
+  <div>
+    <FieldLabel required={required}>{label}</FieldLabel>
+    <div className="relative group">
+      <Icon size={14} className="absolute left-4 top-3.5 text-muted-foreground group-focus-within:text-accent transition-colors" />
+      <textarea
+        rows={rows}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder ?? label}
+        className="w-full bg-background border border-border/60 rounded-xl pl-11 pr-4 py-3 text-sm font-body text-foreground outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 hover:border-accent/40 transition-all resize-none"
+      />
+    </div>
   </div>
 );
 
