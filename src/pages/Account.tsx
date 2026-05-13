@@ -128,10 +128,37 @@ const Account = () => {
     })();
   }, [user]);
 
+  const requiredOk = () =>
+    !!profile.full_name?.trim() &&
+    EMAIL_RE.test((profile.email || '').trim()) &&
+    BD_PHONE_RE.test((profile.phone || '').trim()) &&
+    (!profile.secondary_phone?.trim() || BD_PHONE_RE.test(profile.secondary_phone.trim())) &&
+    !!profile.district &&
+    !!profile.upazila &&
+    !!profile.village?.trim() &&
+    !!profile.house_number?.trim() &&
+    !!profile.detailed_address?.trim();
+
   const saveProfile = async () => {
     if (!user) return;
+    if (!profile.full_name?.trim()) return toast.error('Full name is required');
+    if (!EMAIL_RE.test((profile.email || '').trim())) return toast.error('Enter a valid email');
+    if (!BD_PHONE_RE.test((profile.phone || '').trim())) return toast.error('Enter a valid Bangladeshi mobile number');
+    if (profile.secondary_phone?.trim() && !BD_PHONE_RE.test(profile.secondary_phone.trim())) return toast.error('Secondary number is invalid');
+    if (!profile.district) return toast.error('Select your district');
+    if (!profile.upazila) return toast.error('Select your upazila');
+    if (!profile.village?.trim()) return toast.error('Village / Area is required');
+    if (!profile.house_number?.trim()) return toast.error('House number is required (write "No" if none)');
+    if (!profile.detailed_address?.trim()) return toast.error('Detailed address is required');
+
     setSaving(true);
-    const { error } = await supabase.from('profiles').update(profile).eq('id', user.id);
+    // Mirror to legacy city/address columns for older consumers.
+    const payload = {
+      ...profile,
+      city: profile.district,
+      address: [profile.house_number, profile.village, profile.upazila, profile.district].filter(Boolean).join(', '),
+    };
+    const { error } = await supabase.from('profiles').update(payload).eq('id', user.id);
     setSaving(false);
     if (error) toast.error('Failed to save'); else toast.success('Profile updated');
   };
