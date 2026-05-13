@@ -1,13 +1,14 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { User, Package, Heart, ShoppingBag, Lock, LogOut, MapPin, Phone, Mail, Loader2, CheckCircle2, Truck, Box, Warehouse } from 'lucide-react';
+import { User, Package, Heart, ShoppingBag, Lock, LogOut, MapPin, Phone, Mail, Loader2, CheckCircle2, Truck, Box, Warehouse, Home, Hash, Building2, PhoneCall, Info } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '@/context/AuthContext';
 import { useWishlist } from '@/context/WishlistContext';
 import { useCart } from '@/context/CartContext';
 import { supabase } from '@/integrations/supabase/client';
 import ProductCard from '@/components/ProductCard';
+import { BD_DISTRICTS, BD_LOCATIONS } from '@/data/bangladeshLocations';
 
 type Tab = 'profile' | 'orders' | 'wishlist' | 'cart' | 'security';
 
@@ -15,9 +16,21 @@ interface Profile {
   full_name: string | null;
   email: string | null;
   phone: string | null;
+  secondary_phone: string | null;
+  district: string | null;
+  upazila: string | null;
+  village: string | null;
+  house_number: string | null;
+  detailed_address: string | null;
+  // legacy
   address: string | null;
   city: string | null;
 }
+
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+// Bangladesh mobile: optional +880 or 0, then 1[3-9] + 8 digits
+const BD_PHONE_RE = /^(?:\+?880|0)?1[3-9]\d{8}$/;
+const sanitizePhone = (v: string) => v.replace(/[^\d+]/g, '').slice(0, 15);
 
 interface Order {
   id: string;
@@ -80,7 +93,11 @@ const Account = () => {
   const navigate = useNavigate();
 
   const [tab, setTab] = useState<Tab>('profile');
-  const [profile, setProfile] = useState<Profile>({ full_name: '', email: '', phone: '', address: '', city: '' });
+  const [profile, setProfile] = useState<Profile>({
+    full_name: '', email: '', phone: '', secondary_phone: '',
+    district: '', upazila: '', village: '', house_number: '', detailed_address: '',
+    address: '', city: '',
+  });
   const [orders, setOrders] = useState<Order[]>([]);
   const [saving, setSaving] = useState(false);
   const [pwd, setPwd] = useState({ current: '', next: '', confirm: '' });
@@ -97,6 +114,12 @@ const Account = () => {
         full_name: data.full_name ?? '',
         email: data.email ?? user.email ?? '',
         phone: data.phone ?? '',
+        secondary_phone: (data as any).secondary_phone ?? '',
+        district: (data as any).district ?? '',
+        upazila: (data as any).upazila ?? '',
+        village: (data as any).village ?? '',
+        house_number: (data as any).house_number ?? '',
+        detailed_address: (data as any).detailed_address ?? '',
         address: data.address ?? '',
         city: data.city ?? '',
       });
@@ -105,10 +128,37 @@ const Account = () => {
     })();
   }, [user]);
 
+  const requiredOk = () =>
+    !!profile.full_name?.trim() &&
+    EMAIL_RE.test((profile.email || '').trim()) &&
+    BD_PHONE_RE.test((profile.phone || '').trim()) &&
+    (!profile.secondary_phone?.trim() || BD_PHONE_RE.test(profile.secondary_phone.trim())) &&
+    !!profile.district &&
+    !!profile.upazila &&
+    !!profile.village?.trim() &&
+    !!profile.house_number?.trim() &&
+    !!profile.detailed_address?.trim();
+
   const saveProfile = async () => {
     if (!user) return;
+    if (!profile.full_name?.trim()) return toast.error('Full name is required');
+    if (!EMAIL_RE.test((profile.email || '').trim())) return toast.error('Enter a valid email');
+    if (!BD_PHONE_RE.test((profile.phone || '').trim())) return toast.error('Enter a valid Bangladeshi mobile number');
+    if (profile.secondary_phone?.trim() && !BD_PHONE_RE.test(profile.secondary_phone.trim())) return toast.error('Secondary number is invalid');
+    if (!profile.district) return toast.error('Select your district');
+    if (!profile.upazila) return toast.error('Select your upazila');
+    if (!profile.village?.trim()) return toast.error('Village / Area is required');
+    if (!profile.house_number?.trim()) return toast.error('House number is required (write "No" if none)');
+    if (!profile.detailed_address?.trim()) return toast.error('Detailed address is required');
+
     setSaving(true);
-    const { error } = await supabase.from('profiles').update(profile).eq('id', user.id);
+    // Mirror to legacy city/address columns for older consumers.
+    const payload = {
+      ...profile,
+      city: profile.district,
+      address: [profile.house_number, profile.village, profile.upazila, profile.district].filter(Boolean).join(', '),
+    };
+    const { error } = await supabase.from('profiles').update(payload).eq('id', user.id);
     setSaving(false);
     if (error) toast.error('Failed to save'); else toast.success('Profile updated');
   };
@@ -198,18 +248,76 @@ const Account = () => {
           <motion.div key={tab} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="bg-card/50 border border-border/50 rounded-2xl p-6 lg:p-8 shadow-premium">
             {tab === 'profile' && (
               <div>
-                <h2 className="text-xl font-heading font-semibold text-foreground mb-1">Profile Information</h2>
-                <p className="text-xs font-body text-muted-foreground mb-6">Manage your personal details and shipping address.</p>
-                <div className="grid sm:grid-cols-2 gap-4">
-                  <Field icon={User} label="Full Name" value={profile.full_name || ''} onChange={(v) => setProfile({ ...profile, full_name: v })} />
-                  <Field icon={Mail} label="Email" value={profile.email || ''} onChange={(v) => setProfile({ ...profile, email: v })} type="email" />
-                  <Field icon={Phone} label="Phone" value={profile.phone || ''} onChange={(v) => setProfile({ ...profile, phone: v })} />
-                  <Field icon={MapPin} label="City" value={profile.city || ''} onChange={(v) => setProfile({ ...profile, city: v })} />
-                  <div className="sm:col-span-2">
-                    <Field icon={MapPin} label="Address" value={profile.address || ''} onChange={(v) => setProfile({ ...profile, address: v })} />
+                <h2 className="text-xl font-heading font-semibold text-foreground mb-1">Profile & Shipping Information</h2>
+                <p className="text-xs font-body text-muted-foreground mb-8">Complete your details so we can deliver your order anywhere in Bangladesh.</p>
+
+                {/* Personal */}
+                <div className="mb-8">
+                  <p className="text-[10px] font-body tracking-[0.3em] uppercase text-accent mb-3">Personal Details</p>
+                  <div className="grid sm:grid-cols-2 gap-4">
+                    <Field icon={User} label="Full Name" required value={profile.full_name || ''} onChange={(v) => setProfile({ ...profile, full_name: v })} />
+                    <Field icon={Mail} label="Email Address" required type="email" value={profile.email || ''} onChange={(v) => setProfile({ ...profile, email: v })} />
+                    <Field icon={Phone} label="Primary Mobile Number" required placeholder="01XXXXXXXXX" value={profile.phone || ''} onChange={(v) => setProfile({ ...profile, phone: sanitizePhone(v) })} />
+                    <div>
+                      <Field icon={PhoneCall} label="Secondary Mobile Number (optional)" placeholder="01XXXXXXXXX" value={profile.secondary_phone || ''} onChange={(v) => setProfile({ ...profile, secondary_phone: sanitizePhone(v) })} />
+                      <p className="mt-1.5 text-[11px] font-body text-muted-foreground flex items-start gap-1.5">
+                        <Info size={11} className="mt-0.5 shrink-0 text-accent" />
+                        Used if we cannot reach you on the primary number during delivery.
+                      </p>
+                    </div>
                   </div>
                 </div>
-                <button onClick={saveProfile} disabled={saving} className="mt-6 btn-primary px-7 py-3 text-xs tracking-[0.25em] uppercase font-body flex items-center gap-2">
+
+                {/* Shipping */}
+                <div>
+                  <p className="text-[10px] font-body tracking-[0.3em] uppercase text-accent mb-3">Shipping Address</p>
+                  <div className="grid sm:grid-cols-2 gap-4">
+                    <SelectField
+                      icon={Building2}
+                      label="District"
+                      required
+                      value={profile.district || ''}
+                      onChange={(v) => setProfile({ ...profile, district: v, upazila: '' })}
+                      options={BD_DISTRICTS}
+                      placeholder="Select your district"
+                    />
+                    <SelectField
+                      icon={MapPin}
+                      label="Upazila / Sub-district"
+                      required
+                      disabled={!profile.district}
+                      value={profile.upazila || ''}
+                      onChange={(v) => setProfile({ ...profile, upazila: v })}
+                      options={profile.district ? BD_LOCATIONS[profile.district] || [] : []}
+                      placeholder={profile.district ? 'Select your upazila' : 'Select a district first'}
+                    />
+                    <Field icon={Home} label="Village / Area" required value={profile.village || ''} onChange={(v) => setProfile({ ...profile, village: v })} />
+                    <div>
+                      <Field icon={Hash} label="House Number" required value={profile.house_number || ''} onChange={(v) => setProfile({ ...profile, house_number: v })} />
+                      <p className="mt-1.5 text-[11px] font-body text-muted-foreground flex items-start gap-1.5">
+                        <Info size={11} className="mt-0.5 shrink-0 text-accent" />
+                        If you don't have a house number, write "No".
+                      </p>
+                    </div>
+                    <div className="sm:col-span-2">
+                      <TextareaField
+                        icon={MapPin}
+                        label="Full Detailed Address"
+                        required
+                        rows={3}
+                        placeholder="Road, landmark, nearest mosque/market, postal code…"
+                        value={profile.detailed_address || ''}
+                        onChange={(v) => setProfile({ ...profile, detailed_address: v })}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <button
+                  onClick={saveProfile}
+                  disabled={saving || !requiredOk()}
+                  className="mt-8 btn-primary px-8 py-3.5 text-xs tracking-[0.25em] uppercase font-body flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
                   {saving && <Loader2 size={14} className="animate-spin" />} Save Changes
                 </button>
               </div>
@@ -315,16 +423,64 @@ const Account = () => {
   );
 };
 
-const Field = ({ icon: Icon, label, value, onChange, type = 'text' }: any) => (
-  <div className="relative">
-    <Icon size={14} className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" />
-    <input
-      type={type}
-      value={value}
-      onChange={(e) => onChange(e.target.value)}
-      placeholder={label}
-      className="w-full bg-background border border-border/60 rounded-xl pl-11 pr-4 py-3 text-sm font-body text-foreground outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 transition-all"
-    />
+const FieldLabel = ({ children, required }: { children: React.ReactNode; required?: boolean }) => (
+  <label className="block text-[11px] font-body tracking-[0.18em] uppercase text-foreground/70 mb-1.5">
+    {children}{required && <span className="text-primary ml-1">*</span>}
+  </label>
+);
+
+const Field = ({ icon: Icon, label, value, onChange, type = 'text', placeholder, required }: any) => (
+  <div>
+    <FieldLabel required={required}>{label}</FieldLabel>
+    <div className="relative group">
+      <Icon size={14} className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground group-focus-within:text-accent transition-colors" />
+      <input
+        type={type}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder ?? label}
+        className="w-full bg-background border border-border/60 rounded-xl pl-11 pr-4 py-3 text-sm font-body text-foreground outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 hover:border-accent/40 transition-all"
+      />
+    </div>
+  </div>
+);
+
+const SelectField = ({ icon: Icon, label, value, onChange, options, placeholder, required, disabled }: any) => (
+  <div>
+    <FieldLabel required={required}>{label}</FieldLabel>
+    <div className="relative group">
+      <Icon size={14} className={`absolute left-4 top-1/2 -translate-y-1/2 transition-colors ${disabled ? 'text-muted-foreground/40' : 'text-muted-foreground group-focus-within:text-accent'}`} />
+      <select
+        value={value}
+        disabled={disabled}
+        onChange={(e) => onChange(e.target.value)}
+        className="w-full appearance-none bg-background border border-border/60 rounded-xl pl-11 pr-10 py-3 text-sm font-body text-foreground outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 hover:border-accent/40 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+      >
+        <option value="">{placeholder}</option>
+        {options.map((o: string) => (
+          <option key={o} value={o}>{o}</option>
+        ))}
+      </select>
+      <svg className={`absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none ${disabled ? 'text-muted-foreground/40' : 'text-muted-foreground'}`} width="12" height="12" viewBox="0 0 12 12" fill="none">
+        <path d="M3 4.5L6 7.5L9 4.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+    </div>
+  </div>
+);
+
+const TextareaField = ({ icon: Icon, label, value, onChange, placeholder, required, rows = 3 }: any) => (
+  <div>
+    <FieldLabel required={required}>{label}</FieldLabel>
+    <div className="relative group">
+      <Icon size={14} className="absolute left-4 top-3.5 text-muted-foreground group-focus-within:text-accent transition-colors" />
+      <textarea
+        rows={rows}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder ?? label}
+        className="w-full bg-background border border-border/60 rounded-xl pl-11 pr-4 py-3 text-sm font-body text-foreground outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 hover:border-accent/40 transition-all resize-none"
+      />
+    </div>
   </div>
 );
 
