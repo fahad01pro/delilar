@@ -93,7 +93,11 @@ const Account = () => {
   const navigate = useNavigate();
 
   const [tab, setTab] = useState<Tab>('profile');
-  const [profile, setProfile] = useState<Profile>({ full_name: '', email: '', phone: '', address: '', city: '' });
+  const [profile, setProfile] = useState<Profile>({
+    full_name: '', email: '', phone: '', secondary_phone: '',
+    district: '', upazila: '', village: '', house_number: '', detailed_address: '',
+    address: '', city: '',
+  });
   const [orders, setOrders] = useState<Order[]>([]);
   const [saving, setSaving] = useState(false);
   const [pwd, setPwd] = useState({ current: '', next: '', confirm: '' });
@@ -110,6 +114,12 @@ const Account = () => {
         full_name: data.full_name ?? '',
         email: data.email ?? user.email ?? '',
         phone: data.phone ?? '',
+        secondary_phone: (data as any).secondary_phone ?? '',
+        district: (data as any).district ?? '',
+        upazila: (data as any).upazila ?? '',
+        village: (data as any).village ?? '',
+        house_number: (data as any).house_number ?? '',
+        detailed_address: (data as any).detailed_address ?? '',
         address: data.address ?? '',
         city: data.city ?? '',
       });
