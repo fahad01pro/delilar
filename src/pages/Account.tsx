@@ -1,13 +1,14 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { User, Package, Heart, ShoppingBag, Lock, LogOut, MapPin, Phone, Mail, Loader2, CheckCircle2, Truck, Box, Warehouse } from 'lucide-react';
+import { User, Package, Heart, ShoppingBag, Lock, LogOut, MapPin, Phone, Mail, Loader2, CheckCircle2, Truck, Box, Warehouse, Home, Hash, Building2, PhoneCall, Info } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '@/context/AuthContext';
 import { useWishlist } from '@/context/WishlistContext';
 import { useCart } from '@/context/CartContext';
 import { supabase } from '@/integrations/supabase/client';
 import ProductCard from '@/components/ProductCard';
+import { BD_DISTRICTS, BD_LOCATIONS } from '@/data/bangladeshLocations';
 
 type Tab = 'profile' | 'orders' | 'wishlist' | 'cart' | 'security';
 
@@ -15,9 +16,21 @@ interface Profile {
   full_name: string | null;
   email: string | null;
   phone: string | null;
+  secondary_phone: string | null;
+  district: string | null;
+  upazila: string | null;
+  village: string | null;
+  house_number: string | null;
+  detailed_address: string | null;
+  // legacy
   address: string | null;
   city: string | null;
 }
+
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+// Bangladesh mobile: optional +880 or 0, then 1[3-9] + 8 digits
+const BD_PHONE_RE = /^(?:\+?880|0)?1[3-9]\d{8}$/;
+const sanitizePhone = (v: string) => v.replace(/[^\d+]/g, '').slice(0, 15);
 
 interface Order {
   id: string;
