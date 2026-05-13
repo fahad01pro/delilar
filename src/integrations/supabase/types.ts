@@ -62,33 +62,51 @@ export type Database = {
           avatar_url: string | null
           city: string | null
           created_at: string
+          detailed_address: string | null
+          district: string | null
           email: string | null
           full_name: string | null
+          house_number: string | null
           id: string
           phone: string | null
+          secondary_phone: string | null
+          upazila: string | null
           updated_at: string
+          village: string | null
         }
         Insert: {
           address?: string | null
           avatar_url?: string | null
           city?: string | null
           created_at?: string
+          detailed_address?: string | null
+          district?: string | null
           email?: string | null
           full_name?: string | null
+          house_number?: string | null
           id: string
           phone?: string | null
+          secondary_phone?: string | null
+          upazila?: string | null
           updated_at?: string
+          village?: string | null
         }
         Update: {
           address?: string | null
           avatar_url?: string | null
           city?: string | null
           created_at?: string
+          detailed_address?: string | null
+          district?: string | null
           email?: string | null
           full_name?: string | null
+          house_number?: string | null
           id?: string
           phone?: string | null
+          secondary_phone?: string | null
+          upazila?: string | null
           updated_at?: string
+          village?: string | null
         }
         Relationships: []
       }
