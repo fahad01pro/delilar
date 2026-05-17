@@ -1,209 +1,838 @@
-import { useState } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { getProductById, getProductsByCategory } from '@/data/products';
+import { getProductById, getProductsByCategory, type Product } from '@/data/products';
 import { useCart } from '@/context/CartContext';
 import { useWishlist } from '@/context/WishlistContext';
-import { Star, Minus, Plus, Truck, RotateCcw, Shield, Heart, Share2 } from 'lucide-react';
-import { motion } from 'framer-motion';
+import {
+  Star, Minus, Plus, Truck, RotateCcw, Shield, Heart, Share2,
+  ChevronLeft, ChevronRight, ZoomIn, X, BadgeCheck, Package,
+  Headphones, CreditCard, Ruler, MapPin, Clock, Copy, Facebook,
+  Twitter, MessageCircle, Sparkles,
+} from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import ProductCard from '@/components/ProductCard';
+import {
+  Accordion, AccordionContent, AccordionItem, AccordionTrigger,
+} from '@/components/ui/accordion';
+import {
+  Dialog, DialogContent, DialogTrigger,
+} from '@/components/ui/dialog';
+import { toast } from '@/hooks/use-toast';
+import heroImg from '@/assets/hero-main.jpg';
+import tshirtImg from '@/assets/category-tshirts.jpg';
+import jubbaImg from '@/assets/category-jubba.jpg';
+import panjabiImg from '@/assets/category-panjabi.jpg';
+import attarImg from '@/assets/category-attar.jpg';
+
+const categoryImageMap: Record<Product['category'], string> = {
+  tshirts: tshirtImg,
+  jubba: jubbaImg,
+  panjabi: panjabiImg,
+  attar: attarImg,
+  eid: jubbaImg,
+  accessories: heroImg,
+};
+
+const buildGallery = (product: Product): string[] => {
+  if (product.images && product.images.length) return product.images;
+  const primary = categoryImageMap[product.category] || heroImg;
+  // build 4 visually-distinct gallery slots by reusing assets
+  return [primary, heroImg, primary, categoryImageMap[product.category] || heroImg];
+};
+
+const fragranceFor = (p: Product): string[] | null =>
+  p.category === 'attar'
+    ? ['Original', 'Intense', 'Noir Edition']
+    : null;
+
+const materialFor = (p: Product): string[] | null => {
+  if (p.category === 'tshirts') return ['Premium Cotton', 'Bamboo Blend'];
+  if (p.category === 'jubba' || p.category === 'panjabi' || p.category === 'eid')
+    return ['Cotton', 'Semi-Silk', 'Pure Silk'];
+  return null;
+};
 
 const ProductDetail = () => {
   const { id } = useParams<{ id: string }>();
   const product = getProductById(id || '');
-  const { addItem } = useCart();
+  const { addItem, setIsCartOpen } = useCart();
   const { toggle: toggleWish, has: hasWish } = useWishlist();
+
+  const gallery = useMemo(() => (product ? buildGallery(product) : []), [product]);
+  const fragrances = useMemo(() => (product ? fragranceFor(product) : null), [product]);
+  const materials = useMemo(() => (product ? materialFor(product) : null), [product]);
+
+  const [activeImg, setActiveImg] = useState(0);
   const [selectedSize, setSelectedSize] = useState('');
   const [selectedColor, setSelectedColor] = useState('');
+  const [selectedFragrance, setSelectedFragrance] = useState('');
+  const [selectedMaterial, setSelectedMaterial] = useState('');
   const [quantity, setQuantity] = useState(1);
+  const [zoomOpen, setZoomOpen] = useState(false);
+  const [adding, setAdding] = useState(false);
+
+  useEffect(() => {
+    setActiveImg(0);
+    setQuantity(1);
+    setSelectedSize('');
+    setSelectedColor('');
+    setSelectedFragrance('');
+    setSelectedMaterial('');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, [id]);
 
   if (!product) {
     return (
       <div className="container mx-auto px-4 py-20 text-center">
         <p className="font-body text-muted-foreground">Product not found</p>
-        <Link to="/" className="text-primary text-sm font-body mt-4 inline-block hover:text-accent transition-colors">Back to Home</Link>
+        <Link to="/" className="text-primary text-sm font-body mt-4 inline-block hover:text-accent transition-colors">
+          Back to Home
+        </Link>
       </div>
     );
   }
 
-  const related = getProductsByCategory(product.category).filter((p) => p.id !== product.id).slice(0, 4);
+  const related = getProductsByCategory(product.category)
+    .filter((p) => p.id !== product.id)
+    .slice(0, 4);
 
-  const handleAddToCart = () => {
+  const discountPct = product.originalPrice
+    ? Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)
+    : 0;
+
+  const sku = `DLR-${product.id.toUpperCase()}`;
+  const soldCount = 50 + (product.reviews * 3);
+
+  const handleAddToCart = async (buyNow = false) => {
+    if (!product.inStock) return;
+    setAdding(true);
     addItem(product, quantity, selectedSize || undefined, selectedColor || undefined);
+    toast({ title: 'Added to cart', description: `${quantity} × ${product.name}` });
+    await new Promise((r) => setTimeout(r, 350));
+    setAdding(false);
+    if (buyNow) setIsCartOpen(true);
   };
 
+  const handleShare = async (platform: 'copy' | 'fb' | 'tw' | 'wa') => {
+    const url = typeof window !== 'undefined' ? window.location.href : '';
+    const text = `Check out ${product.name} on Delilar`;
+    if (platform === 'copy') {
+      await navigator.clipboard.writeText(url);
+      toast({ title: 'Link copied' });
+      return;
+    }
+    const map = {
+      fb: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`,
+      tw: `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`,
+      wa: `https://wa.me/?text=${encodeURIComponent(text + ' ' + url)}`,
+    };
+    window.open(map[platform], '_blank');
+  };
+
+  // Rating breakdown (simulated)
+  const breakdown = [5, 4, 3, 2, 1].map((stars) => {
+    const base = stars === 5 ? 0.7 : stars === 4 ? 0.2 : stars === 3 ? 0.06 : stars === 2 ? 0.03 : 0.01;
+    return { stars, count: Math.round(product.reviews * base) };
+  });
+
+  const sampleReviews = [
+    { name: 'Abdullah R.', rating: 5, date: '2 weeks ago', verified: true, title: 'Exceptional craftsmanship', body: 'The fabric quality and stitching are top-notch. Fits perfectly and feels luxurious. Will buy again.' },
+    { name: 'Imran H.', rating: 5, date: '1 month ago', verified: true, title: 'Worth every taka', body: 'Premium feel, elegant design, and delivery was super fast. Delilar never disappoints.' },
+    { name: 'Sadiq M.', rating: 4, date: '1 month ago', verified: true, title: 'Great quality', body: 'Beautiful piece, true to size. Packaging was also very premium.' },
+  ];
+
   return (
-    <main className="container mx-auto px-4 lg:px-8 py-6 lg:py-12">
-      {/* Breadcrumb */}
-      <div className="flex items-center gap-2 text-xs font-body text-muted-foreground mb-8">
-        <Link to="/" className="hover:text-foreground transition-colors">Home</Link>
-        <span className="text-accent">/</span>
-        <Link to={`/${product.category}`} className="hover:text-foreground transition-colors capitalize">{product.category}</Link>
-        <span className="text-accent">/</span>
-        <span className="text-foreground">{product.name}</span>
-      </div>
+    <main className="relative pb-28 lg:pb-12">
+      {/* Soft luxury background */}
+      <div className="absolute inset-0 -z-10 bg-gradient-to-b from-[hsl(var(--cream))] via-[hsl(var(--cream-dark))] to-[hsl(var(--cream))]" />
 
-      <div className="grid lg:grid-cols-2 gap-8 lg:gap-16">
-        {/* Image */}
-        <motion.div
-          initial={{ opacity: 0, scale: 0.98 }}
-          animate={{ opacity: 1, scale: 1 }}
-          className="aspect-square bg-secondary rounded-2xl overflow-hidden shadow-premium-lg relative group"
-        >
-          <div className="absolute inset-0 bg-gradient-to-br from-secondary via-muted to-secondary" />
-          <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-foreground/5 cursor-zoom-in" />
-        </motion.div>
+      <div className="container mx-auto px-4 lg:px-8 pt-6 lg:pt-10">
+        {/* Breadcrumb */}
+        <div className="flex items-center gap-2 text-xs font-body text-muted-foreground mb-6 lg:mb-10">
+          <Link to="/" className="hover:text-primary transition-colors">Home</Link>
+          <span className="text-accent">/</span>
+          <Link to={`/${product.category}`} className="hover:text-primary transition-colors capitalize">{product.category}</Link>
+          <span className="text-accent">/</span>
+          <span className="text-foreground truncate max-w-[200px]">{product.name}</span>
+        </div>
 
-        {/* Details */}
-        <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.2 }}>
-          {product.badge && (
-            <span className="text-[10px] font-body tracking-widest uppercase bg-primary text-primary-foreground px-3 py-1.5 mb-4 inline-block rounded-lg">
-              {product.badge}
-            </span>
-          )}
-          <h1 className="text-2xl lg:text-4xl font-heading font-bold mb-3">{product.name}</h1>
-          <div className="flex items-center gap-3 mb-5">
-            <div className="flex gap-0.5">
-              {Array.from({ length: 5 }).map((_, i) => (
-                <Star key={i} size={16} className={i < Math.floor(product.rating) ? 'fill-accent text-accent' : 'text-border'} />
-              ))}
+        <div className="grid lg:grid-cols-[1.05fr_1fr] gap-8 lg:gap-16">
+          {/* ============ GALLERY ============ */}
+          <div className="lg:sticky lg:top-24 lg:self-start">
+            <div className="flex flex-col-reverse lg:flex-row gap-4">
+              {/* Thumbnails */}
+              <div className="flex lg:flex-col gap-3 overflow-x-auto lg:overflow-visible lg:max-h-[560px] scrollbar-thin">
+                {gallery.map((img, i) => (
+                  <button
+                    key={i}
+                    onClick={() => setActiveImg(i)}
+                    className={`relative shrink-0 w-20 h-20 lg:w-[88px] lg:h-[88px] rounded-xl overflow-hidden transition-all duration-300 ${
+                      activeImg === i
+                        ? 'ring-2 ring-[hsl(var(--gold))] shadow-[0_0_20px_hsl(var(--gold)/0.35)]'
+                        : 'ring-1 ring-border opacity-70 hover:opacity-100'
+                    }`}
+                  >
+                    <img src={img} alt={`${product.name} view ${i + 1}`} className="w-full h-full object-cover" loading="lazy" />
+                  </button>
+                ))}
+              </div>
+
+              {/* Main image */}
+              <div className="flex-1 relative">
+                <div className="relative aspect-[4/5] rounded-2xl overflow-hidden bg-[hsl(var(--cream-dark))] shadow-[0_30px_80px_-30px_hsl(var(--burgundy)/0.35)] group">
+                  <AnimatePresence mode="wait">
+                    <motion.img
+                      key={activeImg}
+                      src={gallery[activeImg]}
+                      alt={product.name}
+                      initial={{ opacity: 0, scale: 1.02 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0.99 }}
+                      transition={{ duration: 0.4, ease: 'easeOut' }}
+                      className="absolute inset-0 w-full h-full object-cover"
+                    />
+                  </AnimatePresence>
+
+                  {/* Badges */}
+                  <div className="absolute top-4 left-4 flex flex-col gap-2 z-10">
+                    {product.badge && (
+                      <span className="text-[10px] font-body tracking-[0.2em] uppercase bg-[hsl(var(--burgundy))] text-[hsl(var(--cream))] px-3 py-1.5 rounded-md shadow-md">
+                        {product.badge}
+                      </span>
+                    )}
+                    {discountPct > 0 && (
+                      <span className="text-[10px] font-body tracking-[0.2em] uppercase bg-[hsl(var(--gold))] text-[hsl(var(--charcoal))] px-3 py-1.5 rounded-md shadow-md font-semibold">
+                        -{discountPct}% OFF
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Out of stock overlay */}
+                  {!product.inStock && (
+                    <div className="absolute inset-0 bg-[hsl(var(--charcoal)/0.55)] backdrop-blur-[2px] z-20 flex items-center justify-center">
+                      <span className="px-6 py-3 bg-[hsl(var(--burgundy))] text-[hsl(var(--cream))] text-xs tracking-[0.3em] uppercase font-body rounded-md">
+                        Out of Stock
+                      </span>
+                    </div>
+                  )}
+
+                  {/* Nav arrows */}
+                  <button
+                    onClick={() => setActiveImg((p) => (p - 1 + gallery.length) % gallery.length)}
+                    aria-label="Previous image"
+                    className="absolute left-3 top-1/2 -translate-y-1/2 z-10 w-10 h-10 rounded-full bg-[hsl(var(--cream))]/90 backdrop-blur flex items-center justify-center text-[hsl(var(--burgundy))] opacity-0 group-hover:opacity-100 hover:bg-[hsl(var(--gold))] hover:text-[hsl(var(--charcoal))] transition-all duration-300 shadow-md"
+                  >
+                    <ChevronLeft size={18} />
+                  </button>
+                  <button
+                    onClick={() => setActiveImg((p) => (p + 1) % gallery.length)}
+                    aria-label="Next image"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 z-10 w-10 h-10 rounded-full bg-[hsl(var(--cream))]/90 backdrop-blur flex items-center justify-center text-[hsl(var(--burgundy))] opacity-0 group-hover:opacity-100 hover:bg-[hsl(var(--gold))] hover:text-[hsl(var(--charcoal))] transition-all duration-300 shadow-md"
+                  >
+                    <ChevronRight size={18} />
+                  </button>
+
+                  {/* Zoom */}
+                  <Dialog open={zoomOpen} onOpenChange={setZoomOpen}>
+                    <DialogTrigger asChild>
+                      <button
+                        aria-label="Zoom image"
+                        className="absolute bottom-4 right-4 z-10 w-11 h-11 rounded-full bg-[hsl(var(--burgundy))] text-[hsl(var(--cream))] flex items-center justify-center shadow-lg hover:bg-[hsl(var(--gold))] hover:text-[hsl(var(--charcoal))] transition-all duration-300"
+                      >
+                        <ZoomIn size={16} />
+                      </button>
+                    </DialogTrigger>
+                    <DialogContent className="max-w-5xl p-0 bg-[hsl(var(--charcoal))] border-0 overflow-hidden">
+                      <div className="relative w-full h-[80vh]">
+                        <img src={gallery[activeImg]} alt={product.name} className="w-full h-full object-contain" />
+                        <button
+                          onClick={() => setZoomOpen(false)}
+                          className="absolute top-4 right-4 w-10 h-10 rounded-full bg-[hsl(var(--cream))]/15 backdrop-blur text-[hsl(var(--cream))] flex items-center justify-center hover:bg-[hsl(var(--gold))] hover:text-[hsl(var(--charcoal))] transition-colors"
+                          aria-label="Close"
+                        >
+                          <X size={18} />
+                        </button>
+                      </div>
+                    </DialogContent>
+                  </Dialog>
+                </div>
+
+                {/* Pagination dots (mobile) */}
+                <div className="flex lg:hidden justify-center gap-1.5 mt-3">
+                  {gallery.map((_, i) => (
+                    <span
+                      key={i}
+                      className={`h-1.5 rounded-full transition-all duration-300 ${
+                        activeImg === i ? 'w-6 bg-[hsl(var(--burgundy))]' : 'w-1.5 bg-[hsl(var(--burgundy)/0.25)]'
+                      }`}
+                    />
+                  ))}
+                </div>
+              </div>
             </div>
-            <span className="text-xs text-muted-foreground font-body">({product.reviews} reviews)</span>
           </div>
-          <div className="flex items-baseline gap-3 mb-6">
-            <span className="text-3xl font-heading font-bold text-primary">৳{product.price.toLocaleString()}</span>
-            {product.originalPrice && (
-              <span className="text-lg text-muted-foreground line-through font-body">৳{product.originalPrice.toLocaleString()}</span>
-            )}
-            {product.originalPrice && (
-              <span className="text-xs font-body bg-destructive/10 text-destructive px-2.5 py-1 rounded-lg font-semibold">
-                Save ৳{(product.originalPrice - product.price).toLocaleString()}
+
+          {/* ============ INFO ============ */}
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+          >
+            {/* Brand + category */}
+            <div className="flex items-center gap-3 mb-3 text-[11px] tracking-[0.3em] uppercase font-body text-[hsl(var(--burgundy))]">
+              <span className="font-semibold">Delilar</span>
+              <span className="w-1 h-1 rounded-full bg-[hsl(var(--gold))]" />
+              <span className="capitalize text-muted-foreground">{product.category}</span>
+            </div>
+
+            <h1 className="text-3xl lg:text-5xl font-heading font-bold text-[hsl(var(--charcoal))] leading-[1.1] mb-3">
+              {product.name}
+            </h1>
+            <p className="text-sm font-body italic text-muted-foreground mb-5">
+              Crafted with care — a Sunnah-inspired piece of timeless elegance.
+            </p>
+
+            {/* Rating row */}
+            <div className="flex flex-wrap items-center gap-x-5 gap-y-2 mb-6 pb-6 border-b border-[hsl(var(--burgundy)/0.12)]">
+              <div className="flex items-center gap-2">
+                <div className="flex gap-0.5">
+                  {Array.from({ length: 5 }).map((_, i) => (
+                    <Star
+                      key={i}
+                      size={16}
+                      className={i < Math.floor(product.rating) ? 'fill-[hsl(var(--gold))] text-[hsl(var(--gold))]' : 'text-border'}
+                    />
+                  ))}
+                </div>
+                <span className="text-sm font-body font-semibold text-foreground">{product.rating.toFixed(1)}</span>
+                <a href="#reviews" className="text-xs font-body text-muted-foreground hover:text-[hsl(var(--burgundy))] underline-offset-4 hover:underline">
+                  ({product.reviews} reviews)
+                </a>
+              </div>
+              <span className="text-xs font-body text-muted-foreground flex items-center gap-1.5">
+                <Package size={13} className="text-[hsl(var(--gold))]" /> {soldCount}+ sold
               </span>
+              <span className="text-xs font-body text-muted-foreground">SKU: <span className="text-foreground">{sku}</span></span>
+            </div>
+
+            {/* Price */}
+            <div className="flex items-baseline flex-wrap gap-3 mb-3">
+              <span className="text-4xl font-heading font-bold text-[hsl(var(--burgundy))]">
+                ৳{product.price.toLocaleString()}
+              </span>
+              {product.originalPrice && (
+                <>
+                  <span className="text-lg text-muted-foreground line-through font-body">
+                    ৳{product.originalPrice.toLocaleString()}
+                  </span>
+                  <span className="text-xs font-body bg-[hsl(var(--gold)/0.2)] text-[hsl(var(--burgundy))] px-2.5 py-1 rounded-md font-semibold tracking-wide">
+                    Save ৳{(product.originalPrice - product.price).toLocaleString()}
+                  </span>
+                </>
+              )}
+            </div>
+            <p className="text-xs font-body text-muted-foreground mb-6">
+              Inclusive of VAT. Free shipping on orders over ৳5,000.
+            </p>
+
+            {/* Stock badge */}
+            <div className="mb-6">
+              {product.inStock ? (
+                <span className="inline-flex items-center gap-2 text-xs font-body text-green-700 bg-green-500/10 px-3 py-1.5 rounded-full">
+                  <span className="w-1.5 h-1.5 rounded-full bg-green-600 animate-pulse" />
+                  In Stock — Ready to ship
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-2 text-xs font-body text-destructive bg-destructive/10 px-3 py-1.5 rounded-full">
+                  <span className="w-1.5 h-1.5 rounded-full bg-destructive" />
+                  Currently Unavailable
+                </span>
+              )}
+            </div>
+
+            <p className="text-sm font-body text-muted-foreground leading-relaxed mb-7">
+              {product.description}
+            </p>
+
+            {/* Variants */}
+            {product.colors && (
+              <VariantGroup
+                label="Color"
+                options={product.colors}
+                selected={selectedColor}
+                onSelect={setSelectedColor}
+              />
             )}
-          </div>
-          <p className="text-sm font-body text-muted-foreground leading-relaxed mb-8">{product.description}</p>
 
-          {/* Size */}
-          {product.sizes && (
-            <div className="mb-6">
-              <p className="text-xs font-body tracking-widest uppercase mb-3 font-medium">Size</p>
-              <div className="flex flex-wrap gap-2">
-                {product.sizes.map((size) => (
-                  <button
-                    key={size}
-                    onClick={() => setSelectedSize(size)}
-                    className={`min-w-[48px] h-11 px-4 rounded-xl text-sm font-body transition-all duration-300 ${
-                      selectedSize === size
-                        ? 'bg-primary text-primary-foreground shadow-premium'
-                        : 'border border-border hover:border-accent hover:bg-secondary'
-                    }`}
-                  >
-                    {size}
-                  </button>
-                ))}
+            {product.sizes && (
+              <div className="mb-6">
+                <div className="flex items-center justify-between mb-3">
+                  <p className="text-xs font-body tracking-[0.25em] uppercase font-semibold text-foreground">Size</p>
+                  <SizeGuideDialog category={product.category} />
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {product.sizes.map((size) => (
+                    <button
+                      key={size}
+                      onClick={() => setSelectedSize(size)}
+                      className={`min-w-[52px] h-12 px-4 rounded-xl text-sm font-body font-medium transition-all duration-300 ${
+                        selectedSize === size
+                          ? 'bg-[hsl(var(--burgundy))] text-[hsl(var(--cream))] shadow-[0_8px_24px_-8px_hsl(var(--burgundy)/0.6)] scale-[1.03]'
+                          : 'bg-[hsl(var(--cream))] border border-[hsl(var(--burgundy)/0.18)] text-foreground hover:border-[hsl(var(--gold))] hover:text-[hsl(var(--burgundy))]'
+                      }`}
+                    >
+                      {size}
+                    </button>
+                  ))}
+                </div>
               </div>
-            </div>
-          )}
+            )}
 
-          {/* Color */}
-          {product.colors && (
-            <div className="mb-6">
-              <p className="text-xs font-body tracking-widest uppercase mb-3 font-medium">Color</p>
-              <div className="flex flex-wrap gap-2">
-                {product.colors.map((color) => (
-                  <button
-                    key={color}
-                    onClick={() => setSelectedColor(color)}
-                    className={`px-5 h-11 rounded-xl text-sm font-body transition-all duration-300 ${
-                      selectedColor === color
-                        ? 'bg-primary text-primary-foreground shadow-premium'
-                        : 'border border-border hover:border-accent hover:bg-secondary'
-                    }`}
-                  >
-                    {color}
-                  </button>
-                ))}
+            {fragrances && (
+              <VariantGroup
+                label="Fragrance"
+                options={fragrances}
+                selected={selectedFragrance}
+                onSelect={setSelectedFragrance}
+                icon={<Sparkles size={12} className="text-[hsl(var(--gold))]" />}
+              />
+            )}
+
+            {materials && (
+              <VariantGroup
+                label="Fabric"
+                options={materials}
+                selected={selectedMaterial}
+                onSelect={setSelectedMaterial}
+              />
+            )}
+
+            {/* Quantity + Actions */}
+            <div className="flex items-stretch gap-3 mb-3">
+              <div className="flex items-center rounded-xl border border-[hsl(var(--burgundy)/0.2)] bg-[hsl(var(--cream))] overflow-hidden">
+                <button
+                  onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                  aria-label="Decrease quantity"
+                  className="w-12 h-14 flex items-center justify-center text-[hsl(var(--burgundy))] hover:bg-[hsl(var(--burgundy))] hover:text-[hsl(var(--cream))] transition-colors"
+                >
+                  <Minus size={16} />
+                </button>
+                <span className="w-14 text-center text-base font-body font-semibold">{quantity}</span>
+                <button
+                  onClick={() => setQuantity(quantity + 1)}
+                  aria-label="Increase quantity"
+                  className="w-12 h-14 flex items-center justify-center text-[hsl(var(--burgundy))] hover:bg-[hsl(var(--burgundy))] hover:text-[hsl(var(--cream))] transition-colors"
+                >
+                  <Plus size={16} />
+                </button>
               </div>
-            </div>
-          )}
 
-          {/* Quantity */}
-          <div className="mb-8">
-            <p className="text-xs font-body tracking-widest uppercase mb-3 font-medium">Quantity</p>
-            <div className="flex items-center rounded-xl border border-border w-fit overflow-hidden">
-              <button onClick={() => setQuantity(Math.max(1, quantity - 1))} className="w-12 h-12 flex items-center justify-center hover:bg-secondary transition-colors">
-                <Minus size={16} />
-              </button>
-              <span className="w-14 text-center text-sm font-body font-medium">{quantity}</span>
-              <button onClick={() => setQuantity(quantity + 1)} className="w-12 h-12 flex items-center justify-center hover:bg-secondary transition-colors">
-                <Plus size={16} />
-              </button>
+              <motion.button
+                whileTap={{ scale: 0.97 }}
+                onClick={() => handleAddToCart(false)}
+                disabled={!product.inStock || adding}
+                className="flex-1 h-14 rounded-xl bg-[hsl(var(--burgundy))] text-[hsl(var(--cream))] text-sm font-body tracking-[0.2em] uppercase font-semibold shadow-[0_10px_30px_-10px_hsl(var(--burgundy)/0.6)] hover:bg-[hsl(var(--burgundy-light))] disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300"
+              >
+                {adding ? 'Adding…' : product.inStock ? 'Add to Cart' : 'Out of Stock'}
+              </motion.button>
             </div>
-          </div>
 
-          {/* Actions */}
-          <div className="flex gap-3 mb-4">
-            <button
-              onClick={handleAddToCart}
+            <motion.button
+              whileTap={{ scale: 0.98 }}
+              onClick={() => handleAddToCart(true)}
               disabled={!product.inStock}
-              className="flex-1 btn-primary py-4 text-sm font-body tracking-widest uppercase font-semibold disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0"
-            >
-              {product.inStock ? 'Add to Cart' : 'Out of Stock'}
-            </button>
-            <button
-              onClick={handleAddToCart}
-              disabled={!product.inStock}
-              className="flex-1 btn-gold py-4 text-sm font-body tracking-widest uppercase font-semibold disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0"
+              className="w-full h-14 rounded-xl bg-[hsl(var(--gold))] text-[hsl(var(--charcoal))] text-sm font-body tracking-[0.2em] uppercase font-bold shadow-[0_10px_30px_-10px_hsl(var(--gold)/0.7)] hover:bg-[hsl(var(--gold-dark))] hover:text-[hsl(var(--cream))] disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 mb-4"
             >
               Buy Now
-            </button>
-          </div>
-          <div className="flex gap-2 mb-8">
-            <button
-              onClick={() => toggleWish(product)}
-              className={`flex items-center gap-2 px-4 py-2.5 text-xs font-body border rounded-xl transition-all ${
-                hasWish(product.id)
-                  ? 'bg-primary text-primary-foreground border-primary'
-                  : 'text-muted-foreground hover:text-foreground border-border hover:bg-secondary'
-              }`}
-            >
-              <Heart size={14} className={hasWish(product.id) ? 'fill-current' : ''} />
-              {hasWish(product.id) ? 'In Wishlist' : 'Wishlist'}
-            </button>
-            <button className="flex items-center gap-2 px-4 py-2.5 text-xs font-body text-muted-foreground hover:text-foreground border border-border rounded-xl hover:bg-secondary transition-all">
-              <Share2 size={14} /> Share
-            </button>
-          </div>
+            </motion.button>
 
-          {/* Trust */}
-          <div className="space-y-3 border-t border-border pt-6">
-            {[
-              { icon: Truck, text: 'Free shipping on orders over ৳5,000' },
-              { icon: RotateCcw, text: '7-day easy return policy' },
-              { icon: Shield, text: '100% authentic products guaranteed' },
-            ].map(({ icon: Icon, text }) => (
-              <div key={text} className="flex items-center gap-3 text-xs text-muted-foreground font-body">
-                <div className="w-8 h-8 rounded-lg bg-secondary flex items-center justify-center">
-                  <Icon size={14} className="text-accent" />
+            {/* Secondary actions */}
+            <div className="flex flex-wrap gap-2 mb-8">
+              <button
+                onClick={() => toggleWish(product)}
+                className={`flex items-center gap-2 px-4 h-11 text-xs font-body tracking-wide uppercase rounded-xl transition-all duration-300 ${
+                  hasWish(product.id)
+                    ? 'bg-[hsl(var(--burgundy))] text-[hsl(var(--cream))] border border-[hsl(var(--burgundy))]'
+                    : 'bg-[hsl(var(--cream))] text-foreground border border-[hsl(var(--burgundy)/0.18)] hover:border-[hsl(var(--gold))] hover:text-[hsl(var(--burgundy))]'
+                }`}
+              >
+                <Heart size={14} className={hasWish(product.id) ? 'fill-current' : ''} />
+                {hasWish(product.id) ? 'Wishlisted' : 'Wishlist'}
+              </button>
+
+              <Dialog>
+                <DialogTrigger asChild>
+                  <button className="flex items-center gap-2 px-4 h-11 text-xs font-body tracking-wide uppercase rounded-xl bg-[hsl(var(--cream))] text-foreground border border-[hsl(var(--burgundy)/0.18)] hover:border-[hsl(var(--gold))] hover:text-[hsl(var(--burgundy))] transition-all duration-300">
+                    <Share2 size={14} /> Share
+                  </button>
+                </DialogTrigger>
+                <DialogContent className="max-w-sm bg-[hsl(var(--cream))] border-[hsl(var(--burgundy)/0.15)]">
+                  <h3 className="text-lg font-heading font-bold mb-4">Share this product</h3>
+                  <div className="grid grid-cols-4 gap-3">
+                    {[
+                      { icon: Copy, label: 'Copy', action: () => handleShare('copy') },
+                      { icon: Facebook, label: 'Facebook', action: () => handleShare('fb') },
+                      { icon: Twitter, label: 'Twitter', action: () => handleShare('tw') },
+                      { icon: MessageCircle, label: 'WhatsApp', action: () => handleShare('wa') },
+                    ].map(({ icon: Icon, label, action }) => (
+                      <button
+                        key={label}
+                        onClick={action}
+                        className="flex flex-col items-center gap-2 p-3 rounded-xl border border-[hsl(var(--burgundy)/0.15)] hover:bg-[hsl(var(--burgundy))] hover:text-[hsl(var(--cream))] transition-colors group"
+                      >
+                        <Icon size={18} />
+                        <span className="text-[10px] font-body uppercase tracking-wider">{label}</span>
+                      </button>
+                    ))}
+                  </div>
+                </DialogContent>
+              </Dialog>
+            </div>
+
+            {/* Delivery info card */}
+            <div className="rounded-2xl bg-[hsl(var(--cream))] border border-[hsl(var(--burgundy)/0.12)] p-5 mb-6 space-y-4">
+              <DeliveryRow icon={MapPin} title="Delivers across Bangladesh" sub="Inside Dhaka: 1–2 days · Outside Dhaka: 3–5 days" />
+              <DeliveryRow icon={CreditCard} title="Cash on Delivery available" sub="Pay when you receive your order" />
+              <DeliveryRow icon={Clock} title="Order today, ships tomorrow" sub="Same-day dispatch for orders before 5 PM" />
+            </div>
+
+            {/* Trust strip */}
+            <div className="grid grid-cols-2 gap-3">
+              {[
+                { icon: BadgeCheck, text: '100% Authentic' },
+                { icon: Truck, text: 'Fast Delivery' },
+                { icon: RotateCcw, text: '7-Day Returns' },
+                { icon: Headphones, text: '24/7 Support' },
+              ].map(({ icon: Icon, text }) => (
+                <div key={text} className="flex items-center gap-3 p-3 rounded-xl bg-[hsl(var(--burgundy)/0.04)] border border-[hsl(var(--burgundy)/0.08)]">
+                  <div className="w-9 h-9 rounded-lg bg-[hsl(var(--burgundy))] flex items-center justify-center shrink-0">
+                    <Icon size={15} className="text-[hsl(var(--gold))]" />
+                  </div>
+                  <span className="text-xs font-body font-medium text-foreground">{text}</span>
                 </div>
-                {text}
-              </div>
-            ))}
-          </div>
-        </motion.div>
-      </div>
+              ))}
+            </div>
+          </motion.div>
+        </div>
 
-      {/* Related */}
-      {related.length > 0 && (
-        <section className="mt-16 lg:mt-28">
-          <h2 className="text-2xl lg:text-3xl font-heading font-bold text-center mb-10">You May Also Like</h2>
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
-            {related.map((p, i) => (
-              <ProductCard key={p.id} product={p} index={i} />
+        {/* ============ DETAILS ACCORDION ============ */}
+        <section className="mt-16 lg:mt-24 max-w-5xl mx-auto">
+          <h2 className="text-2xl lg:text-3xl font-heading font-bold text-[hsl(var(--charcoal))] mb-6 text-center">
+            Product Details
+          </h2>
+          <Accordion type="multiple" defaultValue={['desc']} className="bg-[hsl(var(--cream))] rounded-2xl border border-[hsl(var(--burgundy)/0.12)] divide-y divide-[hsl(var(--burgundy)/0.08)] overflow-hidden">
+            <DetailItem value="desc" title="Description">
+              <p className="text-sm font-body leading-relaxed text-muted-foreground">{product.description}</p>
+              <p className="text-sm font-body leading-relaxed text-muted-foreground mt-3">
+                Each Delilar piece is meticulously selected to embody modesty, refinement, and modern Islamic elegance.
+                Crafted with premium materials and timeless detailing for the discerning gentleman.
+              </p>
+            </DetailItem>
+            <DetailItem value="material" title="Fabric & Material">
+              <ul className="text-sm font-body text-muted-foreground space-y-2 list-disc pl-5">
+                <li>Premium-grade, breathable fabric with a soft hand-feel</li>
+                <li>Reinforced stitching for long-lasting durability</li>
+                <li>Pre-shrunk and color-locked finish</li>
+                <li>Made in small batches for quality assurance</li>
+              </ul>
+            </DetailItem>
+            <DetailItem value="care" title="Care Instructions">
+              <ul className="text-sm font-body text-muted-foreground space-y-2 list-disc pl-5">
+                <li>Gentle machine wash cold with similar colors</li>
+                <li>Do not bleach. Iron on low heat if needed</li>
+                <li>Hang dry to preserve color and finish</li>
+                <li>Store in a cool, dry place</li>
+              </ul>
+            </DetailItem>
+            <DetailItem value="shipping" title="Shipping Information">
+              <p className="text-sm font-body text-muted-foreground leading-relaxed">
+                We ship nationwide via trusted couriers. Inside Dhaka: 1–2 business days. Outside Dhaka: 3–5 business days.
+                Free shipping on all orders over ৳5,000. Track your order anytime from your Delilar account.
+              </p>
+            </DetailItem>
+            <DetailItem value="returns" title="Return & Exchange Policy">
+              <p className="text-sm font-body text-muted-foreground leading-relaxed">
+                Not the right fit? Return or exchange within 7 days of delivery — unworn, with original tags and packaging.
+                Refunds are processed within 3–5 business days after inspection.
+              </p>
+            </DetailItem>
+            <DetailItem value="faq" title="FAQs">
+              <div className="space-y-4 text-sm font-body text-muted-foreground">
+                <div>
+                  <p className="font-semibold text-foreground mb-1">Is the color shown accurate?</p>
+                  <p>Colors are shot in natural light and may vary slightly on different screens.</p>
+                </div>
+                <div>
+                  <p className="font-semibold text-foreground mb-1">Do you offer cash on delivery?</p>
+                  <p>Yes, COD is available across Bangladesh along with secure online payment.</p>
+                </div>
+                <div>
+                  <p className="font-semibold text-foreground mb-1">How do I track my order?</p>
+                  <p>Visit your Delilar account dashboard for real-time order tracking.</p>
+                </div>
+              </div>
+            </DetailItem>
+          </Accordion>
+        </section>
+
+        {/* ============ REVIEWS ============ */}
+        <section id="reviews" className="mt-16 lg:mt-24 max-w-5xl mx-auto">
+          <h2 className="text-2xl lg:text-3xl font-heading font-bold text-[hsl(var(--charcoal))] mb-8 text-center">
+            Customer Reviews
+          </h2>
+
+          <div className="grid md:grid-cols-[280px_1fr] gap-8 bg-[hsl(var(--cream))] rounded-2xl border border-[hsl(var(--burgundy)/0.12)] p-6 lg:p-8 mb-8">
+            {/* Average */}
+            <div className="text-center md:text-left md:border-r md:pr-8 border-[hsl(var(--burgundy)/0.1)]">
+              <p className="text-5xl font-heading font-bold text-[hsl(var(--burgundy))]">{product.rating.toFixed(1)}</p>
+              <div className="flex justify-center md:justify-start gap-0.5 my-2">
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <Star
+                    key={i}
+                    size={16}
+                    className={i < Math.floor(product.rating) ? 'fill-[hsl(var(--gold))] text-[hsl(var(--gold))]' : 'text-border'}
+                  />
+                ))}
+              </div>
+              <p className="text-xs font-body text-muted-foreground mb-5">Based on {product.reviews} reviews</p>
+              <button className="text-xs font-body tracking-[0.2em] uppercase px-5 py-3 rounded-xl bg-[hsl(var(--burgundy))] text-[hsl(var(--cream))] hover:bg-[hsl(var(--burgundy-light))] transition-colors w-full">
+                Write a review
+              </button>
+            </div>
+
+            {/* Breakdown */}
+            <div className="space-y-2.5 self-center">
+              {breakdown.map(({ stars, count }) => {
+                const pct = product.reviews > 0 ? (count / product.reviews) * 100 : 0;
+                return (
+                  <div key={stars} className="flex items-center gap-3 text-xs font-body">
+                    <span className="w-10 text-muted-foreground">{stars} star</span>
+                    <div className="flex-1 h-2 rounded-full bg-[hsl(var(--burgundy)/0.08)] overflow-hidden">
+                      <motion.div
+                        initial={{ width: 0 }}
+                        whileInView={{ width: `${pct}%` }}
+                        viewport={{ once: true }}
+                        transition={{ duration: 0.8, ease: 'easeOut' }}
+                        className="h-full bg-gradient-to-r from-[hsl(var(--gold))] to-[hsl(var(--gold-dark))]"
+                      />
+                    </div>
+                    <span className="w-10 text-right text-muted-foreground">{count}</span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          <div className="grid md:grid-cols-2 gap-4">
+            {sampleReviews.map((r, i) => (
+              <motion.div
+                key={i}
+                initial={{ opacity: 0, y: 10 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: i * 0.05 }}
+                className="rounded-2xl bg-[hsl(var(--cream))] border border-[hsl(var(--burgundy)/0.12)] p-5"
+              >
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-[hsl(var(--burgundy))] text-[hsl(var(--cream))] flex items-center justify-center text-sm font-heading font-bold">
+                      {r.name.charAt(0)}
+                    </div>
+                    <div>
+                      <p className="text-sm font-body font-semibold text-foreground">{r.name}</p>
+                      <p className="text-[11px] font-body text-muted-foreground">{r.date}</p>
+                    </div>
+                  </div>
+                  {r.verified && (
+                    <span className="flex items-center gap-1 text-[10px] font-body uppercase tracking-wider text-green-700 bg-green-500/10 px-2 py-1 rounded">
+                      <BadgeCheck size={11} /> Verified
+                    </span>
+                  )}
+                </div>
+                <div className="flex gap-0.5 mb-2">
+                  {Array.from({ length: 5 }).map((_, j) => (
+                    <Star key={j} size={12} className={j < r.rating ? 'fill-[hsl(var(--gold))] text-[hsl(var(--gold))]' : 'text-border'} />
+                  ))}
+                </div>
+                <p className="text-sm font-body font-semibold text-foreground mb-1">{r.title}</p>
+                <p className="text-sm font-body text-muted-foreground leading-relaxed">{r.body}</p>
+              </motion.div>
             ))}
           </div>
         </section>
-      )}
+
+        {/* ============ RELATED ============ */}
+        {related.length > 0 && (
+          <section className="mt-20 lg:mt-28">
+            <div className="text-center mb-10">
+              <p className="text-[11px] tracking-[0.3em] uppercase font-body text-[hsl(var(--gold))] mb-2">Curated for you</p>
+              <h2 className="text-2xl lg:text-4xl font-heading font-bold text-[hsl(var(--charcoal))]">You May Also Like</h2>
+            </div>
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
+              {related.map((p, i) => (
+                <ProductCard key={p.id} product={p} index={i} />
+              ))}
+            </div>
+          </section>
+        )}
+      </div>
+
+      {/* ============ STICKY MOBILE PURCHASE BAR ============ */}
+      <div className="fixed bottom-0 inset-x-0 z-40 lg:hidden bg-[hsl(var(--cream))]/95 backdrop-blur-xl border-t border-[hsl(var(--burgundy)/0.15)] p-3 shadow-[0_-10px_30px_-10px_hsl(var(--burgundy)/0.25)]">
+        <div className="flex items-center gap-3">
+          <div className="flex-shrink-0">
+            <p className="text-[10px] font-body text-muted-foreground uppercase tracking-wider">Price</p>
+            <p className="text-lg font-heading font-bold text-[hsl(var(--burgundy))] leading-tight">৳{(product.price * quantity).toLocaleString()}</p>
+          </div>
+          <button
+            onClick={() => handleAddToCart(false)}
+            disabled={!product.inStock}
+            className="flex-1 h-12 rounded-xl bg-[hsl(var(--burgundy))] text-[hsl(var(--cream))] text-xs font-body tracking-widest uppercase font-semibold disabled:opacity-50"
+          >
+            Add to Cart
+          </button>
+          <button
+            onClick={() => handleAddToCart(true)}
+            disabled={!product.inStock}
+            className="flex-1 h-12 rounded-xl bg-[hsl(var(--gold))] text-[hsl(var(--charcoal))] text-xs font-body tracking-widest uppercase font-bold disabled:opacity-50"
+          >
+            Buy Now
+          </button>
+        </div>
+      </div>
     </main>
+  );
+};
+
+/* ===================== Sub-components ===================== */
+
+const VariantGroup = ({
+  label,
+  options,
+  selected,
+  onSelect,
+  icon,
+}: {
+  label: string;
+  options: string[];
+  selected: string;
+  onSelect: (v: string) => void;
+  icon?: React.ReactNode;
+}) => (
+  <div className="mb-6">
+    <p className="text-xs font-body tracking-[0.25em] uppercase mb-3 font-semibold text-foreground flex items-center gap-2">
+      {icon}
+      {label}
+      {selected && <span className="text-muted-foreground font-normal normal-case tracking-normal">— {selected}</span>}
+    </p>
+    <div className="flex flex-wrap gap-2">
+      {options.map((opt) => (
+        <button
+          key={opt}
+          onClick={() => onSelect(opt)}
+          className={`px-5 h-11 rounded-xl text-sm font-body transition-all duration-300 ${
+            selected === opt
+              ? 'bg-[hsl(var(--burgundy))] text-[hsl(var(--cream))] shadow-[0_8px_24px_-8px_hsl(var(--burgundy)/0.6)] scale-[1.03]'
+              : 'bg-[hsl(var(--cream))] border border-[hsl(var(--burgundy)/0.18)] text-foreground hover:border-[hsl(var(--gold))] hover:text-[hsl(var(--burgundy))]'
+          }`}
+        >
+          {opt}
+        </button>
+      ))}
+    </div>
+  </div>
+);
+
+const DeliveryRow = ({ icon: Icon, title, sub }: { icon: any; title: string; sub: string }) => (
+  <div className="flex items-start gap-3">
+    <div className="w-9 h-9 rounded-lg bg-[hsl(var(--burgundy))] flex items-center justify-center shrink-0">
+      <Icon size={15} className="text-[hsl(var(--gold))]" />
+    </div>
+    <div className="min-w-0">
+      <p className="text-sm font-body font-semibold text-foreground">{title}</p>
+      <p className="text-xs font-body text-muted-foreground leading-relaxed">{sub}</p>
+    </div>
+  </div>
+);
+
+const DetailItem = ({ value, title, children }: { value: string; title: string; children: React.ReactNode }) => (
+  <AccordionItem value={value} className="border-0 px-5 lg:px-7">
+    <AccordionTrigger className="text-base font-heading font-semibold text-[hsl(var(--charcoal))] hover:no-underline py-5">
+      {title}
+    </AccordionTrigger>
+    <AccordionContent className="pb-5">{children}</AccordionContent>
+  </AccordionItem>
+);
+
+const SizeGuideDialog = ({ category }: { category: Product['category'] }) => {
+  const isThobe = category === 'jubba' || category === 'eid';
+  const isPanjabi = category === 'panjabi';
+
+  const rows = isThobe
+    ? [
+        ['52', '38', '56', '142'],
+        ['54', '40', '58', '144'],
+        ['56', '42', '60', '146'],
+        ['58', '44', '62', '148'],
+        ['60', '46', '64', '150'],
+      ]
+    : isPanjabi
+    ? [
+        ['38', '38', '28', '38'],
+        ['40', '40', '29', '39'],
+        ['42', '42', '30', '40'],
+        ['44', '44', '31', '41'],
+        ['46', '46', '32', '42'],
+      ]
+    : [
+        ['S', '36–38', '28–30', '26'],
+        ['M', '38–40', '30–32', '27'],
+        ['L', '40–42', '32–34', '28'],
+        ['XL', '42–44', '34–36', '29'],
+        ['XXL', '44–46', '36–38', '30'],
+      ];
+
+  const headers = isThobe
+    ? ['Size', 'Chest', 'Shoulder', 'Length (cm)']
+    : isPanjabi
+    ? ['Size', 'Chest', 'Shoulder', 'Length']
+    : ['Size', 'Chest', 'Waist', 'Length'];
+
+  return (
+    <Dialog>
+      <DialogTrigger asChild>
+        <button className="flex items-center gap-1.5 text-[11px] font-body tracking-wider uppercase text-[hsl(var(--burgundy))] hover:text-[hsl(var(--gold-dark))] transition-colors">
+          <Ruler size={12} /> Size Guide
+        </button>
+      </DialogTrigger>
+      <DialogContent className="max-w-lg bg-[hsl(var(--cream))] border-[hsl(var(--burgundy)/0.15)]">
+        <h3 className="text-xl font-heading font-bold text-[hsl(var(--charcoal))] mb-1">Size Guide</h3>
+        <p className="text-xs font-body text-muted-foreground mb-5">All measurements in inches unless noted.</p>
+        <div className="overflow-x-auto rounded-xl border border-[hsl(var(--burgundy)/0.12)]">
+          <table className="w-full text-sm font-body">
+            <thead className="bg-[hsl(var(--burgundy))] text-[hsl(var(--cream))]">
+              <tr>
+                {headers.map((h) => (
+                  <th key={h} className="px-4 py-3 text-left text-xs uppercase tracking-wider font-semibold">{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((r, i) => (
+                <tr key={i} className={i % 2 === 0 ? 'bg-[hsl(var(--cream))]' : 'bg-[hsl(var(--cream-dark))]'}>
+                  {r.map((c, j) => (
+                    <td key={j} className="px-4 py-3 text-foreground">{c}</td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <p className="text-xs font-body text-muted-foreground mt-4">
+          Tip: For a relaxed fit, choose one size up. Contact us if you need help selecting your size.
+        </p>
+      </DialogContent>
+    </Dialog>
   );
 };
 
