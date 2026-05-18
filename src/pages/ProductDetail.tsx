@@ -733,24 +733,38 @@ const SizeGuideDialog = ({
   const isThobe = category === 'jubba' || category === 'eid';
   const isPanjabi = category === 'panjabi';
   const isPants = category === 'pants';
+  const isTshirt = category === 'tshirts' || category === 'polo';
 
-  // inches base data
+  // inches base data — only the three official brand measurements:
+  // Full Chest, Body Length, Sleeve Length (matches Delilar official charts).
   const rowsIn = isThobe
     ? [
-        ['S', '40', '17', '56'],
-        ['M', '42', '18', '57'],
-        ['L', '44', '19', '58'],
-        ['XL', '46', '19.5', '59'],
-        ['2XL', '48', '20', '60'],
-        ['3XL', '50', '20.5', '61'],
+        ['XS', '42', '52', '23.5'],
+        ['S', '44', '54', '24'],
+        ['M', '46', '56', '24.5'],
+        ['L', '48', '58', '25'],
+        ['XL', '50', '60', '25.5'],
+        ['2XL', '52', '62', '26'],
+        ['3XL', '54', '64', '26.5'],
       ]
     : isPanjabi
     ? [
-        ['S', '38', '17', '38'],
-        ['M', '40', '17.5', '39'],
-        ['L', '42', '18', '40'],
-        ['XL', '44', '18.5', '41'],
-        ['2XL', '46', '19', '42'],
+        ['38 / XS', '40', '40', '23.5'],
+        ['40 / S', '42', '41', '24'],
+        ['42 / M', '44', '42', '24.5'],
+        ['44 / L', '46', '43', '25'],
+        ['46 / XL', '48', '44', '25.5'],
+        ['48 / XXL', '50', '45', '26'],
+        ['50 / XXXL', '52', '46', '26.5'],
+      ]
+    : isTshirt
+    ? [
+        ['S', '38', '26', '7.5'],
+        ['M', '40', '27', '8'],
+        ['L', '42', '28', '8.5'],
+        ['XL', '44', '29', '9'],
+        ['XXL', '46', '30', '9.5'],
+        ['XXXL', '48', '31', '10'],
       ]
     : isPants
     ? [
@@ -762,29 +776,22 @@ const SizeGuideDialog = ({
         ['38', '38', '48', '42.5'],
       ]
     : [
-        ['XS', '34–36', '26–28', '25'],
-        ['S', '36–38', '28–30', '26'],
-        ['M', '38–40', '30–32', '27'],
-        ['L', '40–42', '32–34', '28'],
-        ['XL', '42–44', '34–36', '29'],
-        ['2XL', '44–46', '36–38', '30'],
-        ['3XL', '46–48', '38–40', '31'],
+        ['S', '38', '26', '7.5'],
+        ['M', '40', '27', '8'],
+        ['L', '42', '28', '8.5'],
+        ['XL', '44', '29', '9'],
+        ['XXL', '46', '30', '9.5'],
+        ['XXXL', '48', '31', '10'],
       ];
 
-  const headers = isThobe
-    ? ['Size', 'Chest', 'Shoulder', 'Length']
-    : isPanjabi
-    ? ['Size', 'Chest', 'Shoulder', 'Length']
-    : isPants
+  const headers = isPants
     ? ['Size', 'Waist', 'Hip', 'Length']
-    : ['Size', 'Chest', 'Waist', 'Length'];
+    : ['Size', 'Full Chest', 'Body Length', 'Sleeve Length'];
 
   const toCm = (v: string) => {
-    // single number or range "x–y"
-    const conv = (n: string) => (Number.isFinite(+n) ? Math.round(+n * 2.54).toString() : n);
-    if (v.includes('–')) {
-      return v.split('–').map(conv).join('–');
-    }
+    const conv = (n: string) => (Number.isFinite(+n) ? (Math.round(+n * 2.54 * 10) / 10).toString() : n);
+    if (v.includes('–')) return v.split('–').map(conv).join('–');
+    if (v.includes('/')) return v; // keep size labels like "38 / XS"
     return Number.isFinite(+v) ? conv(v) : v;
   };
 
@@ -817,7 +824,7 @@ const SizeGuideDialog = ({
           </div>
         </div>
         <p className="text-xs font-body text-muted-foreground mb-5">
-          All measurements in {unit === 'in' ? 'inches' : 'centimeters'}. Body measurements, not garment.
+          All measurements in {unit === 'in' ? 'inches' : 'centimeters'} · Garment measurements (laid flat) — not body measurements.
         </p>
         <div className="overflow-x-auto rounded-xl border border-[hsl(var(--burgundy)/0.12)]">
           <table className="w-full text-sm font-body">
