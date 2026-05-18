@@ -472,8 +472,15 @@ const Admin = () => {
     const id = productDraft.id.trim() || slugify(productDraft.name);
     if (!id) return toast.error('Product ID is required');
     if (reservedRoutes.has(id)) return toast.error('This product ID conflicts with a reserved route');
-    const variants = parseJsonSafe(productDraft.colorVariantsText);
-    if (variants === null) return;
+    const variants = productDraft.colorVariants
+      .map((cv) => ({
+        name: cv.name.trim(),
+        hex: cv.hex.trim() || '#000000',
+        sku: cv.sku?.trim() || undefined,
+        stock: cv.stock ? Number(cv.stock) : undefined,
+        images: cv.images.map((i) => i.trim()).filter(Boolean),
+      }))
+      .filter((cv) => cv.name && cv.images.length > 0);
     const price = Number(productDraft.price || 0);
     const originalPrice = productDraft.original_price ? Number(productDraft.original_price) : null;
     const stock = Number(productDraft.stock || 0);
@@ -487,7 +494,7 @@ const Admin = () => {
       fitType: productDraft.fitType.trim() || undefined,
       volumeOptions: splitList(productDraft.volumeOptionsText),
     };
-    if (variants) data.colorVariants = variants;
+    if (variants.length) data.colorVariants = variants;
 
     const payload = {
       id,
