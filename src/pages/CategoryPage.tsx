@@ -40,7 +40,14 @@ const CategoryBanner = ({ products, categoryName }: { products: Product[]; categ
           transition={{ duration: 0.6 }}
           className="absolute inset-0"
         >
-          <div className="absolute inset-0 bg-primary" />
+          {bannerImage ? (
+            <>
+              <img src={bannerImage} alt="" className="absolute inset-0 w-full h-full object-cover" />
+              <div className="absolute inset-0 bg-gradient-to-r from-primary/95 via-primary/70 to-primary/20" />
+            </>
+          ) : (
+            <div className="absolute inset-0 bg-primary" />
+          )}
           <div className="absolute inset-0 flex items-center">
             <div className="container mx-auto px-6 lg:px-10 flex items-center justify-between">
               <div className="max-w-md">
