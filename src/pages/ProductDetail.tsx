@@ -153,17 +153,7 @@ const ProductDetail = () => {
     window.open(map[platform], '_blank');
   };
 
-  // Rating breakdown (simulated)
-  const breakdown = [5, 4, 3, 2, 1].map((stars) => {
-    const base = stars === 5 ? 0.7 : stars === 4 ? 0.2 : stars === 3 ? 0.06 : stars === 2 ? 0.03 : 0.01;
-    return { stars, count: Math.round(product.reviews * base) };
-  });
 
-  const sampleReviews = [
-    { name: 'Abdullah R.', rating: 5, date: '2 weeks ago', verified: true, title: 'Exceptional craftsmanship', body: 'The fabric quality and stitching are top-notch. Fits perfectly and feels luxurious. Will buy again.' },
-    { name: 'Imran H.', rating: 5, date: '1 month ago', verified: true, title: 'Worth every taka', body: 'Premium feel, elegant design, and delivery was super fast. Delilar never disappoints.' },
-    { name: 'Sadiq M.', rating: 4, date: '1 month ago', verified: true, title: 'Great quality', body: 'Beautiful piece, true to size. Packaging was also very premium.' },
-  ];
 
   return (
     <main className="relative pb-28 lg:pb-12">
