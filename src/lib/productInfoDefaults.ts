@@ -19,13 +19,27 @@ export const DEFAULT_SHIPPING = `- Flat delivery charge ৳150 across Bangladesh
 - Orders are processed within 24 hours (excluding Fridays)
 - Cash on Delivery available across Bangladesh`;
 
-export const DEFAULT_RETURNS = `Delilar does not operate a 7-day exchange policy. Please review carefully:
+export const DEFAULT_RETURNS = `Delilar does not operate a 7-day exchange policy. Please review the rules below carefully — they protect both you and the brand and reflect international luxury fashion standards.
 
+Check In Front of the Delivery Rider:
 - If there is any size issue, damage, or product problem, the customer must check the product in front of the delivery person and return it immediately at that moment.
-- After verification by Delilar, replacement or re-shipment may be approved.
-- If the customer cancels the order after shipment or upon delivery for personal reasons, the delivery charge must still be paid.
-- Attar, perfumes and personal-care items are non-returnable for hygiene reasons unless the seal is unbroken.
-- Slight colour variation due to lighting and screen calibration is not considered a defect.`;
+- After verification by Delilar, the product may be replaced or re-sent if approved.
+
+No Returns After Delivery is Accepted:
+- After receiving the parcel, exchange or return requests based on customer preference may not be accepted.
+- Returns will NOT be processed once the rider has left the delivery location.
+
+Inspection & Replacement:
+- Returned products go through a fabric, stitching, fitting, and authenticity inspection before any replacement is issued.
+- Replacements depend on live stock availability of the same colour, size, and variant.
+
+Non-Returnable Items:
+- Attar, perfumes, and personal care products are non-returnable for hygiene reasons unless the seal is unbroken.
+- Items damaged due to customer mishandling, washing without care guidance, or alterations are not eligible.
+
+Colour & Photography Disclaimer:
+- Slight colour variation between the photograph and the actual product is normal due to screen calibration and studio lighting.
+- Such minor colour variation is not considered a defect and is not eligible for exchange.`;
 
 export const DEFAULT_FAQS = `Is the colour shown accurate?:
 Colours are photographed in natural light and may vary slightly across screens. Minor variation is not a defect.
