@@ -1,5 +1,12 @@
 import { Link } from 'react-router-dom';
-import { Mail, Phone, MapPin, Instagram, Facebook, Youtube } from 'lucide-react';
+import { Mail, Phone, MapPin, Instagram, Facebook } from 'lucide-react';
+
+// Minimal TikTok glyph (lucide doesn't ship one)
+const TikTokIcon = ({ size = 16 }: { size?: number }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+    <path d="M19.5 7.4a6.6 6.6 0 0 1-3.9-1.3v8.4a5.6 5.6 0 1 1-5.6-5.6c.3 0 .6 0 .9.1v2.8a2.8 2.8 0 1 0 2 2.7V2h2.7a3.9 3.9 0 0 0 3.9 3.9v1.5z" />
+  </svg>
+);
 
 const Footer = () => {
   return (
