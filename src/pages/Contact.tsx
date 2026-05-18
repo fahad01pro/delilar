@@ -18,8 +18,22 @@ const ContactForm = () => (
   </div>
 );
 
+const toEmbedSrc = (raw?: string | null): string | null => {
+  if (!raw) return null;
+  const v = raw.trim();
+  if (!v) return null;
+  // Extract from pasted <iframe ...> HTML
+  const iframeMatch = v.match(/<iframe[^>]*\ssrc=["']([^"']+)["']/i);
+  if (iframeMatch) return iframeMatch[1];
+  // Already a Google embed URL
+  if (/google\.[^/]+\/maps\/embed/i.test(v)) return v;
+  // Plain google maps link or any address → use embeddable search
+  return `https://www.google.com/maps?q=${encodeURIComponent(v)}&output=embed`;
+};
+
 const OutletCard = ({ outlet }: { outlet: Outlet }) => {
   const waNumber = (outlet.whatsapp || outlet.phone || '').replace(/[^\d]/g, '');
+  const embedSrc = toEmbedSrc(outlet.map_embed_url) || toEmbedSrc(outlet.map_link) || toEmbedSrc([outlet.address, outlet.city].filter(Boolean).join(', '));
   return (
     <motion.article
       initial={{ opacity: 0, y: 16 }}
@@ -28,14 +42,14 @@ const OutletCard = ({ outlet }: { outlet: Outlet }) => {
       transition={{ duration: 0.5 }}
       className="rounded-2xl overflow-hidden border border-[hsl(var(--burgundy)/0.15)] bg-background shadow-premium hover:shadow-premium-lg transition-all"
     >
-      {outlet.map_embed_url && (
+      {embedSrc && (
         <div className="relative w-full aspect-[16/9] bg-secondary">
           <iframe
-            src={outlet.map_embed_url}
+            src={embedSrc}
             loading="lazy"
             referrerPolicy="no-referrer-when-downgrade"
             allowFullScreen
-            className="absolute inset-0 w-full h-full"
+            className="absolute inset-0 w-full h-full border-0"
             title={`${outlet.name} location`}
           />
         </div>
@@ -90,23 +104,6 @@ const Contact = () => {
       </section>
 
       <section className="container mx-auto px-4 lg:px-8 py-14 lg:py-20">
-        <div className="flex items-center gap-3 mb-8">
-          <Sparkles size={18} className="text-accent" />
-          <p className="text-xs font-body tracking-[0.3em] uppercase text-[hsl(var(--burgundy))]">Our Outlets</p>
-          <span className="h-px flex-1 bg-[hsl(var(--burgundy)/0.15)]" />
-        </div>
-        {isLoading ? (
-          <p className="text-center text-muted-foreground py-16">Loading outlets…</p>
-        ) : outlets.length === 0 ? (
-          <p className="text-center text-muted-foreground py-16">Outlets coming soon.</p>
-        ) : (
-          <div className="grid lg:grid-cols-2 gap-6 lg:gap-8">
-            {outlets.map((o) => <OutletCard key={o.id} outlet={o} />)}
-          </div>
-        )}
-      </section>
-
-      <section className="container mx-auto px-4 lg:px-8 pb-20">
         <div className="grid lg:grid-cols-[1fr_0.9fr] gap-8 lg:gap-12 items-start">
           <ContactForm />
           <div className="space-y-4">
@@ -144,6 +141,23 @@ const Contact = () => {
             </a>
           </div>
         </div>
+      </section>
+
+      <section className="container mx-auto px-4 lg:px-8 pb-20">
+        <div className="flex items-center gap-3 mb-8">
+          <Sparkles size={18} className="text-accent" />
+          <p className="text-xs font-body tracking-[0.3em] uppercase text-[hsl(var(--burgundy))]">Our Outlets</p>
+          <span className="h-px flex-1 bg-[hsl(var(--burgundy)/0.15)]" />
+        </div>
+        {isLoading ? (
+          <p className="text-center text-muted-foreground py-16">Loading outlets…</p>
+        ) : outlets.length === 0 ? (
+          <p className="text-center text-muted-foreground py-16">Outlets coming soon.</p>
+        ) : (
+          <div className="grid lg:grid-cols-2 gap-6 lg:gap-8">
+            {outlets.map((o) => <OutletCard key={o.id} outlet={o} />)}
+          </div>
+        )}
       </section>
     </main>
   );
