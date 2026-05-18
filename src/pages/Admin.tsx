@@ -1545,4 +1545,77 @@ const SettingsPanel = ({ userEmail, signOut, navigateHome, customerCount, adminC
 
 const InfoBlock = ({ label, value }: { label: string; value: string }) => <div className="rounded-xl border border-border bg-background p-4"><p className="text-[10px] uppercase tracking-[0.22em] text-muted-foreground mb-1">{label}</p><p className="text-foreground">{value}</p></div>;
 
+const OutletsPanel = ({ outlets, draft, setDraft, save, remove, uploadFn }: { outlets: OutletRow[]; draft: OutletDraft | null; setDraft: (d: OutletDraft | null) => void; save: () => void; remove: (id: string) => void; uploadFn: (file: File) => Promise<string | null> }) => (
+  <section className="space-y-6">
+    <div className="flex flex-wrap items-center justify-between gap-3">
+      <div>
+        <h2 className="font-heading text-2xl">Outlet Management</h2>
+        <p className="text-sm text-muted-foreground">Add unlimited Delilar outlets with Google Maps, images, phone, hours, and full address.</p>
+      </div>
+      <Button onClick={() => setDraft(outletToDraft())} className="gap-2"><Plus size={15} /> Add Outlet</Button>
+    </div>
+
+    {draft && (
+      <AdminCard>
+        <div className="flex items-start justify-between gap-4 mb-5">
+          <PanelTitle icon={MapPin} title={draft.id ? 'Edit Outlet' : 'Add Outlet'} subtitle="Premium store location for the Contact page." />
+          <Button variant="ghost" size="icon" onClick={() => setDraft(null)}><X size={18} /></Button>
+        </div>
+        <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-4">
+          <Field label="Outlet Name" value={draft.name} onChange={(v) => setDraft({ ...draft, name: v })} />
+          <Field label="City" value={draft.city} onChange={(v) => setDraft({ ...draft, city: v })} placeholder="Sylhet" />
+          <Field label="Sort Order" type="number" value={draft.sort_order} onChange={(v) => setDraft({ ...draft, sort_order: v })} />
+          <div className="md:col-span-2 xl:col-span-3">
+            <Field label="Full Address" value={draft.address} onChange={(v) => setDraft({ ...draft, address: v })} rows={2} placeholder="Sylhet-3100, Bangladesh" />
+          </div>
+          <Field label="Phone" value={draft.phone} onChange={(v) => setDraft({ ...draft, phone: v })} placeholder="+880 1533-413290" />
+          <Field label="WhatsApp Number" value={draft.whatsapp} onChange={(v) => setDraft({ ...draft, whatsapp: v })} placeholder="8801533413290" />
+          <Field label="Email" value={draft.email} onChange={(v) => setDraft({ ...draft, email: v })} />
+          <Field label="Business Hours" value={draft.hours} onChange={(v) => setDraft({ ...draft, hours: v })} placeholder="Sat–Thu · 10am–9pm" />
+          <div className="md:col-span-2"><Field label="Google Maps Embed URL (iframe src)" value={draft.map_embed_url} onChange={(v) => setDraft({ ...draft, map_embed_url: v })} placeholder="https://www.google.com/maps?q=...&output=embed" /></div>
+          <Field label="Google Maps Link" value={draft.map_link} onChange={(v) => setDraft({ ...draft, map_link: v })} />
+          <div className="md:col-span-2 xl:col-span-3 grid md:grid-cols-[1fr_auto] gap-3 items-end">
+            <Field label="Outlet Image URL" value={draft.image_url} onChange={(v) => setDraft({ ...draft, image_url: v })} />
+            <label className="flex items-center justify-center gap-2 rounded-xl border border-dashed border-border bg-background px-4 py-2.5 text-sm text-muted-foreground cursor-pointer hover:border-accent hover:text-foreground transition-all">
+              <Upload size={14} /> Upload
+              <input type="file" accept="image/*" className="hidden" onChange={async (e) => { const f = e.target.files?.[0]; if (!f) return; const url = await uploadFn(f); if (url) setDraft({ ...draft, image_url: url }); e.target.value = ''; }} />
+            </label>
+          </div>
+        </div>
+        <div className="mt-5 flex flex-wrap items-center justify-between gap-3">
+          <div className="flex flex-wrap gap-2">
+            <TogglePill active={draft.enabled} label={draft.enabled ? 'Live' : 'Hidden'} onClick={() => setDraft({ ...draft, enabled: !draft.enabled })} />
+            <TogglePill active={draft.is_primary} label="Flagship" onClick={() => setDraft({ ...draft, is_primary: !draft.is_primary })} />
+          </div>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => setDraft(null)}>Cancel</Button>
+            <Button onClick={save}>Save Outlet</Button>
+          </div>
+        </div>
+      </AdminCard>
+    )}
+
+    <div className="grid gap-3">
+      {outlets.length === 0 && <AdminCard><p className="text-center text-muted-foreground py-10">No outlets yet.</p></AdminCard>}
+      {outlets.map((o) => (
+        <AdminCard key={o.id} className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div>
+            <div className="flex flex-wrap items-center gap-2 mb-1">
+              <h3 className="font-heading text-lg">{o.name}</h3>
+              {o.is_primary && <Badge>Flagship</Badge>}
+              {!o.enabled && <Badge variant="outline">Hidden</Badge>}
+            </div>
+            <p className="text-sm text-muted-foreground">{o.address}{o.city ? `, ${o.city}` : ''}</p>
+            <p className="text-xs text-muted-foreground mt-1">{o.phone || '—'} · {o.hours || 'Hours not set'}</p>
+          </div>
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" onClick={() => setDraft(outletToDraft(o))} className="gap-2"><PenLine size={14} /> Edit</Button>
+            <Button variant="outline" size="sm" onClick={() => remove(o.id)} className="gap-2 text-destructive hover:text-destructive"><Trash2 size={14} /> Delete</Button>
+          </div>
+        </AdminCard>
+      ))}
+    </div>
+  </section>
+);
+
 export default Admin;
