@@ -940,31 +940,43 @@ const Admin = () => {
                   />
                 )}
 
-                <div className="grid gap-4">
-                  {filteredProducts.map((product) => (
-                    <AdminCard key={product.id} className="grid gap-4 lg:grid-cols-[88px_1fr_auto] lg:items-center">
-                      <img src={resolveImage(product.data?.image)} alt={product.name} className="w-full h-28 lg:w-20 lg:h-20 rounded-xl object-cover bg-secondary" />
-                      <div className="min-w-0">
-                        <div className="flex flex-wrap items-center gap-2 mb-1">
-                          <h3 className="font-heading text-lg truncate">{product.name}</h3>
-                          {product.is_featured && <Badge>Featured</Badge>}
-                          {product.is_sale && <Badge variant="secondary">Sale</Badge>}
-                          {!product.is_visible && <Badge variant="outline">Hidden</Badge>}
+                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                  {filteredProducts.map((product) => {
+                    const lowStock = product.stock > 0 && product.stock <= (product.low_stock_threshold ?? 3);
+                    const outOfStock = product.stock <= 0;
+                    return (
+                      <AdminCard key={product.id} className="group relative flex flex-col gap-3 p-3 transition-all hover:shadow-lg hover:-translate-y-0.5">
+                        <div className="relative overflow-hidden rounded-xl bg-secondary aspect-[4/5]">
+                          <img src={resolveImage(product.data?.image)} alt={product.name} className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" />
+                          <div className="absolute top-2 left-2 flex flex-wrap gap-1">
+                            {product.is_featured && <Badge className="text-[10px] px-1.5 py-0">Featured</Badge>}
+                            {product.is_sale && <Badge variant="secondary" className="text-[10px] px-1.5 py-0">Sale</Badge>}
+                            {!product.is_visible && <Badge variant="outline" className="text-[10px] px-1.5 py-0 bg-background/80">Hidden</Badge>}
+                          </div>
+                          <div className="absolute top-2 right-2">
+                            <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium backdrop-blur ${outOfStock ? 'bg-destructive/90 text-destructive-foreground' : lowStock ? 'bg-amber-500/90 text-white' : 'bg-emerald-600/90 text-white'}`}>
+                              <span className="h-1.5 w-1.5 rounded-full bg-current" />
+                              {outOfStock ? 'Out' : lowStock ? `${product.stock} left` : `${product.stock}`}
+                            </span>
+                          </div>
                         </div>
-                        <p className="text-xs text-muted-foreground font-body">{product.id} · {product.category} · {product.product_type} · SKU {product.sku || '—'}</p>
-                        <div className="mt-3 flex flex-wrap gap-2 text-xs">
-                          <Pill>{money(product.price)}</Pill>
-                          <Pill>{product.stock} in stock</Pill>
-                          <Pill>{product.data?.sizes?.length ?? 0} sizes</Pill>
-                          <Pill>{product.data?.colorVariants?.length ?? product.data?.colors?.length ?? 0} color options</Pill>
+                        <div className="flex-1 min-w-0 space-y-1.5">
+                          <h3 className="font-heading text-sm leading-tight line-clamp-2">{product.name}</h3>
+                          <p className="text-[10px] uppercase tracking-wider text-muted-foreground truncate">{product.category} · {product.sku || product.id.slice(0, 6)}</p>
+                          <div className="flex items-baseline gap-2">
+                            <span className="font-heading text-base text-primary">{money(product.price)}</span>
+                            {product.original_price && Number(product.original_price) > Number(product.price) && (
+                              <span className="text-xs text-muted-foreground line-through">{money(product.original_price)}</span>
+                            )}
+                          </div>
                         </div>
-                      </div>
-                      <div className="flex flex-wrap gap-2 lg:justify-end">
-                        <Button variant="outline" size="sm" onClick={() => setProductDraft(productToDraft(product))} className="gap-2"><PenLine size={14} /> Edit</Button>
-                        <Button variant="outline" size="sm" onClick={() => deleteProduct(product.id)} className="gap-2 text-destructive hover:text-destructive"><Trash2 size={14} /> Delete</Button>
-                      </div>
-                    </AdminCard>
-                  ))}
+                        <div className="flex gap-1.5 pt-1 border-t border-border">
+                          <Button variant="outline" size="sm" onClick={() => setProductDraft(productToDraft(product))} className="flex-1 h-8 text-xs gap-1"><PenLine size={12} /> Edit</Button>
+                          <Button variant="outline" size="sm" onClick={() => deleteProduct(product.id)} className="h-8 w-8 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"><Trash2 size={12} /></Button>
+                        </div>
+                      </AdminCard>
+                    );
+                  })}
                 </div>
 
                 <div className="grid lg:grid-cols-[1fr_380px] gap-6">
