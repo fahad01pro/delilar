@@ -824,7 +824,7 @@ const SizeGuideDialog = ({
           </div>
         </div>
         <p className="text-xs font-body text-muted-foreground mb-5">
-          All measurements in {unit === 'in' ? 'inches' : 'centimeters'}. Body measurements, not garment.
+          All measurements in {unit === 'in' ? 'inches' : 'centimeters'} · Garment measurements (laid flat) — not body measurements.
         </p>
         <div className="overflow-x-auto rounded-xl border border-[hsl(var(--burgundy)/0.12)]">
           <table className="w-full text-sm font-body">
