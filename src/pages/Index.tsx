@@ -158,7 +158,7 @@ const Index = () => {
             { icon: Truck, label: 'Free Shipping 5,000+' },
             { icon: Shield, label: '100% Authentic' },
             { icon: RotateCcw, label: 'Easy Returns' },
-            { icon: Star, label: 'Top Rated' },
+            { icon: Sparkles, label: 'Premium Crafted' },
           ].map(({ icon: Icon, label }) => (
             <div key={label} className="flex items-center gap-2.5 text-primary-foreground/80">
               <Icon size={16} className="text-accent" />
