@@ -1,5 +1,12 @@
 import { Link } from 'react-router-dom';
-import { Mail, Phone, MapPin, Instagram, Facebook, Youtube } from 'lucide-react';
+import { Mail, Phone, MapPin, Instagram, Facebook } from 'lucide-react';
+
+// Minimal TikTok glyph (lucide doesn't ship one)
+const TikTokIcon = ({ size = 16 }: { size?: number }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+    <path d="M19.5 7.4a6.6 6.6 0 0 1-3.9-1.3v8.4a5.6 5.6 0 1 1-5.6-5.6c.3 0 .6 0 .9.1v2.8a2.8 2.8 0 1 0 2 2.7V2h2.7a3.9 3.9 0 0 0 3.9 3.9v1.5z" />
+  </svg>
+);
 
 const Footer = () => {
   return (
@@ -37,8 +44,19 @@ const Footer = () => {
               Premium Islamic fashion & luxury attar. Crafted for the modern man who values tradition and style.
             </p>
             <div className="flex gap-3 mt-5">
-              {[Instagram, Facebook, Youtube].map((Icon, i) => (
-                <a key={i} href="#" className="w-10 h-10 rounded-xl bg-primary-foreground/10 flex items-center justify-center hover:bg-accent hover:text-foreground transition-all duration-300">
+              {[
+                { Icon: Facebook, href: 'https://facebook.com/delilar', label: 'Facebook' },
+                { Icon: Instagram, href: 'https://instagram.com/delilar', label: 'Instagram' },
+                { Icon: TikTokIcon, href: 'https://tiktok.com/@delilar', label: 'TikTok' },
+              ].map(({ Icon, href, label }) => (
+                <a
+                  key={label}
+                  href={href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label={label}
+                  className="w-10 h-10 rounded-xl bg-primary-foreground/10 flex items-center justify-center hover:bg-accent hover:text-foreground transition-all duration-300"
+                >
                   <Icon size={16} />
                 </a>
               ))}
@@ -102,7 +120,17 @@ const Footer = () => {
 
         <div className="border-t border-primary-foreground/10 mt-12 pt-8 flex flex-col md:flex-row items-center justify-between gap-4">
           <p className="text-xs text-primary-foreground/30 font-body">
-            © 2026 Delilar. All rights reserved. Crafted with elegance.
+            © 2026 Delilar. All rights reserved. Crafted with elegance.{' '}
+            <span className="mx-1">·</span>
+            Website developed by{' '}
+            <a
+              href="https://www.mufasys.com/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-accent hover:underline font-medium"
+            >
+              MufaSys
+            </a>
           </p>
           <div className="flex gap-4 text-xs text-primary-foreground/30 font-body">
             <span className="hover:text-accent cursor-pointer transition-colors">Privacy</span>
