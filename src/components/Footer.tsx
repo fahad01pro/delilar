@@ -120,7 +120,17 @@ const Footer = () => {
 
         <div className="border-t border-primary-foreground/10 mt-12 pt-8 flex flex-col md:flex-row items-center justify-between gap-4">
           <p className="text-xs text-primary-foreground/30 font-body">
-            © 2026 Delilar. All rights reserved. Crafted with elegance.
+            © 2026 Delilar. All rights reserved. Crafted with elegance.{' '}
+            <span className="mx-1">·</span>
+            Website developed by{' '}
+            <a
+              href="https://www.mufasys.com/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-accent hover:underline font-medium"
+            >
+              MufaSys
+            </a>
           </p>
           <div className="flex gap-4 text-xs text-primary-foreground/30 font-body">
             <span className="hover:text-accent cursor-pointer transition-colors">Privacy</span>
