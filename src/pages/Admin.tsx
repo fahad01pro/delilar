@@ -13,6 +13,7 @@ import {
   Loader2,
   LogOut,
   Mail,
+  MapPin,
   Package,
   PenLine,
   Plus,
