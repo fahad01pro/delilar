@@ -44,8 +44,19 @@ const Footer = () => {
               Premium Islamic fashion & luxury attar. Crafted for the modern man who values tradition and style.
             </p>
             <div className="flex gap-3 mt-5">
-              {[Instagram, Facebook, Youtube].map((Icon, i) => (
-                <a key={i} href="#" className="w-10 h-10 rounded-xl bg-primary-foreground/10 flex items-center justify-center hover:bg-accent hover:text-foreground transition-all duration-300">
+              {[
+                { Icon: Facebook, href: 'https://facebook.com/delilar', label: 'Facebook' },
+                { Icon: Instagram, href: 'https://instagram.com/delilar', label: 'Instagram' },
+                { Icon: TikTokIcon, href: 'https://tiktok.com/@delilar', label: 'TikTok' },
+              ].map(({ Icon, href, label }) => (
+                <a
+                  key={label}
+                  href={href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label={label}
+                  className="w-10 h-10 rounded-xl bg-primary-foreground/10 flex items-center justify-center hover:bg-accent hover:text-foreground transition-all duration-300"
+                >
                   <Icon size={16} />
                 </a>
               ))}
