@@ -12,6 +12,7 @@ import {
   Lock,
   Loader2,
   LogOut,
+  Mail,
   Package,
   PenLine,
   Plus,
@@ -37,7 +38,7 @@ import { resolveImage } from '@/lib/imageAssets';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 
-type AdminTab = 'overview' | 'products' | 'orders' | 'customers' | 'content' | 'settings';
+type AdminTab = 'overview' | 'products' | 'orders' | 'customers' | 'subscribers' | 'inventory' | 'content' | 'settings';
 type ProductType = 'clothing' | 'accessories' | 'perfume';
 
 type ProductRow = {
@@ -325,7 +326,7 @@ const Admin = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const segment = location.pathname.split('/')[2] as AdminTab | undefined;
-  const activeTab: AdminTab = segment && ['overview', 'products', 'orders', 'customers', 'content', 'settings'].includes(segment) ? segment : 'overview';
+  const activeTab: AdminTab = segment && ['overview', 'products', 'orders', 'customers', 'subscribers', 'inventory', 'content', 'settings'].includes(segment) ? segment : 'overview';
 
   const [checkingAdmin, setCheckingAdmin] = useState(true);
   const [hasAdminAccess, setHasAdminAccess] = useState(false);
@@ -338,6 +339,7 @@ const Admin = () => {
   const [heroBanners, setHeroBanners] = useState<HeroBannerRow[]>([]);
   const [categoryBanners, setCategoryBanners] = useState<CategoryBannerRow[]>([]);
   const [siteContent, setSiteContent] = useState<ContentRow[]>([]);
+  const [subscribers, setSubscribers] = useState<{ id: string; email: string; source: string; created_at: string }[]>([]);
   const [productDraft, setProductDraft] = useState<ProductDraft | null>(null);
   const [categoryDraft, setCategoryDraft] = useState<CategoryDraft | null>(null);
   const [bannerDraft, setBannerDraft] = useState<BannerDraft | null>(null);
@@ -380,7 +382,7 @@ const Admin = () => {
   const loadAdminData = async () => {
     if (!user) return;
     setBusy(true);
-    const [productsRes, ordersRes, profilesRes, rolesRes, categoriesRes, heroRes, catBannerRes, contentRes] = await Promise.all([
+    const [productsRes, ordersRes, profilesRes, rolesRes, categoriesRes, heroRes, catBannerRes, contentRes, subsRes] = await Promise.all([
       db.from('products').select('*').order('sort_order', { ascending: true }),
       db.from('orders').select('*').order('created_at', { ascending: false }),
       db.from('profiles').select('*').order('created_at', { ascending: false }),
@@ -389,9 +391,10 @@ const Admin = () => {
       db.from('hero_banners').select('*').order('sort_order', { ascending: true }),
       db.from('category_banners').select('*').order('category', { ascending: true }),
       db.from('site_content').select('*').order('sort_order', { ascending: true }),
+      db.from('newsletter_subscribers').select('*').order('created_at', { ascending: false }),
     ]);
 
-    const firstError = [productsRes, ordersRes, profilesRes, rolesRes, categoriesRes, heroRes, catBannerRes, contentRes].find((result) => result.error)?.error;
+    const firstError = [productsRes, ordersRes, profilesRes, rolesRes, categoriesRes, heroRes, catBannerRes, contentRes, subsRes].find((result) => result.error)?.error;
     if (firstError) toast.error(firstError.message);
 
     setProducts(productsRes.data ?? []);
@@ -402,6 +405,7 @@ const Admin = () => {
     setHeroBanners(heroRes.data ?? []);
     setCategoryBanners(catBannerRes.data ?? []);
     setSiteContent(contentRes.data ?? []);
+    setSubscribers(subsRes.data ?? []);
     setBusy(false);
   };
 
@@ -898,6 +902,14 @@ const Admin = () => {
               />
             )}
 
+            {activeTab === 'subscribers' && (
+              <SubscribersPanel subscribers={subscribers} />
+            )}
+
+            {activeTab === 'inventory' && (
+              <InventoryPanel products={products} />
+            )}
+
             {activeTab === 'settings' && (
               <SettingsPanel userEmail={user.email ?? ''} signOut={signOut} navigateHome={() => navigate('/')} customerCount={profiles.length} adminCount={adminRoleIds.size + (adminRoleIds.has(user.id) || isAdminUser(user) ? 0 : 1)} />
             )}
@@ -911,11 +923,103 @@ const Admin = () => {
 const adminTabs: { key: AdminTab; label: string; title: string; icon: any }[] = [
   { key: 'overview', label: 'Overview', title: 'Dashboard Overview', icon: LayoutDashboard },
   { key: 'products', label: 'Products', title: 'Products & Categories', icon: Package },
+  { key: 'inventory', label: 'Inventory', title: 'Inventory & Stock', icon: Boxes },
   { key: 'orders', label: 'Orders', title: 'Orders & Delivery', icon: ShoppingBag },
   { key: 'customers', label: 'Customers', title: 'Customers & Purchase History', icon: Users },
+  { key: 'subscribers', label: 'Subscribers', title: 'Newsletter Subscribers', icon: Mail },
   { key: 'content', label: 'Content', title: 'Website Content', icon: ImageIcon },
   { key: 'settings', label: 'Settings', title: 'Authentication & Settings', icon: Settings },
 ];
+
+const SubscribersPanel = ({ subscribers }: { subscribers: { id: string; email: string; source: string; created_at: string }[] }) => {
+  const exportCsv = () => {
+    const rows = [['Email', 'Source', 'Date'], ...subscribers.map((s) => [s.email, s.source, new Date(s.created_at).toISOString()])];
+    const csv = rows.map((r) => r.map((v) => `"${String(v).replace(/"/g, '""')}"`).join(',')).join('\n');
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `delilar-subscribers-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+  return (
+    <section className="space-y-5">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h2 className="font-heading text-2xl">Newsletter Subscribers</h2>
+          <p className="text-sm text-muted-foreground">Emails collected from the “Join the Delilar Family” footer signup.</p>
+        </div>
+        <Button onClick={exportCsv} disabled={!subscribers.length} className="gap-2"><Mail size={15} /> Export CSV</Button>
+      </div>
+      <AdminCard>
+        {subscribers.length === 0 ? (
+          <p className="text-center text-muted-foreground py-10">No subscribers yet.</p>
+        ) : (
+          <div className="divide-y divide-border">
+            {subscribers.map((s) => (
+              <div key={s.id} className="flex flex-wrap items-center justify-between gap-3 py-3 text-sm">
+                <span className="font-medium">{s.email}</span>
+                <span className="text-xs text-muted-foreground">{s.source} · {new Date(s.created_at).toLocaleDateString()}</span>
+              </div>
+            ))}
+          </div>
+        )}
+      </AdminCard>
+    </section>
+  );
+};
+
+const InventoryPanel = ({ products }: { products: ProductRow[] }) => {
+  const outOfStock = products.filter((p) => p.stock <= 0);
+  const lowStock = products.filter((p) => p.stock > 0 && p.stock < 3);
+  const healthy = products.filter((p) => p.stock >= 3);
+  return (
+    <section className="space-y-6">
+      <div>
+        <h2 className="font-heading text-2xl">Inventory Management</h2>
+        <p className="text-sm text-muted-foreground">Total, sold, and remaining stock per product. Customers never see these numbers.</p>
+      </div>
+      <div className="grid sm:grid-cols-3 gap-4">
+        <Metric icon={Package} label="Total Products" value={products.length} detail="All catalog items" />
+        <Metric icon={Boxes} label="Low Stock" value={lowStock.length} detail="Less than 3 remaining" />
+        <Metric icon={ShieldCheck} label="Out of Stock" value={outOfStock.length} detail="Hidden CTA on storefront" />
+      </div>
+      <AdminCard>
+        <PanelTitle icon={Boxes} title="Stock Ledger" subtitle="Total stock = Sold + Remaining. Edit per-product values in the Products tab." />
+        <div className="mt-5 overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="text-left text-xs uppercase tracking-[0.2em] text-muted-foreground border-b border-border">
+                <th className="py-3 pr-3">Product</th>
+                <th className="py-3 px-3">Category</th>
+                <th className="py-3 px-3 text-right">Remaining</th>
+                <th className="py-3 px-3 text-right">Sold</th>
+                <th className="py-3 pl-3 text-right">Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {[...outOfStock, ...lowStock, ...healthy].map((p) => {
+                const sold = (p as any).sold_count ?? 0;
+                const status = p.stock <= 0 ? 'Out of stock' : p.stock < 3 ? 'Low' : 'Healthy';
+                const tone = p.stock <= 0 ? 'text-destructive' : p.stock < 3 ? 'text-amber-600' : 'text-green-700';
+                return (
+                  <tr key={p.id} className="border-b border-border/60">
+                    <td className="py-3 pr-3 font-medium">{p.name}</td>
+                    <td className="py-3 px-3 text-muted-foreground capitalize">{p.category}</td>
+                    <td className="py-3 px-3 text-right">{p.stock}</td>
+                    <td className="py-3 px-3 text-right">{sold}</td>
+                    <td className={`py-3 pl-3 text-right font-semibold ${tone}`}>{status}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </AdminCard>
+    </section>
+  );
+};
 
 const AdminScreen = ({ children }: { children: React.ReactNode }) => <div className="font-body bg-background min-h-screen">{children}</div>;
 const AdminCard = ({ children, className = '' }: { children: React.ReactNode; className?: string }) => <div className={`rounded-2xl border border-border bg-card p-5 shadow-premium ${className}`}>{children}</div>;

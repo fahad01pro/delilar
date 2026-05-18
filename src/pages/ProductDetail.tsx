@@ -5,8 +5,8 @@ import { useProduct, useProductsByCategory } from '@/hooks/useCatalog';
 import { useCart } from '@/context/CartContext';
 import { useWishlist } from '@/context/WishlistContext';
 import {
-  Star, Minus, Plus, Truck, RotateCcw, Shield, Heart, Share2,
-  ChevronLeft, ChevronRight, ZoomIn, X, BadgeCheck, Package,
+  Minus, Plus, Truck, RotateCcw, Shield, Heart, Share2,
+  ChevronLeft, ChevronRight, ZoomIn, X, BadgeCheck,
   Headphones, CreditCard, Ruler, MapPin, Clock, Copy, Facebook,
   Twitter, MessageCircle, Sparkles,
 } from 'lucide-react';
@@ -126,7 +126,6 @@ const ProductDetail = () => {
     : 0;
 
   const sku = `DLR-${product.id.toUpperCase()}`;
-  const soldCount = 50 + (product.reviews * 3);
 
   const handleAddToCart = async (buyNow = false) => {
     if (!product.inStock) return;
@@ -154,17 +153,7 @@ const ProductDetail = () => {
     window.open(map[platform], '_blank');
   };
 
-  // Rating breakdown (simulated)
-  const breakdown = [5, 4, 3, 2, 1].map((stars) => {
-    const base = stars === 5 ? 0.7 : stars === 4 ? 0.2 : stars === 3 ? 0.06 : stars === 2 ? 0.03 : 0.01;
-    return { stars, count: Math.round(product.reviews * base) };
-  });
 
-  const sampleReviews = [
-    { name: 'Abdullah R.', rating: 5, date: '2 weeks ago', verified: true, title: 'Exceptional craftsmanship', body: 'The fabric quality and stitching are top-notch. Fits perfectly and feels luxurious. Will buy again.' },
-    { name: 'Imran H.', rating: 5, date: '1 month ago', verified: true, title: 'Worth every taka', body: 'Premium feel, elegant design, and delivery was super fast. Delilar never disappoints.' },
-    { name: 'Sadiq M.', rating: 4, date: '1 month ago', verified: true, title: 'Great quality', body: 'Beautiful piece, true to size. Packaging was also very premium.' },
-  ];
 
   return (
     <main className="relative pb-28 lg:pb-12">
@@ -317,27 +306,10 @@ const ProductDetail = () => {
               Crafted with care — a Sunnah-inspired piece of timeless elegance.
             </p>
 
-            {/* Rating row */}
+            {/* Meta row */}
             <div className="flex flex-wrap items-center gap-x-5 gap-y-2 mb-6 pb-6 border-b border-[hsl(var(--burgundy)/0.12)]">
-              <div className="flex items-center gap-2">
-                <div className="flex gap-0.5">
-                  {Array.from({ length: 5 }).map((_, i) => (
-                    <Star
-                      key={i}
-                      size={16}
-                      className={i < Math.floor(product.rating) ? 'fill-[hsl(var(--gold))] text-[hsl(var(--gold))]' : 'text-border'}
-                    />
-                  ))}
-                </div>
-                <span className="text-sm font-body font-semibold text-foreground">{product.rating.toFixed(1)}</span>
-                <a href="#reviews" className="text-xs font-body text-muted-foreground hover:text-[hsl(var(--burgundy))] underline-offset-4 hover:underline">
-                  ({product.reviews} reviews)
-                </a>
-              </div>
-              <span className="text-xs font-body text-muted-foreground flex items-center gap-1.5">
-                <Package size={13} className="text-[hsl(var(--gold))]" /> {soldCount}+ sold
-              </span>
               <span className="text-xs font-body text-muted-foreground">SKU: <span className="text-foreground">{sku}</span></span>
+              <span className="text-xs font-body text-muted-foreground capitalize">Category: <span className="text-foreground">{product.category}</span></span>
             </div>
 
             {/* Price */}
@@ -360,7 +332,7 @@ const ProductDetail = () => {
               Inclusive of VAT. Free shipping on orders over ৳5,000.
             </p>
 
-            {/* Stock badge */}
+            {/* Stock badge — never expose exact quantities */}
             <div className="mb-6">
               {product.inStock ? (
                 <span className="inline-flex items-center gap-2 text-xs font-body text-green-700 bg-green-500/10 px-3 py-1.5 rounded-full">
@@ -368,9 +340,9 @@ const ProductDetail = () => {
                   In Stock — Ready to ship
                 </span>
               ) : (
-                <span className="inline-flex items-center gap-2 text-xs font-body text-destructive bg-destructive/10 px-3 py-1.5 rounded-full">
+                <span className="inline-flex items-center gap-2 text-xs font-body text-destructive bg-destructive/15 px-3 py-1.5 rounded-full font-semibold uppercase tracking-wider">
                   <span className="w-1.5 h-1.5 rounded-full bg-destructive" />
-                  Currently Unavailable
+                  Out of Stock
                 </span>
               )}
             </div>
@@ -660,92 +632,6 @@ const ProductDetail = () => {
               </div>
             </DetailItem>
           </Accordion>
-        </section>
-
-        {/* ============ REVIEWS ============ */}
-        <section id="reviews" className="mt-16 lg:mt-24 max-w-5xl mx-auto">
-          <h2 className="text-2xl lg:text-3xl font-heading font-bold text-[hsl(var(--charcoal))] mb-8 text-center">
-            Customer Reviews
-          </h2>
-
-          <div className="grid md:grid-cols-[280px_1fr] gap-8 bg-[hsl(var(--cream))] rounded-2xl border border-[hsl(var(--burgundy)/0.12)] p-6 lg:p-8 mb-8">
-            {/* Average */}
-            <div className="text-center md:text-left md:border-r md:pr-8 border-[hsl(var(--burgundy)/0.1)]">
-              <p className="text-5xl font-heading font-bold text-[hsl(var(--burgundy))]">{product.rating.toFixed(1)}</p>
-              <div className="flex justify-center md:justify-start gap-0.5 my-2">
-                {Array.from({ length: 5 }).map((_, i) => (
-                  <Star
-                    key={i}
-                    size={16}
-                    className={i < Math.floor(product.rating) ? 'fill-[hsl(var(--gold))] text-[hsl(var(--gold))]' : 'text-border'}
-                  />
-                ))}
-              </div>
-              <p className="text-xs font-body text-muted-foreground mb-5">Based on {product.reviews} reviews</p>
-              <button className="text-xs font-body tracking-[0.2em] uppercase px-5 py-3 rounded-xl bg-[hsl(var(--burgundy))] text-[hsl(var(--cream))] hover:bg-[hsl(var(--burgundy-light))] transition-colors w-full">
-                Write a review
-              </button>
-            </div>
-
-            {/* Breakdown */}
-            <div className="space-y-2.5 self-center">
-              {breakdown.map(({ stars, count }) => {
-                const pct = product.reviews > 0 ? (count / product.reviews) * 100 : 0;
-                return (
-                  <div key={stars} className="flex items-center gap-3 text-xs font-body">
-                    <span className="w-10 text-muted-foreground">{stars} star</span>
-                    <div className="flex-1 h-2 rounded-full bg-[hsl(var(--burgundy)/0.08)] overflow-hidden">
-                      <motion.div
-                        initial={{ width: 0 }}
-                        whileInView={{ width: `${pct}%` }}
-                        viewport={{ once: true }}
-                        transition={{ duration: 0.8, ease: 'easeOut' }}
-                        className="h-full bg-gradient-to-r from-[hsl(var(--gold))] to-[hsl(var(--gold-dark))]"
-                      />
-                    </div>
-                    <span className="w-10 text-right text-muted-foreground">{count}</span>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-
-          <div className="grid md:grid-cols-2 gap-4">
-            {sampleReviews.map((r, i) => (
-              <motion.div
-                key={i}
-                initial={{ opacity: 0, y: 10 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: i * 0.05 }}
-                className="rounded-2xl bg-[hsl(var(--cream))] border border-[hsl(var(--burgundy)/0.12)] p-5"
-              >
-                <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-[hsl(var(--burgundy))] text-[hsl(var(--cream))] flex items-center justify-center text-sm font-heading font-bold">
-                      {r.name.charAt(0)}
-                    </div>
-                    <div>
-                      <p className="text-sm font-body font-semibold text-foreground">{r.name}</p>
-                      <p className="text-[11px] font-body text-muted-foreground">{r.date}</p>
-                    </div>
-                  </div>
-                  {r.verified && (
-                    <span className="flex items-center gap-1 text-[10px] font-body uppercase tracking-wider text-green-700 bg-green-500/10 px-2 py-1 rounded">
-                      <BadgeCheck size={11} /> Verified
-                    </span>
-                  )}
-                </div>
-                <div className="flex gap-0.5 mb-2">
-                  {Array.from({ length: 5 }).map((_, j) => (
-                    <Star key={j} size={12} className={j < r.rating ? 'fill-[hsl(var(--gold))] text-[hsl(var(--gold))]' : 'text-border'} />
-                  ))}
-                </div>
-                <p className="text-sm font-body font-semibold text-foreground mb-1">{r.title}</p>
-                <p className="text-sm font-body text-muted-foreground leading-relaxed">{r.body}</p>
-              </motion.div>
-            ))}
-          </div>
         </section>
 
         {/* ============ RELATED ============ */}

@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowRight, Star, Truck, Shield, RotateCcw, ChevronLeft, ChevronRight, Sparkles } from 'lucide-react';
+import { ArrowRight, Truck, Shield, RotateCcw, ChevronLeft, ChevronRight, Sparkles } from 'lucide-react';
 import heroImage from '@/assets/hero-main.jpg';
 import catTshirts from '@/assets/category-tshirts.jpg';
 import catJubba from '@/assets/category-jubba.jpg';
@@ -27,11 +27,6 @@ const fallbackHero = {
   cta: { label: 'Shop Now', href: '/jubba' },
 };
 
-const testimonials = [
-  { name: 'Ahmed R.', text: 'The quality of the Jubba is exceptional. Truly premium fabric and beautiful craftsmanship.', rating: 5 },
-  { name: 'Farhan K.', text: 'Delilar attar collection is unmatched. The Oud Al Majestic is now my signature scent.', rating: 5 },
-  { name: 'Ibrahim S.', text: 'Fast delivery and the Panjabi fit perfectly. Will definitely order again!', rating: 4 },
-];
 
 const Index = () => {
   const { data: catalog = [] } = useCatalog();
@@ -163,7 +158,7 @@ const Index = () => {
             { icon: Truck, label: 'Free Shipping 5,000+' },
             { icon: Shield, label: '100% Authentic' },
             { icon: RotateCcw, label: 'Easy Returns' },
-            { icon: Star, label: 'Top Rated' },
+            { icon: Sparkles, label: 'Premium Crafted' },
           ].map(({ icon: Icon, label }) => (
             <div key={label} className="flex items-center gap-2.5 text-primary-foreground/80">
               <Icon size={16} className="text-accent" />
@@ -281,41 +276,6 @@ const Index = () => {
               View All Products <ArrowRight size={14} />
             </Link>
           </div>
-        </div>
-      </section>
-
-      {/* Testimonials */}
-      <section className="container mx-auto px-4 lg:px-8 py-16 lg:py-24">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          className="text-center mb-12"
-        >
-          <p className="text-xs font-body tracking-[0.3em] uppercase text-accent mb-3 flex items-center justify-center gap-3">
-            <span className="w-8 h-px bg-accent" /> Testimonials <span className="w-8 h-px bg-accent" />
-          </p>
-          <h2 className="text-3xl lg:text-5xl font-heading font-bold">What Our Customers Say</h2>
-        </motion.div>
-        <div className="grid md:grid-cols-3 gap-6 lg:gap-8">
-          {testimonials.map((t, i) => (
-            <motion.div
-              key={i}
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: i * 0.15 }}
-              className="glass p-6 lg:p-8 rounded-2xl shadow-premium hover:shadow-premium-lg transition-all duration-300 group hover:-translate-y-1 border border-transparent hover:border-accent/20"
-            >
-              <div className="flex gap-0.5 mb-4">
-                {Array.from({ length: 5 }).map((_, j) => (
-                  <Star key={j} size={14} className={j < t.rating ? 'fill-accent text-accent' : 'text-border'} />
-                ))}
-              </div>
-              <p className="text-sm font-body text-foreground/80 leading-relaxed mb-4 italic">"{t.text}"</p>
-              <p className="text-xs font-body tracking-wider uppercase text-muted-foreground font-medium">— {t.name}</p>
-            </motion.div>
-          ))}
         </div>
       </section>
 
