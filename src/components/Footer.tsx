@@ -1,14 +1,33 @@
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Mail, Phone, MapPin, Instagram, Facebook } from 'lucide-react';
-
-// Minimal TikTok glyph (lucide doesn't ship one)
-const TikTokIcon = ({ size = 16 }: { size?: number }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-    <path d="M19.5 7.4a6.6 6.6 0 0 1-3.9-1.3v8.4a5.6 5.6 0 1 1-5.6-5.6c.3 0 .6 0 .9.1v2.8a2.8 2.8 0 1 0 2 2.7V2h2.7a3.9 3.9 0 0 0 3.9 3.9v1.5z" />
-  </svg>
-);
+import { Mail, Phone, MapPin, Instagram, Facebook, Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 
 const Footer = () => {
+  const [email, setEmail] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+
+  const subscribe = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const value = email.trim().toLowerCase();
+    if (!value || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
+      toast.error('Please enter a valid email address');
+      return;
+    }
+    setSubmitting(true);
+    const { error } = await (supabase as any)
+      .from('newsletter_subscribers')
+      .insert({ email: value, source: 'footer' });
+    setSubmitting(false);
+    if (error && !String(error.message).toLowerCase().includes('duplicate')) {
+      toast.error(error.message);
+      return;
+    }
+    toast.success('Welcome to the Delilar family ✨');
+    setEmail('');
+  };
+
   return (
     <footer className="bg-primary text-primary-foreground">
       {/* Newsletter */}
@@ -17,16 +36,23 @@ const Footer = () => {
           <p className="text-xs font-body tracking-[0.3em] uppercase text-accent mb-3">Stay Updated</p>
           <h3 className="text-2xl lg:text-3xl font-heading font-bold mb-3">Join the Delilar Family</h3>
           <p className="text-primary-foreground/50 font-body text-sm mb-6 max-w-md mx-auto">Get exclusive offers, new arrivals, and style tips delivered to your inbox.</p>
-          <div className="flex max-w-md mx-auto">
+          <form onSubmit={subscribe} className="flex max-w-md mx-auto">
             <input
               type="email"
+              required
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
               placeholder="Your email address"
               className="flex-1 bg-primary-foreground/10 text-primary-foreground text-sm px-5 py-3.5 outline-none border border-primary-foreground/15 rounded-l-xl placeholder:text-primary-foreground/30 font-body focus:border-accent transition-colors"
             />
-            <button className="bg-accent text-foreground px-8 py-3.5 text-sm font-body tracking-wider uppercase rounded-l-none rounded-r-xl font-semibold hover:shadow-[0_0_20px_hsl(43_72%_52%/0.4)] transition-all duration-300">
-              Join
+            <button
+              type="submit"
+              disabled={submitting}
+              className="bg-accent text-foreground px-8 py-3.5 text-sm font-body tracking-wider uppercase rounded-l-none rounded-r-xl font-semibold hover:shadow-[0_0_20px_hsl(43_72%_52%/0.4)] transition-all duration-300 inline-flex items-center justify-center gap-2 disabled:opacity-70"
+            >
+              {submitting ? <Loader2 size={14} className="animate-spin" /> : 'Join'}
             </button>
-          </div>
+          </form>
         </div>
       </div>
 
@@ -41,13 +67,12 @@ const Footer = () => {
               <h3 className="text-2xl font-heading font-bold tracking-[0.15em]">DELILAR</h3>
             </div>
             <p className="text-primary-foreground/50 text-sm leading-relaxed font-body">
-              Premium Islamic fashion & luxury attar. Crafted for the modern man who values tradition and style.
+              Premium Islamic fashion & lifestyle brand. Jubba, Panjabi, T-Shirts, Polo Shirts, Pants, Bags, Attars and more — crafted for the modern Muslim man.
             </p>
             <div className="flex gap-3 mt-5">
               {[
-                { Icon: Facebook, href: 'https://facebook.com/delilar', label: 'Facebook' },
-                { Icon: Instagram, href: 'https://instagram.com/delilar', label: 'Instagram' },
-                { Icon: TikTokIcon, href: 'https://tiktok.com/@delilar', label: 'TikTok' },
+                { Icon: Facebook, href: 'https://facebook.com/delilar.shop', label: 'Facebook' },
+                { Icon: Instagram, href: 'https://instagram.com/delilar.shop', label: 'Instagram' },
               ].map(({ Icon, href, label }) => (
                 <a
                   key={label}
@@ -63,17 +88,18 @@ const Footer = () => {
             </div>
           </div>
 
-          {/* Quick Links */}
+          {/* Shop */}
           <div>
-            <h4 className="text-sm font-body tracking-widest uppercase mb-5 text-accent font-medium">Quick Links</h4>
+            <h4 className="text-sm font-body tracking-widest uppercase mb-5 text-accent font-medium">Shop</h4>
             <ul className="space-y-3">
               {[
-                { label: 'Eid Collection', href: '/eid' },
-                { label: 'T-Shirts', href: '/tshirts' },
                 { label: 'Jubba / Thobe', href: '/jubba' },
                 { label: 'Panjabi', href: '/panjabi' },
-                { label: 'Attar', href: '/attar' },
-                { label: 'Accessories', href: '/accessories' },
+                { label: 'T-Shirts', href: '/tshirts' },
+                { label: 'Polo Shirts', href: '/polo' },
+                { label: 'Pants', href: '/pants' },
+                { label: 'Bags', href: '/bags' },
+                { label: 'Attar & Perfume', href: '/attar' },
               ].map((item) => (
                 <li key={item.label}>
                   <Link to={item.href} className="text-sm text-primary-foreground/50 hover:text-accent transition-colors font-body">
@@ -88,11 +114,19 @@ const Footer = () => {
           <div>
             <h4 className="text-sm font-body tracking-widest uppercase mb-5 text-accent font-medium">Policies</h4>
             <ul className="space-y-3">
-              {['Privacy Policy', 'Return Policy', 'Terms & Conditions', 'Shipping Info', 'About Us'].map((item) => (
-                <li key={item}>
-                  <span className="text-sm text-primary-foreground/50 hover:text-accent transition-colors cursor-pointer font-body">
-                    {item}
-                  </span>
+              {[
+                { label: 'Shipping Policy', href: '/policies/shipping' },
+                { label: 'Terms & Conditions', href: '/policies/terms' },
+                { label: 'Privacy Policy', href: '/policies/privacy' },
+                { label: 'Payment Policy', href: '/policies/payment' },
+                { label: 'Gift / Reward Policy', href: '/policies/rewards' },
+                { label: 'Exchange & Returns', href: '/policies/exchange' },
+                { label: 'About Delilar', href: '/about' },
+              ].map((item) => (
+                <li key={item.label}>
+                  <Link to={item.href} className="text-sm text-primary-foreground/50 hover:text-accent transition-colors font-body">
+                    {item.label}
+                  </Link>
                 </li>
               ))}
             </ul>
@@ -103,17 +137,29 @@ const Footer = () => {
             <h4 className="text-sm font-body tracking-widest uppercase mb-5 text-accent font-medium">Contact</h4>
             <div className="space-y-3 text-sm text-primary-foreground/50 font-body">
               {[
-                { icon: Mail, text: 'support@delilar.com' },
-                { icon: Phone, text: '+880 1234-567890' },
+                { icon: Mail, text: 'delilar.shop@gmail.com', href: 'mailto:delilar.shop@gmail.com' },
+                { icon: Phone, text: '+880 1533-413290', href: 'tel:+8801533413290' },
                 { icon: MapPin, text: 'Dhaka, Bangladesh' },
-              ].map(({ icon: Icon, text }) => (
+              ].map(({ icon: Icon, text, href }) => (
                 <div key={text} className="flex items-center gap-3">
                   <div className="w-8 h-8 rounded-lg bg-primary-foreground/10 flex items-center justify-center flex-shrink-0">
                     <Icon size={14} className="text-accent" />
                   </div>
-                  <span>{text}</span>
+                  {href ? (
+                    <a href={href} className="hover:text-accent transition-colors">{text}</a>
+                  ) : (
+                    <span>{text}</span>
+                  )}
                 </div>
               ))}
+              <a
+                href="https://wa.me/8801533413290"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 mt-2 text-xs font-body tracking-wider uppercase text-accent hover:underline"
+              >
+                Chat on WhatsApp →
+              </a>
             </div>
           </div>
         </div>
@@ -133,9 +179,9 @@ const Footer = () => {
             </a>
           </p>
           <div className="flex gap-4 text-xs text-primary-foreground/30 font-body">
-            <span className="hover:text-accent cursor-pointer transition-colors">Privacy</span>
-            <span className="hover:text-accent cursor-pointer transition-colors">Terms</span>
-            <span className="hover:text-accent cursor-pointer transition-colors">Cookies</span>
+            <Link to="/policies/privacy" className="hover:text-accent transition-colors">Privacy</Link>
+            <Link to="/policies/terms" className="hover:text-accent transition-colors">Terms</Link>
+            <Link to="/policies/shipping" className="hover:text-accent transition-colors">Shipping</Link>
           </div>
         </div>
       </div>
