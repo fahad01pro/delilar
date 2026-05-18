@@ -815,6 +815,7 @@ const Admin = () => {
                     categories={categoryOptions}
                     save={saveProduct}
                     uploading={uploading}
+                    uploadFn={uploadImage}
                     onUpload={async (file) => {
                       const url = await uploadImage(file);
                       if (url) setProductDraft((draft) => draft ? { ...draft, image: url, imagesText: [draft.imagesText, url].filter(Boolean).join('\n') } : draft);
