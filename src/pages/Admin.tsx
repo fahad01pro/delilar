@@ -87,7 +87,7 @@ type ProductDraft = {
   imagesText: string;
   sizesText: string;
   colorsText: string;
-  colorVariantsText: string;
+  colorVariants: ColorVariantDraft[];
   fabricText: string;
   material: string;
   fitType: string;
