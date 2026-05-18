@@ -1,6 +1,8 @@
 import { useState, useMemo, useEffect, useCallback } from 'react';
 import { useParams, useSearchParams, Link } from 'react-router-dom';
-import { getProductsByCategory, categories, Product } from '@/data/products';
+import { categories, type Product } from '@/data/products';
+import { useProductsByCategory, useCategoryBanner } from '@/hooks/useCatalog';
+import { resolveImage } from '@/lib/imageAssets';
 import ProductCard from '@/components/ProductCard';
 import { SlidersHorizontal, X, ChevronLeft, ChevronRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
