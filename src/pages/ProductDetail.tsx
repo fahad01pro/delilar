@@ -23,33 +23,46 @@ import tshirtImg from '@/assets/category-tshirts.jpg';
 import jubbaImg from '@/assets/category-jubba.jpg';
 import panjabiImg from '@/assets/category-panjabi.jpg';
 import attarImg from '@/assets/category-attar.jpg';
+import poloImg from '@/assets/category-polo.jpg';
+import bagsImg from '@/assets/category-bags.jpg';
+import capsImg from '@/assets/category-caps.jpg';
+import perfumeImg from '@/assets/category-perfume.jpg';
+import streetwearImg from '@/assets/category-streetwear.jpg';
 
 const categoryImageMap: Record<Product['category'], string> = {
   tshirts: tshirtImg,
   jubba: jubbaImg,
   panjabi: panjabiImg,
   attar: attarImg,
+  perfume: perfumeImg,
   eid: jubbaImg,
-  accessories: heroImg,
+  accessories: bagsImg,
+  polo: poloImg,
+  shirts: poloImg,
+  pants: streetwearImg,
+  hoodies: streetwearImg,
+  caps: capsImg,
+  bags: bagsImg,
+  wallets: bagsImg,
+  kuffiyah: capsImg,
+  turban: capsImg,
 };
 
-const buildGallery = (product: Product): string[] => {
+const buildGallery = (product: Product, activeColor?: string): string[] => {
+  // 1) variant-driven images win
+  if (activeColor && product.colorVariants) {
+    const v = product.colorVariants.find((cv) => cv.name === activeColor);
+    if (v && v.images.length) return v.images;
+  }
+  // 2) first variant fallback
+  if (product.colorVariants && product.colorVariants.length) {
+    return product.colorVariants[0].images;
+  }
+  // 3) explicit images
   if (product.images && product.images.length) return product.images;
+  // 4) category-based fallback
   const primary = categoryImageMap[product.category] || heroImg;
-  // build 4 visually-distinct gallery slots by reusing assets
-  return [primary, heroImg, primary, categoryImageMap[product.category] || heroImg];
-};
-
-const fragranceFor = (p: Product): string[] | null =>
-  p.category === 'attar'
-    ? ['Original', 'Intense', 'Noir Edition']
-    : null;
-
-const materialFor = (p: Product): string[] | null => {
-  if (p.category === 'tshirts') return ['Premium Cotton', 'Bamboo Blend'];
-  if (p.category === 'jubba' || p.category === 'panjabi' || p.category === 'eid')
-    return ['Cotton', 'Semi-Silk', 'Pure Silk'];
-  return null;
+  return [primary, heroImg, primary, primary];
 };
 
 const ProductDetail = () => {
@@ -58,28 +71,38 @@ const ProductDetail = () => {
   const { addItem, setIsCartOpen } = useCart();
   const { toggle: toggleWish, has: hasWish } = useWishlist();
 
-  const gallery = useMemo(() => (product ? buildGallery(product) : []), [product]);
-  const fragrances = useMemo(() => (product ? fragranceFor(product) : null), [product]);
-  const materials = useMemo(() => (product ? materialFor(product) : null), [product]);
+  const initialColor = product?.colorVariants?.[0]?.name || product?.colors?.[0] || '';
+  const initialVolume = product?.volumeOptions?.[0] || '';
 
   const [activeImg, setActiveImg] = useState(0);
   const [selectedSize, setSelectedSize] = useState('');
-  const [selectedColor, setSelectedColor] = useState('');
-  const [selectedFragrance, setSelectedFragrance] = useState('');
-  const [selectedMaterial, setSelectedMaterial] = useState('');
+  const [selectedColor, setSelectedColor] = useState(initialColor);
+  const [selectedVolume, setSelectedVolume] = useState(initialVolume);
+  const [selectedFabric, setSelectedFabric] = useState('');
   const [quantity, setQuantity] = useState(1);
   const [zoomOpen, setZoomOpen] = useState(false);
   const [adding, setAdding] = useState(false);
+  const [unit, setUnit] = useState<'in' | 'cm'>('in');
+
+  const gallery = useMemo(
+    () => (product ? buildGallery(product, selectedColor) : []),
+    [product, selectedColor]
+  );
+
+  // Reset image index when variant images change
+  useEffect(() => {
+    setActiveImg(0);
+  }, [selectedColor]);
 
   useEffect(() => {
     setActiveImg(0);
     setQuantity(1);
     setSelectedSize('');
-    setSelectedColor('');
-    setSelectedFragrance('');
-    setSelectedMaterial('');
+    setSelectedColor(product?.colorVariants?.[0]?.name || product?.colors?.[0] || '');
+    setSelectedVolume(product?.volumeOptions?.[0] || '');
+    setSelectedFabric('');
     window.scrollTo({ top: 0, behavior: 'smooth' });
-  }, [id]);
+  }, [id, product]);
 
   if (!product) {
     return (
@@ -354,21 +377,44 @@ const ProductDetail = () => {
               {product.description}
             </p>
 
-            {/* Variants */}
-            {product.colors && (
+            {/* Color swatches (preferred when variants exist) */}
+            {product.colorVariants && product.colorVariants.length > 0 ? (
+              <div className="mb-6">
+                <p className="text-xs font-body tracking-[0.25em] uppercase mb-3 font-semibold text-foreground">
+                  Color {selectedColor && <span className="text-muted-foreground font-normal normal-case tracking-normal">— {selectedColor}</span>}
+                </p>
+                <div className="flex flex-wrap gap-3">
+                  {product.colorVariants.map((cv) => (
+                    <button
+                      key={cv.name}
+                      onClick={() => setSelectedColor(cv.name)}
+                      aria-label={cv.name}
+                      title={cv.name}
+                      className={`relative w-11 h-11 rounded-full transition-all duration-300 ${
+                        selectedColor === cv.name
+                          ? 'ring-2 ring-offset-2 ring-[hsl(var(--burgundy))] ring-offset-[hsl(var(--cream))] scale-110'
+                          : 'ring-1 ring-[hsl(var(--burgundy)/0.2)] hover:scale-105'
+                      }`}
+                      style={{ backgroundColor: cv.hex }}
+                    />
+                  ))}
+                </div>
+              </div>
+            ) : product.colors ? (
               <VariantGroup
                 label="Color"
                 options={product.colors}
                 selected={selectedColor}
                 onSelect={setSelectedColor}
               />
-            )}
+            ) : null}
 
-            {product.sizes && (
+            {/* Sizes (clothing only) */}
+            {product.sizes && product.productType === 'clothing' && (
               <div className="mb-6">
                 <div className="flex items-center justify-between mb-3">
                   <p className="text-xs font-body tracking-[0.25em] uppercase font-semibold text-foreground">Size</p>
-                  <SizeGuideDialog category={product.category} />
+                  <SizeGuideDialog category={product.category} unit={unit} setUnit={setUnit} />
                 </div>
                 <div className="flex flex-wrap gap-2">
                   {product.sizes.map((size) => (
@@ -388,24 +434,63 @@ const ProductDetail = () => {
               </div>
             )}
 
-            {fragrances && (
+            {/* Volume (perfume / attar) */}
+            {product.volumeOptions && product.volumeOptions.length > 0 && (
               <VariantGroup
-                label="Fragrance"
-                options={fragrances}
-                selected={selectedFragrance}
-                onSelect={setSelectedFragrance}
+                label="Volume"
+                options={product.volumeOptions}
+                selected={selectedVolume}
+                onSelect={setSelectedVolume}
                 icon={<Sparkles size={12} className="text-[hsl(var(--gold))]" />}
               />
             )}
 
-            {materials && (
+            {/* Fabric (clothing only, optional) */}
+            {product.fabric && product.fabric.length > 1 && (
               <VariantGroup
                 label="Fabric"
-                options={materials}
-                selected={selectedMaterial}
-                onSelect={setSelectedMaterial}
+                options={product.fabric}
+                selected={selectedFabric}
+                onSelect={setSelectedFabric}
               />
             )}
+
+            {/* Fragrance notes pyramid (perfume) */}
+            {product.fragranceNotes && (
+              <div className="mb-6 rounded-2xl bg-[hsl(var(--burgundy))] text-[hsl(var(--cream))] p-5">
+                <p className="text-[10px] tracking-[0.3em] uppercase text-[hsl(var(--gold))] mb-4 font-body">Fragrance Pyramid</p>
+                <div className="space-y-3 text-sm font-body">
+                  <NoteRow label="Top" notes={product.fragranceNotes.top} />
+                  <NoteRow label="Heart" notes={product.fragranceNotes.heart} />
+                  <NoteRow label="Base" notes={product.fragranceNotes.base} />
+                </div>
+                {(product.longevity || product.projection) && (
+                  <div className="grid grid-cols-2 gap-3 mt-5 pt-5 border-t border-[hsl(var(--gold)/0.25)]">
+                    {product.longevity && (
+                      <div>
+                        <p className="text-[10px] tracking-[0.25em] uppercase text-[hsl(var(--gold))] mb-1">Longevity</p>
+                        <p className="text-sm font-body">{product.longevity}</p>
+                      </div>
+                    )}
+                    {product.projection && (
+                      <div>
+                        <p className="text-[10px] tracking-[0.25em] uppercase text-[hsl(var(--gold))] mb-1">Projection</p>
+                        <p className="text-sm font-body">{product.projection}</p>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Material card (accessories) */}
+            {product.productType === 'accessories' && product.material && (
+              <div className="mb-6 rounded-2xl bg-[hsl(var(--cream))] border border-[hsl(var(--burgundy)/0.12)] p-4">
+                <p className="text-[10px] tracking-[0.3em] uppercase text-[hsl(var(--burgundy))] mb-1 font-body">Material</p>
+                <p className="text-sm font-body text-foreground">{product.material}</p>
+              </div>
+            )}
+
 
             {/* Quantity + Actions */}
             <div className="flex items-stretch gap-3 mb-3">
@@ -764,39 +849,81 @@ const DetailItem = ({ value, title, children }: { value: string; title: string; 
   </AccordionItem>
 );
 
-const SizeGuideDialog = ({ category }: { category: Product['category'] }) => {
+const NoteRow = ({ label, notes }: { label: string; notes: string[] }) => (
+  <div className="flex items-start gap-3">
+    <span className="text-[10px] tracking-[0.25em] uppercase text-[hsl(var(--gold))] w-12 shrink-0 pt-0.5">{label}</span>
+    <span className="text-sm font-body text-[hsl(var(--cream))]">{notes.join(' · ')}</span>
+  </div>
+);
+
+const SizeGuideDialog = ({
+  category,
+  unit,
+  setUnit,
+}: {
+  category: Product['category'];
+  unit: 'in' | 'cm';
+  setUnit: (u: 'in' | 'cm') => void;
+}) => {
   const isThobe = category === 'jubba' || category === 'eid';
   const isPanjabi = category === 'panjabi';
+  const isPants = category === 'pants';
 
-  const rows = isThobe
+  // inches base data
+  const rowsIn = isThobe
     ? [
-        ['52', '38', '56', '142'],
-        ['54', '40', '58', '144'],
-        ['56', '42', '60', '146'],
-        ['58', '44', '62', '148'],
-        ['60', '46', '64', '150'],
+        ['S', '40', '17', '56'],
+        ['M', '42', '18', '57'],
+        ['L', '44', '19', '58'],
+        ['XL', '46', '19.5', '59'],
+        ['2XL', '48', '20', '60'],
+        ['3XL', '50', '20.5', '61'],
       ]
     : isPanjabi
     ? [
-        ['38', '38', '28', '38'],
-        ['40', '40', '29', '39'],
-        ['42', '42', '30', '40'],
-        ['44', '44', '31', '41'],
-        ['46', '46', '32', '42'],
+        ['S', '38', '17', '38'],
+        ['M', '40', '17.5', '39'],
+        ['L', '42', '18', '40'],
+        ['XL', '44', '18.5', '41'],
+        ['2XL', '46', '19', '42'],
+      ]
+    : isPants
+    ? [
+        ['28', '28', '38', '40'],
+        ['30', '30', '40', '40.5'],
+        ['32', '32', '42', '41'],
+        ['34', '34', '44', '41.5'],
+        ['36', '36', '46', '42'],
+        ['38', '38', '48', '42.5'],
       ]
     : [
+        ['XS', '34–36', '26–28', '25'],
         ['S', '36–38', '28–30', '26'],
         ['M', '38–40', '30–32', '27'],
         ['L', '40–42', '32–34', '28'],
         ['XL', '42–44', '34–36', '29'],
-        ['XXL', '44–46', '36–38', '30'],
+        ['2XL', '44–46', '36–38', '30'],
+        ['3XL', '46–48', '38–40', '31'],
       ];
 
   const headers = isThobe
-    ? ['Size', 'Chest', 'Shoulder', 'Length (cm)']
+    ? ['Size', 'Chest', 'Shoulder', 'Length']
     : isPanjabi
     ? ['Size', 'Chest', 'Shoulder', 'Length']
+    : isPants
+    ? ['Size', 'Waist', 'Hip', 'Length']
     : ['Size', 'Chest', 'Waist', 'Length'];
+
+  const toCm = (v: string) => {
+    // single number or range "x–y"
+    const conv = (n: string) => (Number.isFinite(+n) ? Math.round(+n * 2.54).toString() : n);
+    if (v.includes('–')) {
+      return v.split('–').map(conv).join('–');
+    }
+    return Number.isFinite(+v) ? conv(v) : v;
+  };
+
+  const rows = rowsIn.map((r) => [r[0], ...r.slice(1).map((cell) => (unit === 'cm' ? toCm(cell) : cell))]);
 
   return (
     <Dialog>
@@ -806,8 +933,27 @@ const SizeGuideDialog = ({ category }: { category: Product['category'] }) => {
         </button>
       </DialogTrigger>
       <DialogContent className="max-w-lg bg-[hsl(var(--cream))] border-[hsl(var(--burgundy)/0.15)]">
-        <h3 className="text-xl font-heading font-bold text-[hsl(var(--charcoal))] mb-1">Size Guide</h3>
-        <p className="text-xs font-body text-muted-foreground mb-5">All measurements in inches unless noted.</p>
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="text-xl font-heading font-bold text-[hsl(var(--charcoal))]">Size Guide</h3>
+          <div className="flex rounded-full bg-[hsl(var(--burgundy)/0.08)] p-1">
+            {(['in', 'cm'] as const).map((u) => (
+              <button
+                key={u}
+                onClick={() => setUnit(u)}
+                className={`px-3 py-1 text-[11px] font-body tracking-wider uppercase rounded-full transition-all ${
+                  unit === u
+                    ? 'bg-[hsl(var(--burgundy))] text-[hsl(var(--cream))]'
+                    : 'text-[hsl(var(--burgundy))]'
+                }`}
+              >
+                {u === 'in' ? 'Inches' : 'CM'}
+              </button>
+            ))}
+          </div>
+        </div>
+        <p className="text-xs font-body text-muted-foreground mb-5">
+          All measurements in {unit === 'in' ? 'inches' : 'centimeters'}. Body measurements, not garment.
+        </p>
         <div className="overflow-x-auto rounded-xl border border-[hsl(var(--burgundy)/0.12)]">
           <table className="w-full text-sm font-body">
             <thead className="bg-[hsl(var(--burgundy))] text-[hsl(var(--cream))]">
@@ -820,8 +966,8 @@ const SizeGuideDialog = ({ category }: { category: Product['category'] }) => {
             <tbody>
               {rows.map((r, i) => (
                 <tr key={i} className={i % 2 === 0 ? 'bg-[hsl(var(--cream))]' : 'bg-[hsl(var(--cream-dark))]'}>
-                  {r.map((c, j) => (
-                    <td key={j} className="px-4 py-3 text-foreground">{c}</td>
+                  {r.map((cell, j) => (
+                    <td key={j} className="px-4 py-3 text-foreground">{cell}</td>
                   ))}
                 </tr>
               ))}
