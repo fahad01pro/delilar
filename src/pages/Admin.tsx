@@ -187,6 +187,56 @@ type BannerDraft = { id?: string; title: string; subtitle: string; eyebrow: stri
 type CategoryBannerDraft = { id?: string; category: string; title: string; subtitle: string; image_url: string; enabled: boolean };
 type ContentDraft = { id?: string; content_key: string; type: string; title: string; subtitle: string; body: string; image_url: string; cta_label: string; cta_href: string; sort_order: string; enabled: boolean };
 
+type OutletRow = {
+  id: string;
+  name: string;
+  address: string;
+  city?: string | null;
+  phone?: string | null;
+  whatsapp?: string | null;
+  hours?: string | null;
+  email?: string | null;
+  map_embed_url?: string | null;
+  map_link?: string | null;
+  image_url?: string | null;
+  enabled: boolean;
+  is_primary: boolean;
+  sort_order: number;
+};
+type OutletDraft = {
+  id?: string;
+  name: string;
+  address: string;
+  city: string;
+  phone: string;
+  whatsapp: string;
+  hours: string;
+  email: string;
+  map_embed_url: string;
+  map_link: string;
+  image_url: string;
+  enabled: boolean;
+  is_primary: boolean;
+  sort_order: string;
+};
+
+const outletToDraft = (outlet?: OutletRow): OutletDraft => ({
+  id: outlet?.id,
+  name: outlet?.name ?? '',
+  address: outlet?.address ?? '',
+  city: outlet?.city ?? '',
+  phone: outlet?.phone ?? '',
+  whatsapp: outlet?.whatsapp ?? '',
+  hours: outlet?.hours ?? '',
+  email: outlet?.email ?? '',
+  map_embed_url: outlet?.map_embed_url ?? '',
+  map_link: outlet?.map_link ?? '',
+  image_url: outlet?.image_url ?? '',
+  enabled: outlet?.enabled ?? true,
+  is_primary: outlet?.is_primary ?? false,
+  sort_order: String(outlet?.sort_order ?? 0),
+});
+
 const db = supabase as any;
 
 const productTypes: ProductType[] = ['clothing', 'accessories', 'perfume'];
