@@ -24,16 +24,14 @@ const policies: Record<string, Policy> = {
       {
         heading: 'Delivery Timeline',
         body: [
-          'Inside Dhaka: 1–2 business days after dispatch.',
-          'Outside Dhaka: 3–5 business days after dispatch.',
+          'Estimated delivery time across all Bangladesh: 3–5 business days.',
           'Orders are processed within 24 hours of confirmation (excluding Fridays).',
         ],
       },
       {
         heading: 'Shipping Charges',
         body: [
-          'Inside Dhaka: ৳60 flat.',
-          'Outside Dhaka: ৳120 flat.',
+          'Flat Delivery Charge: ৳150 across Bangladesh.',
           'FREE shipping on every order above ৳5,000.',
         ],
       },
