@@ -306,27 +306,10 @@ const ProductDetail = () => {
               Crafted with care — a Sunnah-inspired piece of timeless elegance.
             </p>
 
-            {/* Rating row */}
+            {/* Meta row */}
             <div className="flex flex-wrap items-center gap-x-5 gap-y-2 mb-6 pb-6 border-b border-[hsl(var(--burgundy)/0.12)]">
-              <div className="flex items-center gap-2">
-                <div className="flex gap-0.5">
-                  {Array.from({ length: 5 }).map((_, i) => (
-                    <Star
-                      key={i}
-                      size={16}
-                      className={i < Math.floor(product.rating) ? 'fill-[hsl(var(--gold))] text-[hsl(var(--gold))]' : 'text-border'}
-                    />
-                  ))}
-                </div>
-                <span className="text-sm font-body font-semibold text-foreground">{product.rating.toFixed(1)}</span>
-                <a href="#reviews" className="text-xs font-body text-muted-foreground hover:text-[hsl(var(--burgundy))] underline-offset-4 hover:underline">
-                  ({product.reviews} reviews)
-                </a>
-              </div>
-              <span className="text-xs font-body text-muted-foreground flex items-center gap-1.5">
-                <Package size={13} className="text-[hsl(var(--gold))]" /> {soldCount}+ sold
-              </span>
               <span className="text-xs font-body text-muted-foreground">SKU: <span className="text-foreground">{sku}</span></span>
+              <span className="text-xs font-body text-muted-foreground capitalize">Category: <span className="text-foreground">{product.category}</span></span>
             </div>
 
             {/* Price */}
@@ -349,7 +332,7 @@ const ProductDetail = () => {
               Inclusive of VAT. Free shipping on orders over ৳5,000.
             </p>
 
-            {/* Stock badge */}
+            {/* Stock badge — never expose exact quantities */}
             <div className="mb-6">
               {product.inStock ? (
                 <span className="inline-flex items-center gap-2 text-xs font-body text-green-700 bg-green-500/10 px-3 py-1.5 rounded-full">
@@ -357,9 +340,9 @@ const ProductDetail = () => {
                   In Stock — Ready to ship
                 </span>
               ) : (
-                <span className="inline-flex items-center gap-2 text-xs font-body text-destructive bg-destructive/10 px-3 py-1.5 rounded-full">
+                <span className="inline-flex items-center gap-2 text-xs font-body text-destructive bg-destructive/15 px-3 py-1.5 rounded-full font-semibold uppercase tracking-wider">
                   <span className="w-1.5 h-1.5 rounded-full bg-destructive" />
-                  Currently Unavailable
+                  Out of Stock
                 </span>
               )}
             </div>
