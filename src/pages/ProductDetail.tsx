@@ -5,8 +5,8 @@ import { useProduct, useProductsByCategory } from '@/hooks/useCatalog';
 import { useCart } from '@/context/CartContext';
 import { useWishlist } from '@/context/WishlistContext';
 import {
-  Star, Minus, Plus, Truck, RotateCcw, Shield, Heart, Share2,
-  ChevronLeft, ChevronRight, ZoomIn, X, BadgeCheck, Package,
+  Minus, Plus, Truck, RotateCcw, Shield, Heart, Share2,
+  ChevronLeft, ChevronRight, ZoomIn, X, BadgeCheck,
   Headphones, CreditCard, Ruler, MapPin, Clock, Copy, Facebook,
   Twitter, MessageCircle, Sparkles,
 } from 'lucide-react';
