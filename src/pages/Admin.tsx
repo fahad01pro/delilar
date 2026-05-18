@@ -1349,6 +1349,33 @@ const Field = ({ label, value, onChange, type = 'text', placeholder, rows }: { l
   </label>
 );
 
+const STANDARD_SIZES = ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL', '2XL', '3XL', '28', '30', '32', '34', '36', '38', '40'];
+const SizesPicker = ({ value, onChange }: { value: string; onChange: (v: string) => void }) => {
+  const selected = new Set(value.split(',').map((s) => s.trim()).filter(Boolean));
+  const toggle = (size: string) => {
+    const next = new Set(selected);
+    next.has(size) ? next.delete(size) : next.add(size);
+    onChange(Array.from(next).join(', '));
+  };
+  return (
+    <div className="rounded-xl border border-border bg-background p-4">
+      <div className="flex items-center justify-between mb-3">
+        <span className="text-[10px] uppercase tracking-[0.22em] text-muted-foreground font-body">Sizes</span>
+        <button type="button" onClick={() => onChange('XS, S, M, L, XL, XXL, XXXL')} className="text-[10px] uppercase tracking-[0.18em] text-accent hover:underline">Select All Apparel</button>
+      </div>
+      <div className="flex flex-wrap gap-1.5 mb-3">
+        {STANDARD_SIZES.map((size) => {
+          const active = selected.has(size);
+          return (
+            <button key={size} type="button" onClick={() => toggle(size)} className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-all ${active ? 'bg-accent text-accent-foreground border-accent shadow-sm' : 'bg-background text-muted-foreground border-border hover:border-accent hover:text-foreground'}`}>{size}</button>
+          );
+        })}
+      </div>
+      <input type="text" value={value} onChange={(e) => onChange(e.target.value)} placeholder="Or type custom sizes, comma-separated" className="w-full rounded-lg border border-border bg-background px-3 py-2 text-xs outline-none focus:border-accent focus:ring-2 focus:ring-accent/20" />
+    </div>
+  );
+};
+
 const SelectField = ({ label, value, onChange, options }: { label: string; value: string; onChange: (value: string) => void; options: { value: string; label: string }[] }) => (
   <label className="block">
     <span className="mb-1.5 block text-[10px] uppercase tracking-[0.22em] text-muted-foreground font-body">{label}</span>
