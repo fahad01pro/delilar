@@ -178,6 +178,41 @@ export function useCategoryBanner(category: string | undefined) {
 }
 
 // ───────────────────────────────────────────────
+// Outlets
+// ───────────────────────────────────────────────
+export interface Outlet {
+  id: string;
+  name: string;
+  address: string;
+  city?: string | null;
+  phone?: string | null;
+  whatsapp?: string | null;
+  hours?: string | null;
+  email?: string | null;
+  map_embed_url?: string | null;
+  map_link?: string | null;
+  image_url?: string | null;
+  enabled: boolean;
+  is_primary: boolean;
+  sort_order: number;
+}
+
+export function useOutlets() {
+  return useQuery({
+    queryKey: ['outlets'],
+    queryFn: async (): Promise<Outlet[]> => {
+      const { data, error } = await (supabase as any)
+        .from('outlets')
+        .select('*')
+        .eq('enabled', true)
+        .order('sort_order', { ascending: true });
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+}
+
+// ───────────────────────────────────────────────
 // Admin mutations
 // ───────────────────────────────────────────────
 export function useAdminProducts() {
