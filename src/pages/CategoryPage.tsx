@@ -28,6 +28,7 @@ const CategoryBanner = ({ products, categoryName, bannerImage }: { products: Pro
   }, [next]);
 
   if (bannerProducts.length === 0) return null;
+  const active = bannerProducts[current] ?? bannerProducts[0];
 
   return (
     <div className="relative h-[260px] lg:h-[340px] rounded-2xl overflow-hidden mb-10 shadow-premium-lg">
