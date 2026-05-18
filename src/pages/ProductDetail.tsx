@@ -562,7 +562,7 @@ const ProductDetail = () => {
               {[
                 { icon: BadgeCheck, text: '100% Authentic' },
                 { icon: Truck, text: 'Fast Delivery' },
-                { icon: RotateCcw, text: '7-Day Returns' },
+                { icon: RotateCcw, text: 'Easy Replacement' },
                 { icon: Headphones, text: '24/7 Support' },
               ].map(({ icon: Icon, text }) => (
                 <div key={text} className="flex items-center gap-3 p-3 rounded-xl bg-[hsl(var(--burgundy)/0.04)] border border-[hsl(var(--burgundy)/0.08)]">
@@ -577,64 +577,39 @@ const ProductDetail = () => {
         </div>
 
         {/* ============ DETAILS ACCORDION ============ */}
-        <section className="mt-16 lg:mt-24 max-w-5xl mx-auto">
+        <section className="mt-16 lg:mt-24 max-w-4xl mx-auto">
           <h2 className="text-2xl lg:text-3xl font-heading font-bold text-[hsl(var(--charcoal))] mb-6 text-center">
             Product Details
           </h2>
-          <Accordion type="multiple" defaultValue={['desc']} className="bg-[hsl(var(--cream))] rounded-2xl border border-[hsl(var(--burgundy)/0.12)] divide-y divide-[hsl(var(--burgundy)/0.08)] overflow-hidden">
-            <DetailItem value="desc" title="Description">
-              <p className="text-sm font-body leading-relaxed text-muted-foreground">{product.description}</p>
-              <p className="text-sm font-body leading-relaxed text-muted-foreground mt-3">
-                Each Delilar piece is meticulously selected to embody modesty, refinement, and modern Islamic elegance.
-                Crafted with premium materials and timeless detailing for the discerning gentleman.
-              </p>
-            </DetailItem>
-            <DetailItem value="material" title="Fabric & Material">
-              <ul className="text-sm font-body text-muted-foreground space-y-2 list-disc pl-5">
-                <li>Premium-grade, breathable fabric with a soft hand-feel</li>
-                <li>Reinforced stitching for long-lasting durability</li>
-                <li>Pre-shrunk and color-locked finish</li>
-                <li>Made in small batches for quality assurance</li>
-              </ul>
-            </DetailItem>
-            <DetailItem value="care" title="Care Instructions">
-              <ul className="text-sm font-body text-muted-foreground space-y-2 list-disc pl-5">
-                <li>Gentle machine wash cold with similar colors</li>
-                <li>Do not bleach. Iron on low heat if needed</li>
-                <li>Hang dry to preserve color and finish</li>
-                <li>Store in a cool, dry place</li>
-              </ul>
-            </DetailItem>
-            <DetailItem value="shipping" title="Shipping Information">
-              <p className="text-sm font-body text-muted-foreground leading-relaxed">
-                We ship nationwide via trusted couriers. Inside Dhaka: 1–2 business days. Outside Dhaka: 3–5 business days.
-                Free shipping on all orders over ৳5,000. Track your order anytime from your Delilar account.
-              </p>
-            </DetailItem>
-            <DetailItem value="returns" title="Return & Exchange Policy">
-              <p className="text-sm font-body text-muted-foreground leading-relaxed">
-                Not the right fit? Return or exchange within 7 days of delivery — unworn, with original tags and packaging.
-                Refunds are processed within 3–5 business days after inspection.
-              </p>
-            </DetailItem>
-            <DetailItem value="faq" title="FAQs">
-              <div className="space-y-4 text-sm font-body text-muted-foreground">
-                <div>
-                  <p className="font-semibold text-foreground mb-1">Is the color shown accurate?</p>
-                  <p>Colors are shot in natural light and may vary slightly on different screens.</p>
-                </div>
-                <div>
-                  <p className="font-semibold text-foreground mb-1">Do you offer cash on delivery?</p>
-                  <p>Yes, COD is available across Bangladesh along with secure online payment.</p>
-                </div>
-                <div>
-                  <p className="font-semibold text-foreground mb-1">How do I track my order?</p>
-                  <p>Visit your Delilar account dashboard for real-time order tracking.</p>
-                </div>
-              </div>
-            </DetailItem>
-          </Accordion>
+          {(() => {
+            const info = mergeInfoSections((product as any)?.infoSections);
+            return (
+              <Accordion type="multiple" defaultValue={['desc']} className="bg-[hsl(var(--cream))] rounded-2xl border border-[hsl(var(--burgundy)/0.12)] divide-y divide-[hsl(var(--burgundy)/0.08)] overflow-hidden">
+                <DetailItem value="desc" title="Description">
+                  <p className="text-sm font-body leading-relaxed text-muted-foreground whitespace-pre-line">
+                    {product.description}
+                  </p>
+                </DetailItem>
+                <DetailItem value="material" title="Fabric & Material">
+                  <RichInfo text={info.fabric} />
+                </DetailItem>
+                <DetailItem value="care" title="Care Instructions">
+                  <RichInfo text={info.care} />
+                </DetailItem>
+                <DetailItem value="shipping" title="Shipping Information">
+                  <RichInfo text={info.shipping} />
+                </DetailItem>
+                <DetailItem value="returns" title="Return & Exchange Policy">
+                  <RichInfo text={info.returns} />
+                </DetailItem>
+                <DetailItem value="faq" title="FAQs">
+                  <RichInfo text={info.faqs} />
+                </DetailItem>
+              </Accordion>
+            );
+          })()}
         </section>
+
 
         {/* ============ RELATED ============ */}
         {related.length > 0 && (
