@@ -182,6 +182,63 @@ export type Database = {
         }
         Relationships: []
       }
+      outlets: {
+        Row: {
+          address: string
+          city: string | null
+          created_at: string
+          email: string | null
+          enabled: boolean
+          hours: string | null
+          id: string
+          image_url: string | null
+          is_primary: boolean
+          map_embed_url: string | null
+          map_link: string | null
+          name: string
+          phone: string | null
+          sort_order: number
+          updated_at: string
+          whatsapp: string | null
+        }
+        Insert: {
+          address: string
+          city?: string | null
+          created_at?: string
+          email?: string | null
+          enabled?: boolean
+          hours?: string | null
+          id?: string
+          image_url?: string | null
+          is_primary?: boolean
+          map_embed_url?: string | null
+          map_link?: string | null
+          name: string
+          phone?: string | null
+          sort_order?: number
+          updated_at?: string
+          whatsapp?: string | null
+        }
+        Update: {
+          address?: string
+          city?: string | null
+          created_at?: string
+          email?: string | null
+          enabled?: boolean
+          hours?: string | null
+          id?: string
+          image_url?: string | null
+          is_primary?: boolean
+          map_embed_url?: string | null
+          map_link?: string | null
+          name?: string
+          phone?: string | null
+          sort_order?: number
+          updated_at?: string
+          whatsapp?: string | null
+        }
+        Relationships: []
+      }
       product_categories: {
         Row: {
           created_at: string

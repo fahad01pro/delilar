@@ -13,6 +13,7 @@ import {
   Loader2,
   LogOut,
   Mail,
+  MapPin,
   Package,
   PenLine,
   Plus,
@@ -38,8 +39,10 @@ import { resolveImage } from '@/lib/imageAssets';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 
-type AdminTab = 'overview' | 'products' | 'orders' | 'customers' | 'subscribers' | 'inventory' | 'content' | 'settings';
+type AdminTab = 'overview' | 'products' | 'orders' | 'customers' | 'subscribers' | 'inventory' | 'outlets' | 'content' | 'settings';
 type ProductType = 'clothing' | 'accessories' | 'perfume';
+
+type ColorVariantDraft = { name: string; hex: string; sku?: string; stock?: string; images: [string, string] };
 
 type ProductRow = {
   id: string;
@@ -85,7 +88,7 @@ type ProductDraft = {
   imagesText: string;
   sizesText: string;
   colorsText: string;
-  colorVariantsText: string;
+  colorVariants: ColorVariantDraft[];
   fabricText: string;
   material: string;
   fitType: string;
@@ -185,6 +188,56 @@ type BannerDraft = { id?: string; title: string; subtitle: string; eyebrow: stri
 type CategoryBannerDraft = { id?: string; category: string; title: string; subtitle: string; image_url: string; enabled: boolean };
 type ContentDraft = { id?: string; content_key: string; type: string; title: string; subtitle: string; body: string; image_url: string; cta_label: string; cta_href: string; sort_order: string; enabled: boolean };
 
+type OutletRow = {
+  id: string;
+  name: string;
+  address: string;
+  city?: string | null;
+  phone?: string | null;
+  whatsapp?: string | null;
+  hours?: string | null;
+  email?: string | null;
+  map_embed_url?: string | null;
+  map_link?: string | null;
+  image_url?: string | null;
+  enabled: boolean;
+  is_primary: boolean;
+  sort_order: number;
+};
+type OutletDraft = {
+  id?: string;
+  name: string;
+  address: string;
+  city: string;
+  phone: string;
+  whatsapp: string;
+  hours: string;
+  email: string;
+  map_embed_url: string;
+  map_link: string;
+  image_url: string;
+  enabled: boolean;
+  is_primary: boolean;
+  sort_order: string;
+};
+
+const outletToDraft = (outlet?: OutletRow): OutletDraft => ({
+  id: outlet?.id,
+  name: outlet?.name ?? '',
+  address: outlet?.address ?? '',
+  city: outlet?.city ?? '',
+  phone: outlet?.phone ?? '',
+  whatsapp: outlet?.whatsapp ?? '',
+  hours: outlet?.hours ?? '',
+  email: outlet?.email ?? '',
+  map_embed_url: outlet?.map_embed_url ?? '',
+  map_link: outlet?.map_link ?? '',
+  image_url: outlet?.image_url ?? '',
+  enabled: outlet?.enabled ?? true,
+  is_primary: outlet?.is_primary ?? false,
+  sort_order: String(outlet?.sort_order ?? 0),
+});
+
 const db = supabase as any;
 
 const productTypes: ProductType[] = ['clothing', 'accessories', 'perfume'];
@@ -208,7 +261,7 @@ const emptyProductDraft = (category = 'jubba'): ProductDraft => ({
   imagesText: '',
   sizesText: 'S, M, L, XL, 2XL',
   colorsText: '',
-  colorVariantsText: '',
+  colorVariants: [],
   fabricText: '',
   material: '',
   fitType: '',
@@ -237,14 +290,18 @@ const splitList = (value: string) =>
 const money = (value: number | string | null | undefined) => `৳${Number(value ?? 0).toLocaleString()}`;
 const shortId = (id: string) => id.slice(0, 8).toUpperCase();
 
-const parseJsonSafe = (value: string) => {
-  if (!value.trim()) return undefined;
-  try {
-    return JSON.parse(value);
-  } catch {
-    toast.error('Color variants must be valid JSON');
-    return null;
-  }
+const normalizeVariants = (raw: any): ColorVariantDraft[] => {
+  if (!Array.isArray(raw)) return [];
+  return raw.map((cv: any) => {
+    const images = Array.isArray(cv?.images) ? cv.images : [];
+    return {
+      name: String(cv?.name ?? ''),
+      hex: String(cv?.hex ?? '#000000'),
+      sku: cv?.sku ? String(cv.sku) : '',
+      stock: cv?.stock !== undefined && cv?.stock !== null ? String(cv.stock) : '',
+      images: [String(images[0] ?? ''), String(images[1] ?? '')] as [string, string],
+    };
+  });
 };
 
 const productToDraft = (product: ProductRow): ProductDraft => ({
@@ -264,7 +321,7 @@ const productToDraft = (product: ProductRow): ProductDraft => ({
   imagesText: (product.data?.images ?? []).join('\n'),
   sizesText: (product.data?.sizes ?? []).join(', '),
   colorsText: (product.data?.colors ?? []).join(', '),
-  colorVariantsText: product.data?.colorVariants ? JSON.stringify(product.data.colorVariants, null, 2) : '',
+  colorVariants: normalizeVariants(product.data?.colorVariants),
   fabricText: (product.data?.fabric ?? []).join(', '),
   material: product.data?.material ?? '',
   fitType: product.data?.fitType ?? '',
@@ -326,7 +383,7 @@ const Admin = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const segment = location.pathname.split('/')[2] as AdminTab | undefined;
-  const activeTab: AdminTab = segment && ['overview', 'products', 'orders', 'customers', 'subscribers', 'inventory', 'content', 'settings'].includes(segment) ? segment : 'overview';
+  const activeTab: AdminTab = segment && ['overview', 'products', 'orders', 'customers', 'subscribers', 'inventory', 'outlets', 'content', 'settings'].includes(segment) ? segment : 'overview';
 
   const [checkingAdmin, setCheckingAdmin] = useState(true);
   const [hasAdminAccess, setHasAdminAccess] = useState(false);
@@ -340,6 +397,8 @@ const Admin = () => {
   const [categoryBanners, setCategoryBanners] = useState<CategoryBannerRow[]>([]);
   const [siteContent, setSiteContent] = useState<ContentRow[]>([]);
   const [subscribers, setSubscribers] = useState<{ id: string; email: string; source: string; created_at: string }[]>([]);
+  const [outlets, setOutlets] = useState<OutletRow[]>([]);
+  const [outletDraft, setOutletDraft] = useState<OutletDraft | null>(null);
   const [productDraft, setProductDraft] = useState<ProductDraft | null>(null);
   const [categoryDraft, setCategoryDraft] = useState<CategoryDraft | null>(null);
   const [bannerDraft, setBannerDraft] = useState<BannerDraft | null>(null);
@@ -382,7 +441,7 @@ const Admin = () => {
   const loadAdminData = async () => {
     if (!user) return;
     setBusy(true);
-    const [productsRes, ordersRes, profilesRes, rolesRes, categoriesRes, heroRes, catBannerRes, contentRes, subsRes] = await Promise.all([
+    const [productsRes, ordersRes, profilesRes, rolesRes, categoriesRes, heroRes, catBannerRes, contentRes, subsRes, outletsRes] = await Promise.all([
       db.from('products').select('*').order('sort_order', { ascending: true }),
       db.from('orders').select('*').order('created_at', { ascending: false }),
       db.from('profiles').select('*').order('created_at', { ascending: false }),
@@ -392,9 +451,10 @@ const Admin = () => {
       db.from('category_banners').select('*').order('category', { ascending: true }),
       db.from('site_content').select('*').order('sort_order', { ascending: true }),
       db.from('newsletter_subscribers').select('*').order('created_at', { ascending: false }),
+      db.from('outlets').select('*').order('sort_order', { ascending: true }),
     ]);
 
-    const firstError = [productsRes, ordersRes, profilesRes, rolesRes, categoriesRes, heroRes, catBannerRes, contentRes, subsRes].find((result) => result.error)?.error;
+    const firstError = [productsRes, ordersRes, profilesRes, rolesRes, categoriesRes, heroRes, catBannerRes, contentRes, subsRes, outletsRes].find((result) => result.error)?.error;
     if (firstError) toast.error(firstError.message);
 
     setProducts(productsRes.data ?? []);
@@ -406,6 +466,7 @@ const Admin = () => {
     setCategoryBanners(catBannerRes.data ?? []);
     setSiteContent(contentRes.data ?? []);
     setSubscribers(subsRes.data ?? []);
+    setOutlets(outletsRes.data ?? []);
     setBusy(false);
   };
 
@@ -466,8 +527,15 @@ const Admin = () => {
     const id = productDraft.id.trim() || slugify(productDraft.name);
     if (!id) return toast.error('Product ID is required');
     if (reservedRoutes.has(id)) return toast.error('This product ID conflicts with a reserved route');
-    const variants = parseJsonSafe(productDraft.colorVariantsText);
-    if (variants === null) return;
+    const variants = productDraft.colorVariants
+      .map((cv) => ({
+        name: cv.name.trim(),
+        hex: cv.hex.trim() || '#000000',
+        sku: cv.sku?.trim() || undefined,
+        stock: cv.stock ? Number(cv.stock) : undefined,
+        images: cv.images.map((i) => i.trim()).filter(Boolean),
+      }))
+      .filter((cv) => cv.name && cv.images.length > 0);
     const price = Number(productDraft.price || 0);
     const originalPrice = productDraft.original_price ? Number(productDraft.original_price) : null;
     const stock = Number(productDraft.stock || 0);
@@ -481,7 +549,7 @@ const Admin = () => {
       fitType: productDraft.fitType.trim() || undefined,
       volumeOptions: splitList(productDraft.volumeOptionsText),
     };
-    if (variants) data.colorVariants = variants;
+    if (variants.length) data.colorVariants = variants;
 
     const payload = {
       id,
@@ -644,6 +712,40 @@ const Admin = () => {
     loadAdminData();
   };
 
+  const saveOutlet = async () => {
+    if (!outletDraft) return;
+    if (!outletDraft.name.trim() || !outletDraft.address.trim()) return toast.error('Outlet name and address are required');
+    const payload: any = {
+      name: outletDraft.name.trim(),
+      address: outletDraft.address.trim(),
+      city: outletDraft.city.trim() || null,
+      phone: outletDraft.phone.trim() || null,
+      whatsapp: outletDraft.whatsapp.trim() || null,
+      hours: outletDraft.hours.trim() || null,
+      email: outletDraft.email.trim() || null,
+      map_embed_url: outletDraft.map_embed_url.trim() || null,
+      map_link: outletDraft.map_link.trim() || null,
+      image_url: outletDraft.image_url.trim() || null,
+      enabled: outletDraft.enabled,
+      is_primary: outletDraft.is_primary,
+      sort_order: Number(outletDraft.sort_order || 0),
+    };
+    if (outletDraft.id) payload.id = outletDraft.id;
+    const { error } = await db.from('outlets').upsert(payload);
+    if (error) return toast.error(error.message);
+    toast.success('Outlet saved');
+    setOutletDraft(null);
+    loadAdminData();
+  };
+
+  const deleteOutlet = async (id: string) => {
+    if (!window.confirm('Delete this outlet?')) return;
+    const { error } = await db.from('outlets').delete().eq('id', id);
+    if (error) return toast.error(error.message);
+    toast.success('Outlet deleted');
+    loadAdminData();
+  };
+
   if (authLoading || checkingAdmin) {
     return (
       <AdminScreen>
@@ -802,6 +904,7 @@ const Admin = () => {
                     categories={categoryOptions}
                     save={saveProduct}
                     uploading={uploading}
+                    uploadFn={uploadImage}
                     onUpload={async (file) => {
                       const url = await uploadImage(file);
                       if (url) setProductDraft((draft) => draft ? { ...draft, image: url, imagesText: [draft.imagesText, url].filter(Boolean).join('\n') } : draft);
@@ -910,6 +1013,17 @@ const Admin = () => {
               <InventoryPanel products={products} />
             )}
 
+            {activeTab === 'outlets' && (
+              <OutletsPanel
+                outlets={outlets}
+                draft={outletDraft}
+                setDraft={setOutletDraft}
+                save={saveOutlet}
+                remove={deleteOutlet}
+                uploadFn={uploadImage}
+              />
+            )}
+
             {activeTab === 'settings' && (
               <SettingsPanel userEmail={user.email ?? ''} signOut={signOut} navigateHome={() => navigate('/')} customerCount={profiles.length} adminCount={adminRoleIds.size + (adminRoleIds.has(user.id) || isAdminUser(user) ? 0 : 1)} />
             )}
@@ -927,6 +1041,7 @@ const adminTabs: { key: AdminTab; label: string; title: string; icon: any }[] = 
   { key: 'orders', label: 'Orders', title: 'Orders & Delivery', icon: ShoppingBag },
   { key: 'customers', label: 'Customers', title: 'Customers & Purchase History', icon: Users },
   { key: 'subscribers', label: 'Subscribers', title: 'Newsletter Subscribers', icon: Mail },
+  { key: 'outlets', label: 'Outlets', title: 'Outlet & Store Locations', icon: MapPin },
   { key: 'content', label: 'Content', title: 'Website Content', icon: ImageIcon },
   { key: 'settings', label: 'Settings', title: 'Authentication & Settings', icon: Settings },
 ];
@@ -1057,7 +1172,106 @@ const SelectField = ({ label, value, onChange, options }: { label: string; value
   </label>
 );
 
-const ProductEditor = ({ draft, setDraft, categories, save, uploading, onUpload }: { draft: ProductDraft; setDraft: (draft: ProductDraft | null | ((draft: ProductDraft | null) => ProductDraft | null)) => void; categories: { id: string; name: string }[]; save: () => void; uploading: boolean; onUpload: (file: File) => void }) => (
+const ColorVariantsEditor = ({ variants, setVariants, uploadFn }: { variants: ColorVariantDraft[]; setVariants: (next: ColorVariantDraft[]) => void; uploadFn: (file: File) => Promise<string | null> }) => {
+  const update = (idx: number, patch: Partial<ColorVariantDraft>) => {
+    setVariants(variants.map((v, i) => (i === idx ? { ...v, ...patch } : v)));
+  };
+  const updateImage = (idx: number, slot: 0 | 1, url: string) => {
+    const next = [...variants];
+    const imgs: [string, string] = [...next[idx].images] as [string, string];
+    imgs[slot] = url;
+    next[idx] = { ...next[idx], images: imgs };
+    setVariants(next);
+  };
+  const move = (idx: number, dir: -1 | 1) => {
+    const newIdx = idx + dir;
+    if (newIdx < 0 || newIdx >= variants.length) return;
+    const next = [...variants];
+    [next[idx], next[newIdx]] = [next[newIdx], next[idx]];
+    setVariants(next);
+  };
+  const add = () =>
+    setVariants([...variants, { name: '', hex: '#000000', sku: '', stock: '', images: ['', ''] }]);
+  const remove = (idx: number) => setVariants(variants.filter((_, i) => i !== idx));
+
+  return (
+    <div className="mt-6 rounded-2xl border border-border bg-background/60 p-5">
+      <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+        <div>
+          <h4 className="font-heading text-lg">Color Variants</h4>
+          <p className="text-xs text-muted-foreground">Unlimited colors · 2 images per color · stock & SKU per variant.</p>
+        </div>
+        <Button type="button" onClick={add} className="gap-2"><Plus size={14} /> Add Color</Button>
+      </div>
+      {variants.length === 0 && (
+        <p className="text-sm text-muted-foreground py-6 text-center">No color variants yet. Add one to enable image switching on the storefront.</p>
+      )}
+      <div className="space-y-4">
+        {variants.map((variant, idx) => (
+          <div key={idx} className="rounded-xl border border-border bg-card p-4">
+            <div className="grid lg:grid-cols-[1fr_auto] gap-4 items-start">
+              <div className="grid md:grid-cols-4 gap-3">
+                <Field label="Color Name" value={variant.name} onChange={(v) => update(idx, { name: v })} placeholder="Black / Olive / Cream" />
+                <label className="block">
+                  <span className="mb-1.5 block text-[10px] uppercase tracking-[0.22em] text-muted-foreground font-body">Hex Code</span>
+                  <div className="flex items-center gap-2">
+                    <input type="color" value={variant.hex || '#000000'} onChange={(e) => update(idx, { hex: e.target.value })} className="w-12 h-10 rounded-lg border border-border bg-background cursor-pointer" />
+                    <input type="text" value={variant.hex} onChange={(e) => update(idx, { hex: e.target.value })} placeholder="#000000" className="flex-1 rounded-xl border border-border bg-background px-3 py-2.5 text-sm outline-none focus:border-accent focus:ring-2 focus:ring-accent/20" />
+                  </div>
+                </label>
+                <Field label="Variant SKU" value={variant.sku ?? ''} onChange={(v) => update(idx, { sku: v })} placeholder="optional" />
+                <Field label="Variant Stock" type="number" value={variant.stock ?? ''} onChange={(v) => update(idx, { stock: v })} placeholder="0" />
+              </div>
+              <div className="flex lg:flex-col gap-2 lg:items-end">
+                <Button type="button" variant="outline" size="sm" onClick={() => move(idx, -1)} disabled={idx === 0}>↑</Button>
+                <Button type="button" variant="outline" size="sm" onClick={() => move(idx, 1)} disabled={idx === variants.length - 1}>↓</Button>
+                <Button type="button" variant="outline" size="sm" onClick={() => remove(idx)} className="text-destructive hover:text-destructive gap-1"><Trash2 size={13} /></Button>
+              </div>
+            </div>
+            <div className="mt-4 grid md:grid-cols-2 gap-4">
+              {[0, 1].map((slot) => (
+                <div key={slot} className="rounded-xl border border-dashed border-border bg-background/80 p-3">
+                  <p className="text-[10px] uppercase tracking-[0.22em] text-muted-foreground mb-2">Image {slot + 1}</p>
+                  <div className="aspect-square w-full rounded-lg overflow-hidden bg-secondary mb-2 flex items-center justify-center">
+                    {variant.images[slot] ? (
+                      <img src={variant.images[slot]} alt={`${variant.name} ${slot + 1}`} className="w-full h-full object-cover" />
+                    ) : (
+                      <span className="text-xs text-muted-foreground">No image</span>
+                    )}
+                  </div>
+                  <input
+                    type="text"
+                    value={variant.images[slot]}
+                    onChange={(e) => updateImage(idx, slot as 0 | 1, e.target.value)}
+                    placeholder="https://image-url..."
+                    className="w-full rounded-lg border border-border bg-background px-2 py-1.5 text-xs outline-none focus:border-accent mb-2"
+                  />
+                  <label className="flex items-center justify-center gap-2 rounded-lg border border-dashed border-border bg-background px-3 py-2 text-xs text-muted-foreground cursor-pointer hover:border-accent hover:text-foreground transition-all">
+                    <Upload size={13} /> Upload
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={async (e) => {
+                        const file = e.target.files?.[0];
+                        if (!file) return;
+                        const url = await uploadFn(file);
+                        if (url) updateImage(idx, slot as 0 | 1, url);
+                        e.target.value = '';
+                      }}
+                    />
+                  </label>
+                </div>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+const ProductEditor = ({ draft, setDraft, categories, save, uploading, onUpload, uploadFn }: { draft: ProductDraft; setDraft: (draft: ProductDraft | null | ((draft: ProductDraft | null) => ProductDraft | null)) => void; categories: { id: string; name: string }[]; save: () => void; uploading: boolean; onUpload: (file: File) => void; uploadFn: (file: File) => Promise<string | null> }) => (
   <AdminCard>
     <div className="flex items-start justify-between gap-4 mb-5">
       <PanelTitle icon={PenLine} title={draft.id ? 'Edit Product' : 'Add Product'} subtitle="Manage pricing, stock, variants, images, badges, and category placement." />
@@ -1096,9 +1310,11 @@ const ProductEditor = ({ draft, setDraft, categories, save, uploading, onUpload 
       <Field label="Material" value={draft.material} onChange={(v) => setDraft({ ...draft, material: v })} />
       <Field label="Volume Options" value={draft.volumeOptionsText} onChange={(v) => setDraft({ ...draft, volumeOptionsText: v })} placeholder="3ml, 6ml, 50ml" />
     </div>
-    <div className="mt-4">
-      <Field label="Color Variants JSON" value={draft.colorVariantsText} onChange={(v) => setDraft({ ...draft, colorVariantsText: v })} rows={5} placeholder='[{"name":"Black","hex":"#111111","images":["url"]}]' />
-    </div>
+    <ColorVariantsEditor
+      variants={draft.colorVariants}
+      setVariants={(next) => setDraft({ ...draft, colorVariants: next })}
+      uploadFn={uploadFn}
+    />
     <div className="mt-5 flex flex-wrap items-center justify-between gap-4">
       <div className="flex flex-wrap gap-2">
         <TogglePill active={draft.is_visible} label="Visible" onClick={() => setDraft({ ...draft, is_visible: !draft.is_visible })} />
@@ -1328,5 +1544,78 @@ const SettingsPanel = ({ userEmail, signOut, navigateHome, customerCount, adminC
 };
 
 const InfoBlock = ({ label, value }: { label: string; value: string }) => <div className="rounded-xl border border-border bg-background p-4"><p className="text-[10px] uppercase tracking-[0.22em] text-muted-foreground mb-1">{label}</p><p className="text-foreground">{value}</p></div>;
+
+const OutletsPanel = ({ outlets, draft, setDraft, save, remove, uploadFn }: { outlets: OutletRow[]; draft: OutletDraft | null; setDraft: (d: OutletDraft | null) => void; save: () => void; remove: (id: string) => void; uploadFn: (file: File) => Promise<string | null> }) => (
+  <section className="space-y-6">
+    <div className="flex flex-wrap items-center justify-between gap-3">
+      <div>
+        <h2 className="font-heading text-2xl">Outlet Management</h2>
+        <p className="text-sm text-muted-foreground">Add unlimited Delilar outlets with Google Maps, images, phone, hours, and full address.</p>
+      </div>
+      <Button onClick={() => setDraft(outletToDraft())} className="gap-2"><Plus size={15} /> Add Outlet</Button>
+    </div>
+
+    {draft && (
+      <AdminCard>
+        <div className="flex items-start justify-between gap-4 mb-5">
+          <PanelTitle icon={MapPin} title={draft.id ? 'Edit Outlet' : 'Add Outlet'} subtitle="Premium store location for the Contact page." />
+          <Button variant="ghost" size="icon" onClick={() => setDraft(null)}><X size={18} /></Button>
+        </div>
+        <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-4">
+          <Field label="Outlet Name" value={draft.name} onChange={(v) => setDraft({ ...draft, name: v })} />
+          <Field label="City" value={draft.city} onChange={(v) => setDraft({ ...draft, city: v })} placeholder="Sylhet" />
+          <Field label="Sort Order" type="number" value={draft.sort_order} onChange={(v) => setDraft({ ...draft, sort_order: v })} />
+          <div className="md:col-span-2 xl:col-span-3">
+            <Field label="Full Address" value={draft.address} onChange={(v) => setDraft({ ...draft, address: v })} rows={2} placeholder="Sylhet-3100, Bangladesh" />
+          </div>
+          <Field label="Phone" value={draft.phone} onChange={(v) => setDraft({ ...draft, phone: v })} placeholder="+880 1533-413290" />
+          <Field label="WhatsApp Number" value={draft.whatsapp} onChange={(v) => setDraft({ ...draft, whatsapp: v })} placeholder="8801533413290" />
+          <Field label="Email" value={draft.email} onChange={(v) => setDraft({ ...draft, email: v })} />
+          <Field label="Business Hours" value={draft.hours} onChange={(v) => setDraft({ ...draft, hours: v })} placeholder="Sat–Thu · 10am–9pm" />
+          <div className="md:col-span-2"><Field label="Google Maps Embed URL (iframe src)" value={draft.map_embed_url} onChange={(v) => setDraft({ ...draft, map_embed_url: v })} placeholder="https://www.google.com/maps?q=...&output=embed" /></div>
+          <Field label="Google Maps Link" value={draft.map_link} onChange={(v) => setDraft({ ...draft, map_link: v })} />
+          <div className="md:col-span-2 xl:col-span-3 grid md:grid-cols-[1fr_auto] gap-3 items-end">
+            <Field label="Outlet Image URL" value={draft.image_url} onChange={(v) => setDraft({ ...draft, image_url: v })} />
+            <label className="flex items-center justify-center gap-2 rounded-xl border border-dashed border-border bg-background px-4 py-2.5 text-sm text-muted-foreground cursor-pointer hover:border-accent hover:text-foreground transition-all">
+              <Upload size={14} /> Upload
+              <input type="file" accept="image/*" className="hidden" onChange={async (e) => { const f = e.target.files?.[0]; if (!f) return; const url = await uploadFn(f); if (url) setDraft({ ...draft, image_url: url }); e.target.value = ''; }} />
+            </label>
+          </div>
+        </div>
+        <div className="mt-5 flex flex-wrap items-center justify-between gap-3">
+          <div className="flex flex-wrap gap-2">
+            <TogglePill active={draft.enabled} label={draft.enabled ? 'Live' : 'Hidden'} onClick={() => setDraft({ ...draft, enabled: !draft.enabled })} />
+            <TogglePill active={draft.is_primary} label="Flagship" onClick={() => setDraft({ ...draft, is_primary: !draft.is_primary })} />
+          </div>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => setDraft(null)}>Cancel</Button>
+            <Button onClick={save}>Save Outlet</Button>
+          </div>
+        </div>
+      </AdminCard>
+    )}
+
+    <div className="grid gap-3">
+      {outlets.length === 0 && <AdminCard><p className="text-center text-muted-foreground py-10">No outlets yet.</p></AdminCard>}
+      {outlets.map((o) => (
+        <AdminCard key={o.id} className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div>
+            <div className="flex flex-wrap items-center gap-2 mb-1">
+              <h3 className="font-heading text-lg">{o.name}</h3>
+              {o.is_primary && <Badge>Flagship</Badge>}
+              {!o.enabled && <Badge variant="outline">Hidden</Badge>}
+            </div>
+            <p className="text-sm text-muted-foreground">{o.address}{o.city ? `, ${o.city}` : ''}</p>
+            <p className="text-xs text-muted-foreground mt-1">{o.phone || '—'} · {o.hours || 'Hours not set'}</p>
+          </div>
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" onClick={() => setDraft(outletToDraft(o))} className="gap-2"><PenLine size={14} /> Edit</Button>
+            <Button variant="outline" size="sm" onClick={() => remove(o.id)} className="gap-2 text-destructive hover:text-destructive"><Trash2 size={14} /> Delete</Button>
+          </div>
+        </AdminCard>
+      ))}
+    </div>
+  </section>
+);
 
 export default Admin;

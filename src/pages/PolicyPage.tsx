@@ -52,34 +52,41 @@ const policies: Record<string, Policy> = {
     eyebrow: 'Customer Protection',
     icon: RefreshCw,
     intro:
-      'At Delilar, we are committed to delivering premium quality. Please review the policy below carefully — it is designed to protect both you and the brand.',
+      'Delilar does not operate a 7-day exchange policy. Please review the rules below carefully — they protect both you and the brand and reflect international luxury fashion standards.',
     sections: [
       {
-        heading: 'No 7-Day Exchange Policy',
+        heading: 'Check In Front of the Delivery Rider',
         body: [
-          'Delilar does NOT offer the standard 7-day exchange policy.',
-          'Customers must inspect the product, check size, fitting, fabric and condition immediately in front of the delivery rider.',
+          'If there is any size issue, damage, or product problem, the customer must check the product in front of the delivery person and return it immediately at that moment.',
+          'After verification by Delilar, the product may be replaced or re-sent if approved.',
         ],
       },
       {
-        heading: 'Instant Return at Delivery',
+        heading: 'No Returns After Delivery is Accepted',
         body: [
-          'If there is any issue with the product during delivery (size, defect, wrong item), the product should be returned instantly with the rider.',
-          'Returns will NOT be accepted after the rider has left the delivery location.',
+          'After receiving the parcel, exchange or return requests based on customer preference may not be accepted.',
+          'Returns will NOT be processed once the rider has left the delivery location.',
         ],
       },
       {
         heading: 'Inspection & Replacement',
         body: [
-          'After receiving the returned product, Delilar will inspect and verify the issue.',
-          'Once verified, a replacement or further support will be arranged based on stock availability.',
+          'Returned products go through a fabric, stitching, fitting, and authenticity inspection before any replacement is issued.',
+          'Replacements depend on live stock availability of the same colour, size, and variant.',
         ],
       },
       {
         heading: 'Non-Returnable Items',
         body: [
-          'Attar, perfumes, and personal care products are non-returnable for hygiene reasons unless sealed and unused.',
-          'Items damaged due to customer mishandling are not eligible for exchange.',
+          'Attar, perfumes, and personal care products are non-returnable for hygiene reasons unless the seal is unbroken.',
+          'Items damaged due to customer mishandling, washing without care guidance, or alterations are not eligible.',
+        ],
+      },
+      {
+        heading: 'Colour & Photography Disclaimer',
+        body: [
+          'Slight colour variation between the photograph and the actual product is normal due to screen calibration and studio lighting.',
+          'Such minor colour variation is not considered a defect and is not eligible for exchange.',
         ],
       },
     ],
