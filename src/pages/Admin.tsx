@@ -940,31 +940,43 @@ const Admin = () => {
                   />
                 )}
 
-                <div className="grid gap-4">
-                  {filteredProducts.map((product) => (
-                    <AdminCard key={product.id} className="grid gap-4 lg:grid-cols-[88px_1fr_auto] lg:items-center">
-                      <img src={resolveImage(product.data?.image)} alt={product.name} className="w-full h-28 lg:w-20 lg:h-20 rounded-xl object-cover bg-secondary" />
-                      <div className="min-w-0">
-                        <div className="flex flex-wrap items-center gap-2 mb-1">
-                          <h3 className="font-heading text-lg truncate">{product.name}</h3>
-                          {product.is_featured && <Badge>Featured</Badge>}
-                          {product.is_sale && <Badge variant="secondary">Sale</Badge>}
-                          {!product.is_visible && <Badge variant="outline">Hidden</Badge>}
+                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                  {filteredProducts.map((product) => {
+                    const lowStock = product.stock > 0 && product.stock <= ((product as any).low_stock_threshold ?? 3);
+                    const outOfStock = product.stock <= 0;
+                    return (
+                      <AdminCard key={product.id} className="group relative flex flex-col gap-3 p-3 transition-all hover:shadow-lg hover:-translate-y-0.5">
+                        <div className="relative overflow-hidden rounded-xl bg-secondary aspect-[4/5]">
+                          <img src={resolveImage(product.data?.image)} alt={product.name} className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" />
+                          <div className="absolute top-2 left-2 flex flex-wrap gap-1">
+                            {product.is_featured && <Badge className="text-[10px] px-1.5 py-0">Featured</Badge>}
+                            {product.is_sale && <Badge variant="secondary" className="text-[10px] px-1.5 py-0">Sale</Badge>}
+                            {!product.is_visible && <Badge variant="outline" className="text-[10px] px-1.5 py-0 bg-background/80">Hidden</Badge>}
+                          </div>
+                          <div className="absolute top-2 right-2">
+                            <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium backdrop-blur ${outOfStock ? 'bg-destructive/90 text-destructive-foreground' : lowStock ? 'bg-amber-500/90 text-white' : 'bg-emerald-600/90 text-white'}`}>
+                              <span className="h-1.5 w-1.5 rounded-full bg-current" />
+                              {outOfStock ? 'Out' : lowStock ? `${product.stock} left` : `${product.stock}`}
+                            </span>
+                          </div>
                         </div>
-                        <p className="text-xs text-muted-foreground font-body">{product.id} · {product.category} · {product.product_type} · SKU {product.sku || '—'}</p>
-                        <div className="mt-3 flex flex-wrap gap-2 text-xs">
-                          <Pill>{money(product.price)}</Pill>
-                          <Pill>{product.stock} in stock</Pill>
-                          <Pill>{product.data?.sizes?.length ?? 0} sizes</Pill>
-                          <Pill>{product.data?.colorVariants?.length ?? product.data?.colors?.length ?? 0} color options</Pill>
+                        <div className="flex-1 min-w-0 space-y-1.5">
+                          <h3 className="font-heading text-sm leading-tight line-clamp-2">{product.name}</h3>
+                          <p className="text-[10px] uppercase tracking-wider text-muted-foreground truncate">{product.category} · {product.sku || product.id.slice(0, 6)}</p>
+                          <div className="flex items-baseline gap-2">
+                            <span className="font-heading text-base text-primary">{money(product.price)}</span>
+                            {product.original_price && Number(product.original_price) > Number(product.price) && (
+                              <span className="text-xs text-muted-foreground line-through">{money(product.original_price)}</span>
+                            )}
+                          </div>
                         </div>
-                      </div>
-                      <div className="flex flex-wrap gap-2 lg:justify-end">
-                        <Button variant="outline" size="sm" onClick={() => setProductDraft(productToDraft(product))} className="gap-2"><PenLine size={14} /> Edit</Button>
-                        <Button variant="outline" size="sm" onClick={() => deleteProduct(product.id)} className="gap-2 text-destructive hover:text-destructive"><Trash2 size={14} /> Delete</Button>
-                      </div>
-                    </AdminCard>
-                  ))}
+                        <div className="flex gap-1.5 pt-1 border-t border-border">
+                          <Button variant="outline" size="sm" onClick={() => setProductDraft(productToDraft(product))} className="flex-1 h-8 text-xs gap-1"><PenLine size={12} /> Edit</Button>
+                          <Button variant="outline" size="sm" onClick={() => deleteProduct(product.id)} className="h-8 w-8 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"><Trash2 size={12} /></Button>
+                        </div>
+                      </AdminCard>
+                    );
+                  })}
                 </div>
 
                 <div className="grid lg:grid-cols-[1fr_380px] gap-6">
@@ -1611,57 +1623,90 @@ const OverviewPanel = ({ products, orders, profiles, revenue, lowStock, pendingO
 const Metric = ({ icon: Icon, label, value, detail }: any) => <AdminCard><div className="flex items-start justify-between"><div><p className="text-xs uppercase tracking-[0.22em] text-muted-foreground">{label}</p><p className="font-heading text-3xl mt-2">{value}</p><p className="text-xs text-muted-foreground mt-1">{detail}</p></div><span className="w-11 h-11 rounded-xl bg-primary text-accent flex items-center justify-center"><Icon size={19} /></span></div></AdminCard>;
 const Queue = ({ label, value }: { label: string; value: number }) => <div className="flex items-center justify-between rounded-xl bg-background border border-border px-4 py-3"><span className="text-sm text-muted-foreground">{label}</span><span className="font-heading text-xl">{value}</span></div>;
 
-const OrdersPanel = ({ orders, profileById, trackingDrafts, setTrackingDrafts, updateOrder, saveTracking }: any) => (
-  <section className="space-y-5">
-    <div><h2 className="font-heading text-2xl">Orders</h2><p className="text-sm text-muted-foreground">View order details, customer shipping information, delivery tracking, cancellations, and refunds.</p></div>
-    {orders.length === 0 && <AdminCard><p className="text-center text-muted-foreground py-10">No orders yet.</p></AdminCard>}
-    {orders.map((order: OrderRow) => {
-      const customer = profileById.get(order.user_id);
-      const draft = trackingDrafts[order.id] ?? order;
-      return (
-        <AdminCard key={order.id} className="space-y-5">
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-            <div>
-              <div className="flex flex-wrap items-center gap-2 mb-2"><h3 className="font-heading text-xl">Order #{shortId(order.id)}</h3><Badge variant="secondary">{order.status}</Badge></div>
-              <p className="text-sm text-muted-foreground">{new Date(order.created_at).toLocaleString()} · {customer?.full_name || customer?.email || 'Customer'} · {money(order.total)}</p>
-              <p className="text-xs text-muted-foreground mt-1">Payment: {order.payment_method} · Items: {order.items?.length ?? 0}</p>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              <select value={order.status} onChange={(event) => updateOrder(order.id, { status: event.target.value })} className="rounded-xl border border-border bg-background px-3 py-2 text-sm">
-                {orderStatuses.map((status) => <option key={status} value={status}>{status}</option>)}
-              </select>
-              <Button variant="outline" onClick={() => updateOrder(order.id, { status: 'cancelled', cancelled_at: new Date().toISOString() })}>Cancel</Button>
-              <Button variant="outline" onClick={() => updateOrder(order.id, { status: 'refunded', refunded_at: new Date().toISOString() })}>Refund</Button>
-            </div>
-          </div>
-          <div className="grid lg:grid-cols-3 gap-4">
-            <div className="rounded-xl border border-border bg-background p-4">
-              <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground mb-2">Customer</p>
-              <p className="font-medium">{customer?.full_name || 'No profile name'}</p>
-              <p className="text-sm text-muted-foreground">{customer?.email || 'No email'}</p>
-              <p className="text-sm text-muted-foreground">{customer?.phone || 'No phone'}</p>
-            </div>
-            <div className="rounded-xl border border-border bg-background p-4">
-              <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground mb-2">Shipping</p>
-              <p className="text-sm text-muted-foreground">{order.shipping_address ? JSON.stringify(order.shipping_address) : [customer?.house_number, customer?.village, customer?.upazila, customer?.district].filter(Boolean).join(', ') || 'No shipping address'}</p>
-            </div>
-            <div className="rounded-xl border border-border bg-background p-4">
-              <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground mb-2">Items</p>
-              <div className="space-y-1 text-sm text-muted-foreground max-h-24 overflow-auto">{(order.items ?? []).map((item, index) => <p key={index}>{item.name || item.product?.name || 'Item'} × {item.quantity || 1}</p>)}</div>
-            </div>
-          </div>
-          <div className="grid md:grid-cols-4 gap-3">
-            <Field label="Courier" value={String(draft.courier ?? '')} onChange={(v) => setTrackingDrafts((prev: any) => ({ ...prev, [order.id]: { ...prev[order.id], courier: v } }))} />
-            <Field label="Tracking Number" value={String(draft.tracking_number ?? '')} onChange={(v) => setTrackingDrafts((prev: any) => ({ ...prev, [order.id]: { ...prev[order.id], tracking_number: v } }))} />
-            <Field label="Tracking URL" value={String(draft.tracking_url ?? '')} onChange={(v) => setTrackingDrafts((prev: any) => ({ ...prev, [order.id]: { ...prev[order.id], tracking_url: v } }))} />
-            <div className="flex items-end"><Button className="w-full" onClick={() => saveTracking(order)}>Save Tracking</Button></div>
-          </div>
-          <Field label="Admin Notes" value={String(draft.admin_notes ?? '')} onChange={(v) => setTrackingDrafts((prev: any) => ({ ...prev, [order.id]: { ...prev[order.id], admin_notes: v } }))} rows={2} />
-        </AdminCard>
-      );
-    })}
-  </section>
-);
+const orderStatusStyle = (status: string) => {
+  const map: Record<string, string> = {
+    warehouse: 'bg-slate-500/15 text-slate-700 dark:text-slate-300 border-slate-500/30',
+    packaging: 'bg-blue-500/15 text-blue-700 dark:text-blue-300 border-blue-500/30',
+    transit: 'bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/30',
+    delivered: 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-500/30',
+    cancelled: 'bg-rose-500/15 text-rose-700 dark:text-rose-300 border-rose-500/30',
+    refunded: 'bg-violet-500/15 text-violet-700 dark:text-violet-300 border-violet-500/30',
+  };
+  return map[status] || 'bg-muted text-muted-foreground border-border';
+};
+
+const OrdersPanel = ({ orders, profileById, trackingDrafts, setTrackingDrafts, updateOrder, saveTracking }: any) => {
+  const [expanded, setExpanded] = useState<Record<string, boolean>>({});
+  return (
+    <section className="space-y-5">
+      <div><h2 className="font-heading text-2xl">Orders</h2><p className="text-sm text-muted-foreground">View order details, customer shipping information, delivery tracking, cancellations, and refunds.</p></div>
+      {orders.length === 0 && <AdminCard><p className="text-center text-muted-foreground py-10">No orders yet.</p></AdminCard>}
+      <div className="grid gap-4 xl:grid-cols-2">
+        {orders.map((order: OrderRow) => {
+          const customer = profileById.get(order.user_id);
+          const draft = trackingDrafts[order.id] ?? order;
+          const isOpen = expanded[order.id];
+          return (
+            <AdminCard key={order.id} className="p-0 overflow-hidden transition-all hover:shadow-lg">
+              <div className="p-5 space-y-3">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <div className="flex flex-wrap items-center gap-2 mb-1">
+                      <h3 className="font-heading text-lg">#{shortId(order.id)}</h3>
+                      <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${orderStatusStyle(order.status)}`}>{order.status}</span>
+                    </div>
+                    <p className="text-xs text-muted-foreground truncate">{new Date(order.created_at).toLocaleString()}</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="font-heading text-lg text-primary">{money(order.total)}</p>
+                    <p className="text-[10px] uppercase tracking-wider text-muted-foreground">{order.payment_method} · {order.items?.length ?? 0} items</p>
+                  </div>
+                </div>
+                <div className="rounded-xl bg-background/60 border border-border p-3 text-sm">
+                  <p className="font-medium truncate">{customer?.full_name || 'Customer'}</p>
+                  <p className="text-xs text-muted-foreground truncate">{customer?.email || customer?.phone || 'No contact'}</p>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <select value={order.status} onChange={(event) => updateOrder(order.id, { status: event.target.value })} className="flex-1 min-w-[120px] rounded-lg border border-border bg-background px-2.5 py-1.5 text-xs">
+                    {orderStatuses.map((status) => <option key={status} value={status}>{status}</option>)}
+                  </select>
+                  <Button variant="outline" size="sm" className="h-8 text-xs" onClick={() => setExpanded((p) => ({ ...p, [order.id]: !isOpen }))}>
+                    {isOpen ? 'Hide' : 'Details'}
+                  </Button>
+                </div>
+              </div>
+              {isOpen && (
+                <div className="border-t border-border bg-background/40 p-5 space-y-4">
+                  <div className="grid sm:grid-cols-2 gap-3">
+                    <div className="rounded-xl border border-border bg-background p-3">
+                      <p className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground mb-1">Shipping</p>
+                      <p className="text-xs text-muted-foreground">{order.shipping_address ? JSON.stringify(order.shipping_address) : [customer?.house_number, customer?.village, customer?.upazila, customer?.district].filter(Boolean).join(', ') || 'No shipping address'}</p>
+                    </div>
+                    <div className="rounded-xl border border-border bg-background p-3">
+                      <p className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground mb-1">Items</p>
+                      <div className="space-y-0.5 text-xs text-muted-foreground max-h-24 overflow-auto">{(order.items ?? []).map((item, index) => <p key={index}>{item.name || item.product?.name || 'Item'} × {item.quantity || 1}</p>)}</div>
+                    </div>
+                  </div>
+                  <div className="grid sm:grid-cols-3 gap-2">
+                    <Field label="Courier" value={String(draft.courier ?? '')} onChange={(v) => setTrackingDrafts((prev: any) => ({ ...prev, [order.id]: { ...prev[order.id], courier: v } }))} />
+                    <Field label="Tracking #" value={String(draft.tracking_number ?? '')} onChange={(v) => setTrackingDrafts((prev: any) => ({ ...prev, [order.id]: { ...prev[order.id], tracking_number: v } }))} />
+                    <Field label="Tracking URL" value={String(draft.tracking_url ?? '')} onChange={(v) => setTrackingDrafts((prev: any) => ({ ...prev, [order.id]: { ...prev[order.id], tracking_url: v } }))} />
+                  </div>
+                  <Field label="Admin Notes" value={String(draft.admin_notes ?? '')} onChange={(v) => setTrackingDrafts((prev: any) => ({ ...prev, [order.id]: { ...prev[order.id], admin_notes: v } }))} rows={2} />
+                  <div className="flex flex-wrap gap-2 justify-end">
+                    <Button variant="outline" size="sm" onClick={() => updateOrder(order.id, { status: 'cancelled', cancelled_at: new Date().toISOString() })}>Cancel</Button>
+                    <Button variant="outline" size="sm" onClick={() => updateOrder(order.id, { status: 'refunded', refunded_at: new Date().toISOString() })}>Refund</Button>
+                    <Button size="sm" onClick={() => saveTracking(order)}>Save Tracking</Button>
+                  </div>
+                </div>
+              )}
+            </AdminCard>
+          );
+        })}
+      </div>
+    </section>
+  );
+};
 
 const CustomersPanel = ({ customers, orders, adminRoleIds, selectedCustomer, selectedCustomerOrders, selectCustomer, grantAdmin, revokeAdmin }: any) => (
   <section className="grid xl:grid-cols-[1fr_420px] gap-6">
@@ -1828,22 +1873,29 @@ const OutletsPanel = ({ outlets, draft, setDraft, save, remove, uploadFn }: { ou
       </AdminCard>
     )}
 
-    <div className="grid gap-3">
-      {outlets.length === 0 && <AdminCard><p className="text-center text-muted-foreground py-10">No outlets yet.</p></AdminCard>}
+    <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+      {outlets.length === 0 && <div className="md:col-span-2 xl:col-span-3"><AdminCard><p className="text-center text-muted-foreground py-10">No outlets yet.</p></AdminCard></div>}
       {outlets.map((o) => (
-        <AdminCard key={o.id} className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div>
-            <div className="flex flex-wrap items-center gap-2 mb-1">
-              <h3 className="font-heading text-lg">{o.name}</h3>
-              {o.is_primary && <Badge>Flagship</Badge>}
-              {!o.enabled && <Badge variant="outline">Hidden</Badge>}
+        <AdminCard key={o.id} className="group flex flex-col gap-4 p-4 transition-all hover:shadow-lg">
+          <div className="relative overflow-hidden rounded-xl bg-secondary aspect-[16/9]">
+            {o.image_url ? (
+              <img src={o.image_url} alt={o.name} className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" />
+            ) : (
+              <div className="absolute inset-0 flex items-center justify-center text-muted-foreground"><MapPin size={32} /></div>
+            )}
+            <div className="absolute top-2 left-2 flex gap-1">
+              {o.is_primary && <Badge className="text-[10px] px-1.5 py-0">Flagship</Badge>}
+              {!o.enabled && <Badge variant="outline" className="text-[10px] px-1.5 py-0 bg-background/80">Hidden</Badge>}
             </div>
-            <p className="text-sm text-muted-foreground">{o.address}{o.city ? `, ${o.city}` : ''}</p>
-            <p className="text-xs text-muted-foreground mt-1">{o.phone || '—'} · {o.hours || 'Hours not set'}</p>
           </div>
-          <div className="flex gap-2">
-            <Button variant="outline" size="sm" onClick={() => setDraft(outletToDraft(o))} className="gap-2"><PenLine size={14} /> Edit</Button>
-            <Button variant="outline" size="sm" onClick={() => remove(o.id)} className="gap-2 text-destructive hover:text-destructive"><Trash2 size={14} /> Delete</Button>
+          <div className="flex-1 space-y-1">
+            <h3 className="font-heading text-lg leading-tight">{o.name}</h3>
+            <p className="text-sm text-muted-foreground line-clamp-2">{o.address}{o.city ? `, ${o.city}` : ''}</p>
+            <p className="text-xs text-muted-foreground pt-1">{o.phone || '—'} · {o.hours || 'Hours not set'}</p>
+          </div>
+          <div className="flex gap-2 pt-2 border-t border-border">
+            <Button variant="outline" size="sm" onClick={() => setDraft(outletToDraft(o))} className="flex-1 gap-1.5 h-8 text-xs"><PenLine size={12} /> Edit</Button>
+            <Button variant="outline" size="sm" onClick={() => remove(o.id)} className="h-8 w-8 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"><Trash2 size={12} /></Button>
           </div>
         </AdminCard>
       ))}
