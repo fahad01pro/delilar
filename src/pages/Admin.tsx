@@ -1152,12 +1152,75 @@ const HeroBannerEditor = ({ draft, setDraft, save }: any) => <div className="mt-
 const CategoryBannerEditor = ({ draft, setDraft, save, categories }: any) => <div className="mt-5 grid gap-3"><SelectField label="Category" value={draft.category} onChange={(v) => setDraft({ ...draft, category: v })} options={categories.map((cat: any) => ({ value: cat.id, label: cat.name }))} /><Field label="Title" value={draft.title} onChange={(v) => setDraft({ ...draft, title: v })} /><Field label="Subtitle" value={draft.subtitle} onChange={(v) => setDraft({ ...draft, subtitle: v })} /><Field label="Image URL" value={draft.image_url} onChange={(v) => setDraft({ ...draft, image_url: v })} /><TogglePill active={draft.enabled} label={draft.enabled ? 'Enabled' : 'Disabled'} onClick={() => setDraft({ ...draft, enabled: !draft.enabled })} /><div className="flex gap-2"><Button onClick={save}>Save Banner</Button><Button variant="outline" onClick={() => setDraft(null)}>Cancel</Button></div></div>;
 const SiteContentEditor = ({ draft, setDraft, save }: any) => <div className="mt-5 grid md:grid-cols-2 gap-3"><Field label="Content Key" value={draft.content_key} onChange={(v) => setDraft({ ...draft, content_key: v })} /><Field label="Type" value={draft.type} onChange={(v) => setDraft({ ...draft, type: v })} placeholder="page, footer, policy, section" /><Field label="Title" value={draft.title} onChange={(v) => setDraft({ ...draft, title: v })} /><Field label="Subtitle" value={draft.subtitle} onChange={(v) => setDraft({ ...draft, subtitle: v })} /><Field label="Image URL" value={draft.image_url} onChange={(v) => setDraft({ ...draft, image_url: v })} /><Field label="CTA Link" value={draft.cta_href} onChange={(v) => setDraft({ ...draft, cta_href: v })} /><div className="md:col-span-2"><Field label="Body" value={draft.body} onChange={(v) => setDraft({ ...draft, body: v })} rows={5} /></div><Field label="Sort Order" type="number" value={draft.sort_order} onChange={(v) => setDraft({ ...draft, sort_order: v })} /><div className="flex items-end gap-2"><TogglePill active={draft.enabled} label={draft.enabled ? 'Enabled' : 'Disabled'} onClick={() => setDraft({ ...draft, enabled: !draft.enabled })} /><Button onClick={save}>Save Content</Button><Button variant="outline" onClick={() => setDraft(null)}>Cancel</Button></div></div>;
 
-const SettingsPanel = ({ userEmail, signOut, navigateHome, customerCount, adminCount }: any) => (
-  <section className="grid xl:grid-cols-[1fr_0.9fr] gap-6">
-    <AdminCard><PanelTitle icon={ShieldCheck} title="Admin Access Instructions" subtitle="Secure route, primary credentials guidance, password reset, and additional admin workflow." /><div className="mt-6 space-y-4 text-sm"><InfoBlock label="Admin URL" value="https://delilar-luxe-emporium.lovable.app/admin" /><InfoBlock label="Primary admin email" value={ADMIN_EMAIL} /><InfoBlock label="Default admin password" value="No default password is stored. Sign up with the primary admin email once, then use your chosen password." /><InfoBlock label="Create additional admins" value="Ask the person to create a normal customer account, open Customers, then click Make Admin on that profile." /><InfoBlock label="Reset password" value="Open the sign-in modal and use the account recovery flow for the admin email. If unavailable, create a new password through your secure authentication email link." /><InfoBlock label="Dashboard settings" value="Use /admin/settings for authentication notes, logout, route details, and admin management guidance." /></div></AdminCard>
-    <AdminCard><PanelTitle icon={Settings} title="Session" subtitle="Current signed-in admin and operating summary." /><div className="mt-6 space-y-3"><InfoRow label="Signed in as" value={userEmail} /><InfoRow label="Customers" value={String(customerCount)} /><InfoRow label="Admins" value={String(adminCount)} /></div><div className="mt-6 flex flex-wrap gap-2"><Button variant="outline" onClick={navigateHome}>View Storefront</Button><Button onClick={async () => { await signOut(); navigateHome(); toast.success('Signed out'); }} className="gap-2"><LogOut size={15} /> Logout</Button></div></AdminCard>
-  </section>
-);
+const SettingsPanel = ({ userEmail, signOut, navigateHome, customerCount, adminCount }: any) => {
+  const [newEmail, setNewEmail] = useState(userEmail || '');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [savingEmail, setSavingEmail] = useState(false);
+  const [savingPassword, setSavingPassword] = useState(false);
+
+  const updateEmail = async () => {
+    if (!newEmail || newEmail === userEmail) return toast.error('Enter a different email');
+    setSavingEmail(true);
+    const { error } = await supabase.auth.updateUser({ email: newEmail });
+    setSavingEmail(false);
+    if (error) return toast.error(error.message);
+    toast.success('Confirmation sent', { description: `Check ${newEmail} to confirm the change.` });
+  };
+
+  const updatePassword = async () => {
+    if (newPassword.length < 6) return toast.error('Password must be at least 6 characters');
+    if (newPassword !== confirmPassword) return toast.error('Passwords do not match');
+    setSavingPassword(true);
+    const { error } = await supabase.auth.updateUser({ password: newPassword });
+    setSavingPassword(false);
+    if (error) return toast.error(error.message);
+    setNewPassword(''); setConfirmPassword('');
+    toast.success('Password updated');
+  };
+
+  return (
+    <section className="grid xl:grid-cols-[1fr_0.9fr] gap-6">
+      <AdminCard>
+        <PanelTitle icon={ShieldCheck} title="Change Admin Email" subtitle="Update the email used to sign in to the admin dashboard. A confirmation link will be sent to the new address." />
+        <div className="mt-6 space-y-3">
+          <Field label="New Admin Email" value={newEmail} onChange={setNewEmail} placeholder="admin@example.com" />
+          <Button onClick={updateEmail} disabled={savingEmail} className="gap-2">
+            {savingEmail && <Loader2 size={14} className="animate-spin" />} Update Email
+          </Button>
+        </div>
+        <div className="mt-8 border-t border-border pt-6">
+          <PanelTitle icon={Lock} title="Change Password" subtitle="Set a new password for this admin account." />
+          <div className="mt-6 space-y-3">
+            <Field label="New Password" type="password" value={newPassword} onChange={setNewPassword} />
+            <Field label="Confirm New Password" type="password" value={confirmPassword} onChange={setConfirmPassword} />
+            <Button onClick={updatePassword} disabled={savingPassword} className="gap-2">
+              {savingPassword && <Loader2 size={14} className="animate-spin" />} Update Password
+            </Button>
+          </div>
+        </div>
+      </AdminCard>
+      <AdminCard>
+        <PanelTitle icon={Settings} title="Session" subtitle="Current signed-in admin and operating summary." />
+        <div className="mt-6 space-y-3">
+          <InfoRow label="Signed in as" value={userEmail} />
+          <InfoRow label="Customers" value={String(customerCount)} />
+          <InfoRow label="Admins" value={String(adminCount)} />
+        </div>
+        <div className="mt-6 flex flex-wrap gap-2">
+          <Button variant="outline" onClick={navigateHome}>View Storefront</Button>
+          <Button onClick={async () => { await signOut(); navigateHome(); toast.success('Signed out'); }} className="gap-2">
+            <LogOut size={15} /> Logout
+          </Button>
+        </div>
+        <div className="mt-6 rounded-xl border border-border bg-background p-4 text-xs text-muted-foreground space-y-1">
+          <p className="text-foreground font-medium">Forgot password flow</p>
+          <p>Customers and admins can use “Forgot password?” on the sign-in modal. A secure reset link is emailed and lands on <code>/reset-password</code>.</p>
+        </div>
+      </AdminCard>
+    </section>
+  );
+};
 
 const InfoBlock = ({ label, value }: { label: string; value: string }) => <div className="rounded-xl border border-border bg-background p-4"><p className="text-[10px] uppercase tracking-[0.22em] text-muted-foreground mb-1">{label}</p><p className="text-foreground">{value}</p></div>;
 
