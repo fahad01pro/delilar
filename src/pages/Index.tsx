@@ -8,7 +8,8 @@ import catJubba from '@/assets/category-jubba.jpg';
 import catPanjabi from '@/assets/category-panjabi.jpg';
 import catAttar from '@/assets/category-attar.jpg';
 import ProductCard from '@/components/ProductCard';
-import { getFeaturedProducts, getEidProducts, products } from '@/data/products';
+import { useCatalog, useHeroBanners } from '@/hooks/useCatalog';
+import { resolveImage } from '@/lib/imageAssets';
 
 const homeCategories = [
   { name: 'T-Shirts', slug: '/tshirts', image: catTshirts, desc: 'Premium casual wear for the modern man' },
@@ -17,32 +18,14 @@ const homeCategories = [
   { name: 'Attar', slug: '/attar', image: catAttar, desc: 'Luxury natural fragrances' },
 ];
 
-const heroSlides = [
-  {
-    image: heroImage,
-    subtitle: 'Premium Islamic Fashion & Attar',
-    title: 'Elegance Meets',
-    highlight: 'Tradition',
-    desc: 'Discover our curated collection of premium menswear and luxury fragrances, crafted for the modern man.',
-    cta: { label: 'Shop Now', href: '/tshirts' },
-  },
-  {
-    image: catJubba,
-    subtitle: 'Eid Collection 2026',
-    title: 'Celebrate in',
-    highlight: 'Luxury',
-    desc: 'Exclusive Eid outfits — premium jubba sets, golden panjabi, and luxury attar gift boxes.',
-    cta: { label: 'Shop Eid', href: '/eid' },
-  },
-  {
-    image: catAttar,
-    subtitle: 'Signature Scents',
-    title: 'Art of',
-    highlight: 'Fragrance',
-    desc: 'Our exclusive attar collection is crafted from the finest natural ingredients.',
-    cta: { label: 'Discover Attar', href: '/attar' },
-  },
-];
+const fallbackHero = {
+  image: heroImage,
+  subtitle: 'Premium Islamic Fashion & Attar',
+  title: 'Elegance Meets Tradition',
+  highlight: '',
+  desc: 'Discover our curated collection of premium menswear and luxury fragrances, crafted for the modern man.',
+  cta: { label: 'Shop Now', href: '/jubba' },
+};
 
 const testimonials = [
   { name: 'Ahmed R.', text: 'The quality of the Jubba is exceptional. Truly premium fabric and beautiful craftsmanship.', rating: 5 },
@@ -51,8 +34,22 @@ const testimonials = [
 ];
 
 const Index = () => {
-  const featured = getFeaturedProducts();
-  const eidProducts = getEidProducts();
+  const { data: catalog = [] } = useCatalog();
+  const { data: heroBanners = [] } = useHeroBanners();
+  const featured = catalog.filter((p) => p.badge === 'Best Seller').slice(0, 8);
+  const eidProducts = catalog.filter((p) => p.category === 'eid');
+
+  const heroSlides = heroBanners.length
+    ? heroBanners.map((b) => ({
+        image: resolveImage(b.image_url),
+        subtitle: b.eyebrow || '',
+        title: b.title,
+        highlight: '',
+        desc: b.subtitle || '',
+        cta: { label: b.cta_label || 'Shop Now', href: b.cta_href || '/' },
+      }))
+    : [fallbackHero];
+
   const [currentSlide, setCurrentSlide] = useState(0);
 
   const nextSlide = useCallback(() => {
