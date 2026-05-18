@@ -39,6 +39,7 @@ const AppShell = () => {
         <Route path="/" element={<Index />} />
         <Route path="/admin/*" element={<Admin />} />
         <Route path="/reset-password" element={<ResetPassword />} />
+        <Route path="/policies/:slug" element={<PolicyPage />} />
         <Route path="/account" element={<Account />} />
         <Route path="/wishlist" element={<Wishlist />} />
         <Route path="/cart" element={<CartPage />} />
@@ -49,6 +50,7 @@ const AppShell = () => {
         <Route path="*" element={<NotFound />} />
       </Routes>
       {!isAdminRoute && <Footer />}
+      {!isAdminRoute && <WhatsAppButton />}
     </>
   );
 };
