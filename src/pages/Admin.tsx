@@ -1623,57 +1623,90 @@ const OverviewPanel = ({ products, orders, profiles, revenue, lowStock, pendingO
 const Metric = ({ icon: Icon, label, value, detail }: any) => <AdminCard><div className="flex items-start justify-between"><div><p className="text-xs uppercase tracking-[0.22em] text-muted-foreground">{label}</p><p className="font-heading text-3xl mt-2">{value}</p><p className="text-xs text-muted-foreground mt-1">{detail}</p></div><span className="w-11 h-11 rounded-xl bg-primary text-accent flex items-center justify-center"><Icon size={19} /></span></div></AdminCard>;
 const Queue = ({ label, value }: { label: string; value: number }) => <div className="flex items-center justify-between rounded-xl bg-background border border-border px-4 py-3"><span className="text-sm text-muted-foreground">{label}</span><span className="font-heading text-xl">{value}</span></div>;
 
-const OrdersPanel = ({ orders, profileById, trackingDrafts, setTrackingDrafts, updateOrder, saveTracking }: any) => (
-  <section className="space-y-5">
-    <div><h2 className="font-heading text-2xl">Orders</h2><p className="text-sm text-muted-foreground">View order details, customer shipping information, delivery tracking, cancellations, and refunds.</p></div>
-    {orders.length === 0 && <AdminCard><p className="text-center text-muted-foreground py-10">No orders yet.</p></AdminCard>}
-    {orders.map((order: OrderRow) => {
-      const customer = profileById.get(order.user_id);
-      const draft = trackingDrafts[order.id] ?? order;
-      return (
-        <AdminCard key={order.id} className="space-y-5">
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-            <div>
-              <div className="flex flex-wrap items-center gap-2 mb-2"><h3 className="font-heading text-xl">Order #{shortId(order.id)}</h3><Badge variant="secondary">{order.status}</Badge></div>
-              <p className="text-sm text-muted-foreground">{new Date(order.created_at).toLocaleString()} · {customer?.full_name || customer?.email || 'Customer'} · {money(order.total)}</p>
-              <p className="text-xs text-muted-foreground mt-1">Payment: {order.payment_method} · Items: {order.items?.length ?? 0}</p>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              <select value={order.status} onChange={(event) => updateOrder(order.id, { status: event.target.value })} className="rounded-xl border border-border bg-background px-3 py-2 text-sm">
-                {orderStatuses.map((status) => <option key={status} value={status}>{status}</option>)}
-              </select>
-              <Button variant="outline" onClick={() => updateOrder(order.id, { status: 'cancelled', cancelled_at: new Date().toISOString() })}>Cancel</Button>
-              <Button variant="outline" onClick={() => updateOrder(order.id, { status: 'refunded', refunded_at: new Date().toISOString() })}>Refund</Button>
-            </div>
-          </div>
-          <div className="grid lg:grid-cols-3 gap-4">
-            <div className="rounded-xl border border-border bg-background p-4">
-              <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground mb-2">Customer</p>
-              <p className="font-medium">{customer?.full_name || 'No profile name'}</p>
-              <p className="text-sm text-muted-foreground">{customer?.email || 'No email'}</p>
-              <p className="text-sm text-muted-foreground">{customer?.phone || 'No phone'}</p>
-            </div>
-            <div className="rounded-xl border border-border bg-background p-4">
-              <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground mb-2">Shipping</p>
-              <p className="text-sm text-muted-foreground">{order.shipping_address ? JSON.stringify(order.shipping_address) : [customer?.house_number, customer?.village, customer?.upazila, customer?.district].filter(Boolean).join(', ') || 'No shipping address'}</p>
-            </div>
-            <div className="rounded-xl border border-border bg-background p-4">
-              <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground mb-2">Items</p>
-              <div className="space-y-1 text-sm text-muted-foreground max-h-24 overflow-auto">{(order.items ?? []).map((item, index) => <p key={index}>{item.name || item.product?.name || 'Item'} × {item.quantity || 1}</p>)}</div>
-            </div>
-          </div>
-          <div className="grid md:grid-cols-4 gap-3">
-            <Field label="Courier" value={String(draft.courier ?? '')} onChange={(v) => setTrackingDrafts((prev: any) => ({ ...prev, [order.id]: { ...prev[order.id], courier: v } }))} />
-            <Field label="Tracking Number" value={String(draft.tracking_number ?? '')} onChange={(v) => setTrackingDrafts((prev: any) => ({ ...prev, [order.id]: { ...prev[order.id], tracking_number: v } }))} />
-            <Field label="Tracking URL" value={String(draft.tracking_url ?? '')} onChange={(v) => setTrackingDrafts((prev: any) => ({ ...prev, [order.id]: { ...prev[order.id], tracking_url: v } }))} />
-            <div className="flex items-end"><Button className="w-full" onClick={() => saveTracking(order)}>Save Tracking</Button></div>
-          </div>
-          <Field label="Admin Notes" value={String(draft.admin_notes ?? '')} onChange={(v) => setTrackingDrafts((prev: any) => ({ ...prev, [order.id]: { ...prev[order.id], admin_notes: v } }))} rows={2} />
-        </AdminCard>
-      );
-    })}
-  </section>
-);
+const orderStatusStyle = (status: string) => {
+  const map: Record<string, string> = {
+    warehouse: 'bg-slate-500/15 text-slate-700 dark:text-slate-300 border-slate-500/30',
+    packaging: 'bg-blue-500/15 text-blue-700 dark:text-blue-300 border-blue-500/30',
+    transit: 'bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/30',
+    delivered: 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-500/30',
+    cancelled: 'bg-rose-500/15 text-rose-700 dark:text-rose-300 border-rose-500/30',
+    refunded: 'bg-violet-500/15 text-violet-700 dark:text-violet-300 border-violet-500/30',
+  };
+  return map[status] || 'bg-muted text-muted-foreground border-border';
+};
+
+const OrdersPanel = ({ orders, profileById, trackingDrafts, setTrackingDrafts, updateOrder, saveTracking }: any) => {
+  const [expanded, setExpanded] = useState<Record<string, boolean>>({});
+  return (
+    <section className="space-y-5">
+      <div><h2 className="font-heading text-2xl">Orders</h2><p className="text-sm text-muted-foreground">View order details, customer shipping information, delivery tracking, cancellations, and refunds.</p></div>
+      {orders.length === 0 && <AdminCard><p className="text-center text-muted-foreground py-10">No orders yet.</p></AdminCard>}
+      <div className="grid gap-4 xl:grid-cols-2">
+        {orders.map((order: OrderRow) => {
+          const customer = profileById.get(order.user_id);
+          const draft = trackingDrafts[order.id] ?? order;
+          const isOpen = expanded[order.id];
+          return (
+            <AdminCard key={order.id} className="p-0 overflow-hidden transition-all hover:shadow-lg">
+              <div className="p-5 space-y-3">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <div className="flex flex-wrap items-center gap-2 mb-1">
+                      <h3 className="font-heading text-lg">#{shortId(order.id)}</h3>
+                      <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${orderStatusStyle(order.status)}`}>{order.status}</span>
+                    </div>
+                    <p className="text-xs text-muted-foreground truncate">{new Date(order.created_at).toLocaleString()}</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="font-heading text-lg text-primary">{money(order.total)}</p>
+                    <p className="text-[10px] uppercase tracking-wider text-muted-foreground">{order.payment_method} · {order.items?.length ?? 0} items</p>
+                  </div>
+                </div>
+                <div className="rounded-xl bg-background/60 border border-border p-3 text-sm">
+                  <p className="font-medium truncate">{customer?.full_name || 'Customer'}</p>
+                  <p className="text-xs text-muted-foreground truncate">{customer?.email || customer?.phone || 'No contact'}</p>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <select value={order.status} onChange={(event) => updateOrder(order.id, { status: event.target.value })} className="flex-1 min-w-[120px] rounded-lg border border-border bg-background px-2.5 py-1.5 text-xs">
+                    {orderStatuses.map((status) => <option key={status} value={status}>{status}</option>)}
+                  </select>
+                  <Button variant="outline" size="sm" className="h-8 text-xs" onClick={() => setExpanded((p) => ({ ...p, [order.id]: !isOpen }))}>
+                    {isOpen ? 'Hide' : 'Details'}
+                  </Button>
+                </div>
+              </div>
+              {isOpen && (
+                <div className="border-t border-border bg-background/40 p-5 space-y-4">
+                  <div className="grid sm:grid-cols-2 gap-3">
+                    <div className="rounded-xl border border-border bg-background p-3">
+                      <p className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground mb-1">Shipping</p>
+                      <p className="text-xs text-muted-foreground">{order.shipping_address ? JSON.stringify(order.shipping_address) : [customer?.house_number, customer?.village, customer?.upazila, customer?.district].filter(Boolean).join(', ') || 'No shipping address'}</p>
+                    </div>
+                    <div className="rounded-xl border border-border bg-background p-3">
+                      <p className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground mb-1">Items</p>
+                      <div className="space-y-0.5 text-xs text-muted-foreground max-h-24 overflow-auto">{(order.items ?? []).map((item, index) => <p key={index}>{item.name || item.product?.name || 'Item'} × {item.quantity || 1}</p>)}</div>
+                    </div>
+                  </div>
+                  <div className="grid sm:grid-cols-3 gap-2">
+                    <Field label="Courier" value={String(draft.courier ?? '')} onChange={(v) => setTrackingDrafts((prev: any) => ({ ...prev, [order.id]: { ...prev[order.id], courier: v } }))} />
+                    <Field label="Tracking #" value={String(draft.tracking_number ?? '')} onChange={(v) => setTrackingDrafts((prev: any) => ({ ...prev, [order.id]: { ...prev[order.id], tracking_number: v } }))} />
+                    <Field label="Tracking URL" value={String(draft.tracking_url ?? '')} onChange={(v) => setTrackingDrafts((prev: any) => ({ ...prev, [order.id]: { ...prev[order.id], tracking_url: v } }))} />
+                  </div>
+                  <Field label="Admin Notes" value={String(draft.admin_notes ?? '')} onChange={(v) => setTrackingDrafts((prev: any) => ({ ...prev, [order.id]: { ...prev[order.id], admin_notes: v } }))} rows={2} />
+                  <div className="flex flex-wrap gap-2 justify-end">
+                    <Button variant="outline" size="sm" onClick={() => updateOrder(order.id, { status: 'cancelled', cancelled_at: new Date().toISOString() })}>Cancel</Button>
+                    <Button variant="outline" size="sm" onClick={() => updateOrder(order.id, { status: 'refunded', refunded_at: new Date().toISOString() })}>Refund</Button>
+                    <Button size="sm" onClick={() => saveTracking(order)}>Save Tracking</Button>
+                  </div>
+                </div>
+              )}
+            </AdminCard>
+          );
+        })}
+      </div>
+    </section>
+  );
+};
 
 const CustomersPanel = ({ customers, orders, adminRoleIds, selectedCustomer, selectedCustomerOrders, selectCustomer, grantAdmin, revokeAdmin }: any) => (
   <section className="grid xl:grid-cols-[1fr_420px] gap-6">
