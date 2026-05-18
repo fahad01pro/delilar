@@ -75,7 +75,7 @@ const Admin = () => {
   }
 
   const toggleProduct = async (id: string, field: 'is_visible' | 'is_featured' | 'is_new' | 'is_trending' | 'is_sale', value: boolean) => {
-    const { error } = await supabase.from('products').update({ [field]: !value }).eq('id', id);
+    const { error } = await supabase.from('products').update({ [field]: !value } as any).eq('id', id);
     if (error) return toast.error(error.message);
     toast.success('Updated');
     load();
