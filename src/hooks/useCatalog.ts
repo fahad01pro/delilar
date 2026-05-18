@@ -41,7 +41,9 @@ function rowToProduct(row: any): Product {
     projection: data.projection,
     volumeOptions: data.volumeOptions,
     usageGuide: data.usageGuide,
-  };
+    // Admin-editable info sections (fabric, care, shipping, returns, faqs)
+    infoSections: data.infoSections,
+  } as Product;
 }
 
 // Raw row type (for admin views)
