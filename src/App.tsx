@@ -36,6 +36,7 @@ const AppShell = () => {
       <Routes>
         <Route path="/" element={<Index />} />
         <Route path="/admin/*" element={<Admin />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="/account" element={<Account />} />
         <Route path="/wishlist" element={<Wishlist />} />
         <Route path="/cart" element={<CartPage />} />
