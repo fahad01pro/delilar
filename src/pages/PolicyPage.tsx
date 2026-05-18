@@ -236,12 +236,12 @@ const PolicyPage = () => {
   if (!policy) return <Navigate to="/policies/shipping" replace />;
 
   const Icon = policy.icon;
-  const others = Object.values(policies).filter((p) => p.slug !== policy.slug);
+  const allPolicies = Object.values(policies);
 
   return (
-    <main className="bg-[hsl(var(--cream))] min-h-screen">
-      <section className="bg-primary text-primary-foreground py-16 lg:py-24">
-        <div className="container mx-auto px-4 lg:px-8 max-w-4xl">
+    <main className="bg-[hsl(var(--cream))] min-h-screen scroll-smooth">
+      <section className="bg-primary text-primary-foreground py-14 lg:py-20">
+        <div className="container mx-auto px-4 lg:px-8 max-w-7xl">
           <Link to="/" className="inline-flex items-center gap-2 text-xs font-body tracking-[0.25em] uppercase text-accent mb-6 hover:underline">
             <ArrowLeft size={14} /> Back to Store
           </Link>
@@ -258,42 +258,56 @@ const PolicyPage = () => {
         </div>
       </section>
 
-      <section className="container mx-auto px-4 lg:px-8 py-14 lg:py-20 max-w-4xl">
-        <div className="space-y-8">
-          {policy.sections.map((sec, i) => (
-            <motion.article
-              key={sec.heading}
-              initial={{ opacity: 0, y: 14 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: i * 0.05 }}
-              className="rounded-2xl bg-background border border-[hsl(var(--burgundy)/0.12)] p-6 lg:p-8 shadow-premium"
-            >
-              <h2 className="font-heading text-2xl text-[hsl(var(--burgundy))] mb-4">{sec.heading}</h2>
-              <ul className="space-y-3 text-sm lg:text-base font-body text-foreground/80 leading-relaxed">
-                {sec.body.map((line, j) => (
-                  <li key={j} className="flex gap-3">
-                    <span className="mt-2 w-1.5 h-1.5 rounded-full bg-accent flex-shrink-0" />
-                    <span>{line}</span>
-                  </li>
-                ))}
-              </ul>
-            </motion.article>
-          ))}
-        </div>
+      <section className="container mx-auto px-4 lg:px-8 py-10 lg:py-16 max-w-7xl">
+        <div className="grid lg:grid-cols-[260px_1fr] gap-8 lg:gap-12">
+          {/* Sticky left nav */}
+          <aside className="lg:sticky lg:top-24 lg:self-start">
+            <p className="text-[10px] font-body tracking-[0.3em] uppercase text-accent mb-4">All Policies</p>
+            <nav className="flex lg:flex-col gap-2 overflow-x-auto lg:overflow-visible -mx-1 px-1 pb-2 lg:pb-0">
+              {allPolicies.map((p) => {
+                const PIcon = p.icon;
+                const active = p.slug === policy.slug;
+                return (
+                  <Link
+                    key={p.slug}
+                    to={`/policies/${p.slug}`}
+                    className={`group flex items-center gap-3 rounded-xl px-3.5 py-3 text-sm font-body whitespace-nowrap lg:whitespace-normal transition-all flex-shrink-0 lg:flex-shrink ${
+                      active
+                        ? 'bg-primary text-primary-foreground shadow-premium'
+                        : 'bg-background border border-[hsl(var(--burgundy)/0.1)] text-foreground/80 hover:border-accent hover:text-[hsl(var(--burgundy))]'
+                    }`}
+                  >
+                    <span className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${active ? 'bg-accent/20 text-accent' : 'bg-[hsl(var(--cream))] text-[hsl(var(--burgundy))]'}`}>
+                      <PIcon size={15} />
+                    </span>
+                    <span className="font-medium">{p.title}</span>
+                  </Link>
+                );
+              })}
+            </nav>
+          </aside>
 
-        <div className="mt-16 pt-10 border-t border-[hsl(var(--burgundy)/0.15)]">
-          <p className="text-xs font-body tracking-[0.3em] uppercase text-accent mb-5">Other Policies</p>
-          <div className="grid sm:grid-cols-2 gap-3">
-            {others.map((p) => (
-              <Link
-                key={p.slug}
-                to={`/policies/${p.slug}`}
-                className="group rounded-xl bg-background border border-[hsl(var(--burgundy)/0.1)] p-4 hover:border-accent hover:shadow-premium transition-all"
+          {/* Content */}
+          <div className="space-y-6 lg:space-y-8 min-w-0">
+            {policy.sections.map((sec, i) => (
+              <motion.article
+                key={sec.heading}
+                initial={{ opacity: 0, y: 14 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: i * 0.05 }}
+                className="rounded-2xl bg-background border border-[hsl(var(--burgundy)/0.12)] p-6 lg:p-8 shadow-premium"
               >
-                <p className="text-[10px] font-body tracking-[0.25em] uppercase text-muted-foreground mb-1">{p.eyebrow}</p>
-                <p className="font-heading text-lg text-foreground group-hover:text-[hsl(var(--burgundy))] transition-colors">{p.title} →</p>
-              </Link>
+                <h2 className="font-heading text-2xl text-[hsl(var(--burgundy))] mb-4">{sec.heading}</h2>
+                <ul className="space-y-3 text-sm lg:text-base font-body text-foreground/80 leading-relaxed">
+                  {sec.body.map((line, j) => (
+                    <li key={j} className="flex gap-3">
+                      <span className="mt-2 w-1.5 h-1.5 rounded-full bg-accent flex-shrink-0" />
+                      <span>{line}</span>
+                    </li>
+                  ))}
+                </ul>
+              </motion.article>
             ))}
           </div>
         </div>
