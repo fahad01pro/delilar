@@ -75,6 +75,15 @@ export interface Product {
   projection?: string;
   volumeOptions?: string[];
   usageGuide?: string;
+
+  // Admin-editable rich info sections (markdown-lite). Auto-defaulted on create.
+  infoSections?: {
+    fabric?: string;
+    care?: string;
+    shipping?: string;
+    returns?: string;
+    faqs?: string;
+  };
 }
 
 /* ---------- Helpers to keep records terse ---------- */
