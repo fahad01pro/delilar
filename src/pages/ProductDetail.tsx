@@ -849,39 +849,81 @@ const DetailItem = ({ value, title, children }: { value: string; title: string; 
   </AccordionItem>
 );
 
-const SizeGuideDialog = ({ category }: { category: Product['category'] }) => {
+const NoteRow = ({ label, notes }: { label: string; notes: string[] }) => (
+  <div className="flex items-start gap-3">
+    <span className="text-[10px] tracking-[0.25em] uppercase text-[hsl(var(--gold))] w-12 shrink-0 pt-0.5">{label}</span>
+    <span className="text-sm font-body text-[hsl(var(--cream))]">{notes.join(' · ')}</span>
+  </div>
+);
+
+const SizeGuideDialog = ({
+  category,
+  unit,
+  setUnit,
+}: {
+  category: Product['category'];
+  unit: 'in' | 'cm';
+  setUnit: (u: 'in' | 'cm') => void;
+}) => {
   const isThobe = category === 'jubba' || category === 'eid';
   const isPanjabi = category === 'panjabi';
+  const isPants = category === 'pants';
 
-  const rows = isThobe
+  // inches base data
+  const rowsIn = isThobe
     ? [
-        ['52', '38', '56', '142'],
-        ['54', '40', '58', '144'],
-        ['56', '42', '60', '146'],
-        ['58', '44', '62', '148'],
-        ['60', '46', '64', '150'],
+        ['S', '40', '17', '56'],
+        ['M', '42', '18', '57'],
+        ['L', '44', '19', '58'],
+        ['XL', '46', '19.5', '59'],
+        ['2XL', '48', '20', '60'],
+        ['3XL', '50', '20.5', '61'],
       ]
     : isPanjabi
     ? [
-        ['38', '38', '28', '38'],
-        ['40', '40', '29', '39'],
-        ['42', '42', '30', '40'],
-        ['44', '44', '31', '41'],
-        ['46', '46', '32', '42'],
+        ['S', '38', '17', '38'],
+        ['M', '40', '17.5', '39'],
+        ['L', '42', '18', '40'],
+        ['XL', '44', '18.5', '41'],
+        ['2XL', '46', '19', '42'],
+      ]
+    : isPants
+    ? [
+        ['28', '28', '38', '40'],
+        ['30', '30', '40', '40.5'],
+        ['32', '32', '42', '41'],
+        ['34', '34', '44', '41.5'],
+        ['36', '36', '46', '42'],
+        ['38', '38', '48', '42.5'],
       ]
     : [
+        ['XS', '34–36', '26–28', '25'],
         ['S', '36–38', '28–30', '26'],
         ['M', '38–40', '30–32', '27'],
         ['L', '40–42', '32–34', '28'],
         ['XL', '42–44', '34–36', '29'],
-        ['XXL', '44–46', '36–38', '30'],
+        ['2XL', '44–46', '36–38', '30'],
+        ['3XL', '46–48', '38–40', '31'],
       ];
 
   const headers = isThobe
-    ? ['Size', 'Chest', 'Shoulder', 'Length (cm)']
+    ? ['Size', 'Chest', 'Shoulder', 'Length']
     : isPanjabi
     ? ['Size', 'Chest', 'Shoulder', 'Length']
+    : isPants
+    ? ['Size', 'Waist', 'Hip', 'Length']
     : ['Size', 'Chest', 'Waist', 'Length'];
+
+  const toCm = (v: string) => {
+    // single number or range "x–y"
+    const conv = (n: string) => (Number.isFinite(+n) ? Math.round(+n * 2.54).toString() : n);
+    if (v.includes('–')) {
+      return v.split('–').map(conv).join('–');
+    }
+    return Number.isFinite(+v) ? conv(v) : v;
+  };
+
+  const rows = rowsIn.map((r) => [r[0], ...r.slice(1).map((cell) => (unit === 'cm' ? toCm(cell) : cell))]);
 
   return (
     <Dialog>
@@ -891,8 +933,27 @@ const SizeGuideDialog = ({ category }: { category: Product['category'] }) => {
         </button>
       </DialogTrigger>
       <DialogContent className="max-w-lg bg-[hsl(var(--cream))] border-[hsl(var(--burgundy)/0.15)]">
-        <h3 className="text-xl font-heading font-bold text-[hsl(var(--charcoal))] mb-1">Size Guide</h3>
-        <p className="text-xs font-body text-muted-foreground mb-5">All measurements in inches unless noted.</p>
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="text-xl font-heading font-bold text-[hsl(var(--charcoal))]">Size Guide</h3>
+          <div className="flex rounded-full bg-[hsl(var(--burgundy)/0.08)] p-1">
+            {(['in', 'cm'] as const).map((u) => (
+              <button
+                key={u}
+                onClick={() => setUnit(u)}
+                className={`px-3 py-1 text-[11px] font-body tracking-wider uppercase rounded-full transition-all ${
+                  unit === u
+                    ? 'bg-[hsl(var(--burgundy))] text-[hsl(var(--cream))]'
+                    : 'text-[hsl(var(--burgundy))]'
+                }`}
+              >
+                {u === 'in' ? 'Inches' : 'CM'}
+              </button>
+            ))}
+          </div>
+        </div>
+        <p className="text-xs font-body text-muted-foreground mb-5">
+          All measurements in {unit === 'in' ? 'inches' : 'centimeters'}. Body measurements, not garment.
+        </p>
         <div className="overflow-x-auto rounded-xl border border-[hsl(var(--burgundy)/0.12)]">
           <table className="w-full text-sm font-body">
             <thead className="bg-[hsl(var(--burgundy))] text-[hsl(var(--cream))]">
@@ -905,8 +966,8 @@ const SizeGuideDialog = ({ category }: { category: Product['category'] }) => {
             <tbody>
               {rows.map((r, i) => (
                 <tr key={i} className={i % 2 === 0 ? 'bg-[hsl(var(--cream))]' : 'bg-[hsl(var(--cream-dark))]'}>
-                  {r.map((c, j) => (
-                    <td key={j} className="px-4 py-3 text-foreground">{c}</td>
+                  {r.map((cell, j) => (
+                    <td key={j} className="px-4 py-3 text-foreground">{cell}</td>
                   ))}
                 </tr>
               ))}
