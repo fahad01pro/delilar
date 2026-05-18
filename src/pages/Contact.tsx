@@ -104,23 +104,6 @@ const Contact = () => {
       </section>
 
       <section className="container mx-auto px-4 lg:px-8 py-14 lg:py-20">
-        <div className="flex items-center gap-3 mb-8">
-          <Sparkles size={18} className="text-accent" />
-          <p className="text-xs font-body tracking-[0.3em] uppercase text-[hsl(var(--burgundy))]">Our Outlets</p>
-          <span className="h-px flex-1 bg-[hsl(var(--burgundy)/0.15)]" />
-        </div>
-        {isLoading ? (
-          <p className="text-center text-muted-foreground py-16">Loading outlets…</p>
-        ) : outlets.length === 0 ? (
-          <p className="text-center text-muted-foreground py-16">Outlets coming soon.</p>
-        ) : (
-          <div className="grid lg:grid-cols-2 gap-6 lg:gap-8">
-            {outlets.map((o) => <OutletCard key={o.id} outlet={o} />)}
-          </div>
-        )}
-      </section>
-
-      <section className="container mx-auto px-4 lg:px-8 pb-20">
         <div className="grid lg:grid-cols-[1fr_0.9fr] gap-8 lg:gap-12 items-start">
           <ContactForm />
           <div className="space-y-4">
@@ -158,6 +141,23 @@ const Contact = () => {
             </a>
           </div>
         </div>
+      </section>
+
+      <section className="container mx-auto px-4 lg:px-8 pb-20">
+        <div className="flex items-center gap-3 mb-8">
+          <Sparkles size={18} className="text-accent" />
+          <p className="text-xs font-body tracking-[0.3em] uppercase text-[hsl(var(--burgundy))]">Our Outlets</p>
+          <span className="h-px flex-1 bg-[hsl(var(--burgundy)/0.15)]" />
+        </div>
+        {isLoading ? (
+          <p className="text-center text-muted-foreground py-16">Loading outlets…</p>
+        ) : outlets.length === 0 ? (
+          <p className="text-center text-muted-foreground py-16">Outlets coming soon.</p>
+        ) : (
+          <div className="grid lg:grid-cols-2 gap-6 lg:gap-8">
+            {outlets.map((o) => <OutletCard key={o.id} outlet={o} />)}
+          </div>
+        )}
       </section>
     </main>
   );
