@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowRight, Star, Truck, Shield, RotateCcw, ChevronLeft, ChevronRight, Sparkles } from 'lucide-react';
+import { ArrowRight, Truck, Shield, RotateCcw, ChevronLeft, ChevronRight, Sparkles } from 'lucide-react';
 import heroImage from '@/assets/hero-main.jpg';
 import catTshirts from '@/assets/category-tshirts.jpg';
 import catJubba from '@/assets/category-jubba.jpg';
