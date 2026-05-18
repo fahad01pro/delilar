@@ -54,17 +54,17 @@ const CategoryBanner = ({ products, categoryName, bannerImage }: { products: Pro
               <div className="max-w-md">
                 <p className="text-xs font-body tracking-[0.3em] uppercase text-accent mb-2">{categoryName}</p>
                 <h2 className="text-2xl lg:text-4xl font-heading font-bold text-primary-foreground mb-2">
-                  {bannerProducts[current].name}
+                  {active.name}
                 </h2>
                 <p className="text-primary-foreground/60 text-sm font-body line-clamp-2 mb-4">
-                  {bannerProducts[current].description}
+                  {active.description}
                 </p>
                 <div className="flex items-center gap-4">
                   <span className="text-2xl font-heading font-bold text-accent">
-                    ৳{bannerProducts[current].price.toLocaleString()}
+                    ৳{active.price.toLocaleString()}
                   </span>
                   <Link
-                    to={`/product/${bannerProducts[current].id}`}
+                    to={`/product/${active.id}`}
                     className="bg-accent text-foreground px-6 py-2.5 text-xs font-body tracking-widest uppercase font-semibold rounded-xl hover:shadow-[0_0_20px_hsl(43_72%_52%/0.4)] transition-all duration-300"
                   >
                     Shop Now
