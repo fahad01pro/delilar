@@ -339,6 +339,7 @@ const Admin = () => {
   const [heroBanners, setHeroBanners] = useState<HeroBannerRow[]>([]);
   const [categoryBanners, setCategoryBanners] = useState<CategoryBannerRow[]>([]);
   const [siteContent, setSiteContent] = useState<ContentRow[]>([]);
+  const [subscribers, setSubscribers] = useState<{ id: string; email: string; source: string; created_at: string }[]>([]);
   const [productDraft, setProductDraft] = useState<ProductDraft | null>(null);
   const [categoryDraft, setCategoryDraft] = useState<CategoryDraft | null>(null);
   const [bannerDraft, setBannerDraft] = useState<BannerDraft | null>(null);
