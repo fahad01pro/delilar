@@ -103,8 +103,8 @@ const CategoryPage = () => {
 
   const subFilter = searchParams.get('sub');
   const cat = categories.find((c) => c.slug === category);
-  const allProducts = getProductsByCategory(category as any);
-
+  const { data: allProducts = [] } = useProductsByCategory(category);
+  const { data: banner } = useCategoryBanner(category);
   const filtered = useMemo(() => {
     const range = priceRanges[priceFilter];
     let result = allProducts.filter((p) => p.price >= range.min && p.price < range.max);
