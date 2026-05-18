@@ -93,6 +93,11 @@ type ProductDraft = {
   material: string;
   fitType: string;
   volumeOptionsText: string;
+  fabricInfo: string;
+  careInfo: string;
+  shippingInfo: string;
+  returnsInfo: string;
+  faqsInfo: string;
   is_featured: boolean;
   is_new: boolean;
   is_trending: boolean;
