@@ -279,41 +279,6 @@ const Index = () => {
         </div>
       </section>
 
-      {/* Testimonials */}
-      <section className="container mx-auto px-4 lg:px-8 py-16 lg:py-24">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          className="text-center mb-12"
-        >
-          <p className="text-xs font-body tracking-[0.3em] uppercase text-accent mb-3 flex items-center justify-center gap-3">
-            <span className="w-8 h-px bg-accent" /> Testimonials <span className="w-8 h-px bg-accent" />
-          </p>
-          <h2 className="text-3xl lg:text-5xl font-heading font-bold">What Our Customers Say</h2>
-        </motion.div>
-        <div className="grid md:grid-cols-3 gap-6 lg:gap-8">
-          {testimonials.map((t, i) => (
-            <motion.div
-              key={i}
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: i * 0.15 }}
-              className="glass p-6 lg:p-8 rounded-2xl shadow-premium hover:shadow-premium-lg transition-all duration-300 group hover:-translate-y-1 border border-transparent hover:border-accent/20"
-            >
-              <div className="flex gap-0.5 mb-4">
-                {Array.from({ length: 5 }).map((_, j) => (
-                  <Star key={j} size={14} className={j < t.rating ? 'fill-accent text-accent' : 'text-border'} />
-                ))}
-              </div>
-              <p className="text-sm font-body text-foreground/80 leading-relaxed mb-4 italic">"{t.text}"</p>
-              <p className="text-xs font-body tracking-wider uppercase text-muted-foreground font-medium">— {t.name}</p>
-            </motion.div>
-          ))}
-        </div>
-      </section>
-
       {/* CTA Banner */}
       <section className="bg-primary py-20 lg:py-28 relative overflow-hidden">
         <div className="absolute inset-0 opacity-15">
