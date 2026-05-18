@@ -711,6 +711,40 @@ const Admin = () => {
     loadAdminData();
   };
 
+  const saveOutlet = async () => {
+    if (!outletDraft) return;
+    if (!outletDraft.name.trim() || !outletDraft.address.trim()) return toast.error('Outlet name and address are required');
+    const payload: any = {
+      name: outletDraft.name.trim(),
+      address: outletDraft.address.trim(),
+      city: outletDraft.city.trim() || null,
+      phone: outletDraft.phone.trim() || null,
+      whatsapp: outletDraft.whatsapp.trim() || null,
+      hours: outletDraft.hours.trim() || null,
+      email: outletDraft.email.trim() || null,
+      map_embed_url: outletDraft.map_embed_url.trim() || null,
+      map_link: outletDraft.map_link.trim() || null,
+      image_url: outletDraft.image_url.trim() || null,
+      enabled: outletDraft.enabled,
+      is_primary: outletDraft.is_primary,
+      sort_order: Number(outletDraft.sort_order || 0),
+    };
+    if (outletDraft.id) payload.id = outletDraft.id;
+    const { error } = await db.from('outlets').upsert(payload);
+    if (error) return toast.error(error.message);
+    toast.success('Outlet saved');
+    setOutletDraft(null);
+    loadAdminData();
+  };
+
+  const deleteOutlet = async (id: string) => {
+    if (!window.confirm('Delete this outlet?')) return;
+    const { error } = await db.from('outlets').delete().eq('id', id);
+    if (error) return toast.error(error.message);
+    toast.success('Outlet deleted');
+    loadAdminData();
+  };
+
   if (authLoading || checkingAdmin) {
     return (
       <AdminScreen>
