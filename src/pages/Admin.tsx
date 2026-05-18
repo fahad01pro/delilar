@@ -36,6 +36,7 @@ import { useAuth } from '@/context/AuthContext';
 import { ADMIN_EMAIL, isAdminUser } from '@/lib/admin';
 import { categories as staticCategories } from '@/data/products';
 import { resolveImage } from '@/lib/imageAssets';
+import { defaultInfoSections, mergeInfoSections } from '@/lib/productInfoDefaults';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 
