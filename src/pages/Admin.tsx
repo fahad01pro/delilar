@@ -942,7 +942,7 @@ const Admin = () => {
 
                 <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                   {filteredProducts.map((product) => {
-                    const lowStock = product.stock > 0 && product.stock <= (product.low_stock_threshold ?? 3);
+                    const lowStock = product.stock > 0 && product.stock <= ((product as any).low_stock_threshold ?? 3);
                     const outOfStock = product.stock <= 0;
                     return (
                       <AdminCard key={product.id} className="group relative flex flex-col gap-3 p-3 transition-all hover:shadow-lg hover:-translate-y-0.5">
