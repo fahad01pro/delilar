@@ -1086,50 +1086,196 @@ const SubscribersPanel = ({ subscribers }: { subscribers: { id: string; email: s
 };
 
 const InventoryPanel = ({ products }: { products: ProductRow[] }) => {
-  const outOfStock = products.filter((p) => p.stock <= 0);
-  const lowStock = products.filter((p) => p.stock > 0 && p.stock < 3);
-  const healthy = products.filter((p) => p.stock >= 3);
+  const LOW = 3;
+  const [activeCat, setActiveCat] = useState<string>('all');
+  const [query, setQuery] = useState('');
+  const [stockFilter, setStockFilter] = useState<'all' | 'in' | 'low' | 'out'>('all');
+  const [sortBy, setSortBy] = useState<'latest' | 'oldest' | 'name' | 'stock-asc' | 'stock-desc'>('latest');
+
+  const totals = useMemo(() => {
+    const out = products.filter((p) => p.stock <= 0).length;
+    const low = products.filter((p) => p.stock > 0 && p.stock < LOW).length;
+    const inS = products.filter((p) => p.stock >= LOW).length;
+    return { total: products.length, out, low, inS };
+  }, [products]);
+
+  const categoryGroups = useMemo(() => {
+    const map = new Map<string, ProductRow[]>();
+    for (const p of products) {
+      const k = (p.category || 'others').toLowerCase();
+      if (!map.has(k)) map.set(k, []);
+      map.get(k)!.push(p);
+    }
+    return Array.from(map.entries())
+      .map(([key, items]) => ({
+        key,
+        label: key.replace(/-/g, ' '),
+        count: items.length,
+        stock: items.reduce((s, p) => s + (p.stock || 0), 0),
+        items,
+      }))
+      .sort((a, b) => b.count - a.count);
+  }, [products]);
+
+  const filtered = useMemo(() => {
+    let list = activeCat === 'all' ? products : products.filter((p) => (p.category || '').toLowerCase() === activeCat);
+    if (query.trim()) {
+      const q = query.toLowerCase();
+      list = list.filter((p) => p.name.toLowerCase().includes(q) || (p.sku || '').toLowerCase().includes(q));
+    }
+    if (stockFilter === 'in') list = list.filter((p) => p.stock >= LOW);
+    if (stockFilter === 'low') list = list.filter((p) => p.stock > 0 && p.stock < LOW);
+    if (stockFilter === 'out') list = list.filter((p) => p.stock <= 0);
+    const sorted = [...list];
+    if (sortBy === 'latest') sorted.sort((a: any, b: any) => (b.created_at || '').localeCompare(a.created_at || ''));
+    if (sortBy === 'oldest') sorted.sort((a: any, b: any) => (a.created_at || '').localeCompare(b.created_at || ''));
+    if (sortBy === 'name') sorted.sort((a, b) => a.name.localeCompare(b.name));
+    if (sortBy === 'stock-asc') sorted.sort((a, b) => a.stock - b.stock);
+    if (sortBy === 'stock-desc') sorted.sort((a, b) => b.stock - a.stock);
+    return sorted;
+  }, [products, activeCat, query, stockFilter, sortBy]);
+
   return (
     <section className="space-y-6">
       <div>
         <h2 className="font-heading text-2xl">Inventory Management</h2>
-        <p className="text-sm text-muted-foreground">Total, sold, and remaining stock per product. Customers never see these numbers.</p>
+        <p className="text-sm text-muted-foreground">Category-wise stock control. Customers never see exact numbers.</p>
       </div>
-      <div className="grid sm:grid-cols-3 gap-4">
-        <Metric icon={Package} label="Total Products" value={products.length} detail="All catalog items" />
-        <Metric icon={Boxes} label="Low Stock" value={lowStock.length} detail="Less than 3 remaining" />
-        <Metric icon={ShieldCheck} label="Out of Stock" value={outOfStock.length} detail="Hidden CTA on storefront" />
+
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <Metric icon={Package} label="Total Products" value={totals.total} detail="All catalog items" />
+        <Metric icon={CheckCircle2} label="Active / In Stock" value={totals.inS} detail="Healthy stock level" />
+        <Metric icon={Boxes} label="Low Stock" value={totals.low} detail={`Below ${LOW} units`} />
+        <Metric icon={ShieldCheck} label="Out of Stock" value={totals.out} detail="Hidden CTA on storefront" />
       </div>
+
       <AdminCard>
-        <PanelTitle icon={Boxes} title="Stock Ledger" subtitle="Total stock = Sold + Remaining. Edit per-product values in the Products tab." />
-        <div className="mt-5 overflow-x-auto">
+        <PanelTitle icon={Boxes} title="Browse by Category" subtitle="Tap a category to filter the inventory list." />
+        <div className="mt-5 flex flex-wrap gap-2">
+          <button
+            type="button"
+            onClick={() => setActiveCat('all')}
+            className={`rounded-full border px-4 py-2 text-xs font-medium transition-all ${activeCat === 'all' ? 'border-primary bg-primary text-primary-foreground' : 'border-border bg-background text-muted-foreground hover:text-foreground'}`}
+          >
+            All <span className="ml-1 opacity-70">({totals.total})</span>
+          </button>
+          {categoryGroups.map((g) => (
+            <button
+              key={g.key}
+              type="button"
+              onClick={() => setActiveCat(g.key)}
+              className={`rounded-full border px-4 py-2 text-xs font-medium capitalize transition-all ${activeCat === g.key ? 'border-primary bg-primary text-primary-foreground' : 'border-border bg-background text-muted-foreground hover:text-foreground'}`}
+            >
+              {g.label} <span className="ml-1 opacity-70">({g.count} · {g.stock}u)</span>
+            </button>
+          ))}
+        </div>
+      </AdminCard>
+
+      <AdminCard>
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <PanelTitle icon={Boxes} title="Stock Ledger" subtitle={`${filtered.length} product${filtered.length === 1 ? '' : 's'} shown`} />
+        </div>
+        <div className="mt-5 grid gap-3 sm:grid-cols-[1fr_auto_auto]">
+          <div className="relative">
+            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+            <input
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Search by name or SKU…"
+              className="w-full rounded-xl border border-border bg-background pl-9 pr-3 py-2.5 text-sm outline-none focus:border-accent focus:ring-2 focus:ring-accent/20"
+            />
+          </div>
+          <select
+            value={stockFilter}
+            onChange={(e) => setStockFilter(e.target.value as any)}
+            className="rounded-xl border border-border bg-background px-3 py-2.5 text-sm outline-none focus:border-accent"
+          >
+            <option value="all">All stock</option>
+            <option value="in">In stock</option>
+            <option value="low">Low stock</option>
+            <option value="out">Out of stock</option>
+          </select>
+          <select
+            value={sortBy}
+            onChange={(e) => setSortBy(e.target.value as any)}
+            className="rounded-xl border border-border bg-background px-3 py-2.5 text-sm outline-none focus:border-accent"
+          >
+            <option value="latest">Latest</option>
+            <option value="oldest">Oldest</option>
+            <option value="name">Name (A–Z)</option>
+            <option value="stock-asc">Stock (Low → High)</option>
+            <option value="stock-desc">Stock (High → Low)</option>
+          </select>
+        </div>
+
+        <div className="mt-5 hidden md:block overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
               <tr className="text-left text-xs uppercase tracking-[0.2em] text-muted-foreground border-b border-border">
                 <th className="py-3 pr-3">Product</th>
                 <th className="py-3 px-3">Category</th>
+                <th className="py-3 px-3">SKU</th>
                 <th className="py-3 px-3 text-right">Remaining</th>
                 <th className="py-3 px-3 text-right">Sold</th>
                 <th className="py-3 pl-3 text-right">Status</th>
               </tr>
             </thead>
             <tbody>
-              {[...outOfStock, ...lowStock, ...healthy].map((p) => {
+              {filtered.map((p) => {
                 const sold = (p as any).sold_count ?? 0;
-                const status = p.stock <= 0 ? 'Out of stock' : p.stock < 3 ? 'Low' : 'Healthy';
-                const tone = p.stock <= 0 ? 'text-destructive' : p.stock < 3 ? 'text-amber-600' : 'text-green-700';
+                const isOut = p.stock <= 0;
+                const isLow = !isOut && p.stock < LOW;
+                const label = isOut ? 'Out of Stock' : isLow ? 'Low Stock' : 'In Stock';
+                const tone = isOut ? 'bg-destructive/10 text-destructive' : isLow ? 'bg-amber-100 text-amber-800' : 'bg-green-100 text-green-800';
+                const dot = isOut ? 'bg-destructive' : isLow ? 'bg-amber-500' : 'bg-green-600';
                 return (
-                  <tr key={p.id} className="border-b border-border/60">
-                    <td className="py-3 pr-3 font-medium">{p.name}</td>
+                  <tr key={p.id} className="border-b border-border/60 hover:bg-secondary/40">
+                    <td className="py-3 pr-3 font-medium flex items-center gap-2">
+                      <span className={`w-2 h-2 rounded-full ${dot}`} />
+                      {p.name}
+                    </td>
                     <td className="py-3 px-3 text-muted-foreground capitalize">{p.category}</td>
-                    <td className="py-3 px-3 text-right">{p.stock}</td>
-                    <td className="py-3 px-3 text-right">{sold}</td>
-                    <td className={`py-3 pl-3 text-right font-semibold ${tone}`}>{status}</td>
+                    <td className="py-3 px-3 text-muted-foreground">{p.sku || '—'}</td>
+                    <td className="py-3 px-3 text-right tabular-nums">{p.stock}</td>
+                    <td className="py-3 px-3 text-right tabular-nums">{sold}</td>
+                    <td className="py-3 pl-3 text-right">
+                      <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${tone}`}>{label}</span>
+                    </td>
                   </tr>
                 );
               })}
+              {filtered.length === 0 && (
+                <tr><td colSpan={6} className="py-10 text-center text-muted-foreground">No products match these filters.</td></tr>
+              )}
             </tbody>
           </table>
+        </div>
+
+        <div className="mt-5 md:hidden space-y-3">
+          {filtered.map((p) => {
+            const sold = (p as any).sold_count ?? 0;
+            const isOut = p.stock <= 0;
+            const isLow = !isOut && p.stock < LOW;
+            const label = isOut ? 'Out of Stock' : isLow ? 'Low Stock' : 'In Stock';
+            const tone = isOut ? 'bg-destructive/10 text-destructive' : isLow ? 'bg-amber-100 text-amber-800' : 'bg-green-100 text-green-800';
+            return (
+              <div key={p.id} className="rounded-xl border border-border p-3">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="font-medium">{p.name}</p>
+                    <p className="text-xs text-muted-foreground capitalize">{p.category} · {p.sku || 'No SKU'}</p>
+                  </div>
+                  <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${tone}`}>{label}</span>
+                </div>
+                <div className="mt-2 flex gap-4 text-xs text-muted-foreground">
+                  <span>Remaining: <b className="text-foreground tabular-nums">{p.stock}</b></span>
+                  <span>Sold: <b className="text-foreground tabular-nums">{sold}</b></span>
+                </div>
+              </div>
+            );
+          })}
+          {filtered.length === 0 && <p className="py-10 text-center text-sm text-muted-foreground">No products match these filters.</p>}
         </div>
       </AdminCard>
     </section>
