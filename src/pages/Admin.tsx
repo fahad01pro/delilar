@@ -440,7 +440,7 @@ const Admin = () => {
   const loadAdminData = async () => {
     if (!user) return;
     setBusy(true);
-    const [productsRes, ordersRes, profilesRes, rolesRes, categoriesRes, heroRes, catBannerRes, contentRes, subsRes] = await Promise.all([
+    const [productsRes, ordersRes, profilesRes, rolesRes, categoriesRes, heroRes, catBannerRes, contentRes, subsRes, outletsRes] = await Promise.all([
       db.from('products').select('*').order('sort_order', { ascending: true }),
       db.from('orders').select('*').order('created_at', { ascending: false }),
       db.from('profiles').select('*').order('created_at', { ascending: false }),
@@ -450,9 +450,10 @@ const Admin = () => {
       db.from('category_banners').select('*').order('category', { ascending: true }),
       db.from('site_content').select('*').order('sort_order', { ascending: true }),
       db.from('newsletter_subscribers').select('*').order('created_at', { ascending: false }),
+      db.from('outlets').select('*').order('sort_order', { ascending: true }),
     ]);
 
-    const firstError = [productsRes, ordersRes, profilesRes, rolesRes, categoriesRes, heroRes, catBannerRes, contentRes, subsRes].find((result) => result.error)?.error;
+    const firstError = [productsRes, ordersRes, profilesRes, rolesRes, categoriesRes, heroRes, catBannerRes, contentRes, subsRes, outletsRes].find((result) => result.error)?.error;
     if (firstError) toast.error(firstError.message);
 
     setProducts(productsRes.data ?? []);
@@ -464,6 +465,7 @@ const Admin = () => {
     setCategoryBanners(catBannerRes.data ?? []);
     setSiteContent(contentRes.data ?? []);
     setSubscribers(subsRes.data ?? []);
+    setOutlets(outletsRes.data ?? []);
     setBusy(false);
   };
 
