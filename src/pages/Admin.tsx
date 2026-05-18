@@ -1489,6 +1489,7 @@ const ProductEditor = ({ draft, setDraft, categories, save, uploading, onUpload,
       setVariants={(next) => setDraft({ ...draft, colorVariants: next })}
       uploadFn={uploadFn}
     />
+    <InfoSectionsEditor draft={draft} setDraft={(updater) => setDraft(updater)} />
     <div className="mt-5 flex flex-wrap items-center justify-between gap-4">
       <div className="flex flex-wrap gap-2">
         <TogglePill active={draft.is_visible} label="Visible" onClick={() => setDraft({ ...draft, is_visible: !draft.is_visible })} />
