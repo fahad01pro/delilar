@@ -126,7 +126,7 @@ const CategoryPage = () => {
   return (
     <main className="container mx-auto px-4 lg:px-8 py-8 lg:py-12">
       {/* Dynamic Banner */}
-      <CategoryBanner products={allProducts} categoryName={cat.name} />
+      <CategoryBanner products={allProducts} categoryName={cat.name} bannerImage={banner ? resolveImage(banner.image_url) : undefined} />
 
       {/* Header */}
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="text-center mb-10">
