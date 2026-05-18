@@ -377,21 +377,44 @@ const ProductDetail = () => {
               {product.description}
             </p>
 
-            {/* Variants */}
-            {product.colors && (
+            {/* Color swatches (preferred when variants exist) */}
+            {product.colorVariants && product.colorVariants.length > 0 ? (
+              <div className="mb-6">
+                <p className="text-xs font-body tracking-[0.25em] uppercase mb-3 font-semibold text-foreground">
+                  Color {selectedColor && <span className="text-muted-foreground font-normal normal-case tracking-normal">— {selectedColor}</span>}
+                </p>
+                <div className="flex flex-wrap gap-3">
+                  {product.colorVariants.map((cv) => (
+                    <button
+                      key={cv.name}
+                      onClick={() => setSelectedColor(cv.name)}
+                      aria-label={cv.name}
+                      title={cv.name}
+                      className={`relative w-11 h-11 rounded-full transition-all duration-300 ${
+                        selectedColor === cv.name
+                          ? 'ring-2 ring-offset-2 ring-[hsl(var(--burgundy))] ring-offset-[hsl(var(--cream))] scale-110'
+                          : 'ring-1 ring-[hsl(var(--burgundy)/0.2)] hover:scale-105'
+                      }`}
+                      style={{ backgroundColor: cv.hex }}
+                    />
+                  ))}
+                </div>
+              </div>
+            ) : product.colors ? (
               <VariantGroup
                 label="Color"
                 options={product.colors}
                 selected={selectedColor}
                 onSelect={setSelectedColor}
               />
-            )}
+            ) : null}
 
-            {product.sizes && (
+            {/* Sizes (clothing only) */}
+            {product.sizes && product.productType === 'clothing' && (
               <div className="mb-6">
                 <div className="flex items-center justify-between mb-3">
                   <p className="text-xs font-body tracking-[0.25em] uppercase font-semibold text-foreground">Size</p>
-                  <SizeGuideDialog category={product.category} />
+                  <SizeGuideDialog category={product.category} unit={unit} setUnit={setUnit} />
                 </div>
                 <div className="flex flex-wrap gap-2">
                   {product.sizes.map((size) => (
@@ -411,24 +434,63 @@ const ProductDetail = () => {
               </div>
             )}
 
-            {fragrances && (
+            {/* Volume (perfume / attar) */}
+            {product.volumeOptions && product.volumeOptions.length > 0 && (
               <VariantGroup
-                label="Fragrance"
-                options={fragrances}
-                selected={selectedFragrance}
-                onSelect={setSelectedFragrance}
+                label="Volume"
+                options={product.volumeOptions}
+                selected={selectedVolume}
+                onSelect={setSelectedVolume}
                 icon={<Sparkles size={12} className="text-[hsl(var(--gold))]" />}
               />
             )}
 
-            {materials && (
+            {/* Fabric (clothing only, optional) */}
+            {product.fabric && product.fabric.length > 1 && (
               <VariantGroup
                 label="Fabric"
-                options={materials}
-                selected={selectedMaterial}
-                onSelect={setSelectedMaterial}
+                options={product.fabric}
+                selected={selectedFabric}
+                onSelect={setSelectedFabric}
               />
             )}
+
+            {/* Fragrance notes pyramid (perfume) */}
+            {product.fragranceNotes && (
+              <div className="mb-6 rounded-2xl bg-[hsl(var(--burgundy))] text-[hsl(var(--cream))] p-5">
+                <p className="text-[10px] tracking-[0.3em] uppercase text-[hsl(var(--gold))] mb-4 font-body">Fragrance Pyramid</p>
+                <div className="space-y-3 text-sm font-body">
+                  <NoteRow label="Top" notes={product.fragranceNotes.top} />
+                  <NoteRow label="Heart" notes={product.fragranceNotes.heart} />
+                  <NoteRow label="Base" notes={product.fragranceNotes.base} />
+                </div>
+                {(product.longevity || product.projection) && (
+                  <div className="grid grid-cols-2 gap-3 mt-5 pt-5 border-t border-[hsl(var(--gold)/0.25)]">
+                    {product.longevity && (
+                      <div>
+                        <p className="text-[10px] tracking-[0.25em] uppercase text-[hsl(var(--gold))] mb-1">Longevity</p>
+                        <p className="text-sm font-body">{product.longevity}</p>
+                      </div>
+                    )}
+                    {product.projection && (
+                      <div>
+                        <p className="text-[10px] tracking-[0.25em] uppercase text-[hsl(var(--gold))] mb-1">Projection</p>
+                        <p className="text-sm font-body">{product.projection}</p>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Material card (accessories) */}
+            {product.productType === 'accessories' && product.material && (
+              <div className="mb-6 rounded-2xl bg-[hsl(var(--cream))] border border-[hsl(var(--burgundy)/0.12)] p-4">
+                <p className="text-[10px] tracking-[0.3em] uppercase text-[hsl(var(--burgundy))] mb-1 font-body">Material</p>
+                <p className="text-sm font-body text-foreground">{product.material}</p>
+              </div>
+            )}
+
 
             {/* Quantity + Actions */}
             <div className="flex items-stretch gap-3 mb-3">
