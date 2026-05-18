@@ -18,8 +18,22 @@ const ContactForm = () => (
   </div>
 );
 
+const toEmbedSrc = (raw?: string | null): string | null => {
+  if (!raw) return null;
+  const v = raw.trim();
+  if (!v) return null;
+  // Extract from pasted <iframe ...> HTML
+  const iframeMatch = v.match(/<iframe[^>]*\ssrc=["']([^"']+)["']/i);
+  if (iframeMatch) return iframeMatch[1];
+  // Already a Google embed URL
+  if (/google\.[^/]+\/maps\/embed/i.test(v)) return v;
+  // Plain google maps link or any address → use embeddable search
+  return `https://www.google.com/maps?q=${encodeURIComponent(v)}&output=embed`;
+};
+
 const OutletCard = ({ outlet }: { outlet: Outlet }) => {
   const waNumber = (outlet.whatsapp || outlet.phone || '').replace(/[^\d]/g, '');
+  const embedSrc = toEmbedSrc(outlet.map_embed_url) || toEmbedSrc(outlet.map_link) || toEmbedSrc([outlet.address, outlet.city].filter(Boolean).join(', '));
   return (
     <motion.article
       initial={{ opacity: 0, y: 16 }}
@@ -28,14 +42,14 @@ const OutletCard = ({ outlet }: { outlet: Outlet }) => {
       transition={{ duration: 0.5 }}
       className="rounded-2xl overflow-hidden border border-[hsl(var(--burgundy)/0.15)] bg-background shadow-premium hover:shadow-premium-lg transition-all"
     >
-      {outlet.map_embed_url && (
+      {embedSrc && (
         <div className="relative w-full aspect-[16/9] bg-secondary">
           <iframe
-            src={outlet.map_embed_url}
+            src={embedSrc}
             loading="lazy"
             referrerPolicy="no-referrer-when-downgrade"
             allowFullScreen
-            className="absolute inset-0 w-full h-full"
+            className="absolute inset-0 w-full h-full border-0"
             title={`${outlet.name} location`}
           />
         </div>
