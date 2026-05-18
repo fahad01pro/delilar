@@ -60,6 +60,7 @@ const menuItems: MenuCategory[] = [
 const MegaMenu = () => {
   const [activeMenu, setActiveMenu] = useState<string | null>(null);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const { data: products = [] } = useCatalog();
 
   const handleEnter = (label: string) => {
     if (timeoutRef.current) clearTimeout(timeoutRef.current);
