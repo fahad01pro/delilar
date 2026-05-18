@@ -265,7 +265,7 @@ const emptyProductDraft = (category = 'jubba'): ProductDraft => ({
   tagsText: '',
   image: '',
   imagesText: '',
-  sizesText: 'S, M, L, XL, 2XL',
+  sizesText: 'XS, S, M, L, XL, XXL, XXXL',
   colorsText: '',
   colorVariants: [],
   fabricText: '',
