@@ -23,33 +23,46 @@ import tshirtImg from '@/assets/category-tshirts.jpg';
 import jubbaImg from '@/assets/category-jubba.jpg';
 import panjabiImg from '@/assets/category-panjabi.jpg';
 import attarImg from '@/assets/category-attar.jpg';
+import poloImg from '@/assets/category-polo.jpg';
+import bagsImg from '@/assets/category-bags.jpg';
+import capsImg from '@/assets/category-caps.jpg';
+import perfumeImg from '@/assets/category-perfume.jpg';
+import streetwearImg from '@/assets/category-streetwear.jpg';
 
 const categoryImageMap: Record<Product['category'], string> = {
   tshirts: tshirtImg,
   jubba: jubbaImg,
   panjabi: panjabiImg,
   attar: attarImg,
+  perfume: perfumeImg,
   eid: jubbaImg,
-  accessories: heroImg,
+  accessories: bagsImg,
+  polo: poloImg,
+  shirts: poloImg,
+  pants: streetwearImg,
+  hoodies: streetwearImg,
+  caps: capsImg,
+  bags: bagsImg,
+  wallets: bagsImg,
+  kuffiyah: capsImg,
+  turban: capsImg,
 };
 
-const buildGallery = (product: Product): string[] => {
+const buildGallery = (product: Product, activeColor?: string): string[] => {
+  // 1) variant-driven images win
+  if (activeColor && product.colorVariants) {
+    const v = product.colorVariants.find((cv) => cv.name === activeColor);
+    if (v && v.images.length) return v.images;
+  }
+  // 2) first variant fallback
+  if (product.colorVariants && product.colorVariants.length) {
+    return product.colorVariants[0].images;
+  }
+  // 3) explicit images
   if (product.images && product.images.length) return product.images;
+  // 4) category-based fallback
   const primary = categoryImageMap[product.category] || heroImg;
-  // build 4 visually-distinct gallery slots by reusing assets
-  return [primary, heroImg, primary, categoryImageMap[product.category] || heroImg];
-};
-
-const fragranceFor = (p: Product): string[] | null =>
-  p.category === 'attar'
-    ? ['Original', 'Intense', 'Noir Edition']
-    : null;
-
-const materialFor = (p: Product): string[] | null => {
-  if (p.category === 'tshirts') return ['Premium Cotton', 'Bamboo Blend'];
-  if (p.category === 'jubba' || p.category === 'panjabi' || p.category === 'eid')
-    return ['Cotton', 'Semi-Silk', 'Pure Silk'];
-  return null;
+  return [primary, heroImg, primary, primary];
 };
 
 const ProductDetail = () => {
