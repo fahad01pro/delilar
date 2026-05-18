@@ -100,16 +100,6 @@ const ProductCard = ({ product, index = 0 }: { product: Product; index?: number 
         </div>
       </Link>
       <div className="mt-4 px-1">
-        <div className="flex items-center gap-1 mb-1.5">
-          {Array.from({ length: 5 }).map((_, i) => (
-            <Star
-              key={i}
-              size={12}
-              className={i < Math.floor(product.rating) ? 'fill-accent text-accent' : 'text-border'}
-            />
-          ))}
-          <span className="text-[10px] text-muted-foreground font-body ml-1">({product.reviews})</span>
-        </div>
         <Link to={`/product/${product.id}`}>
           <h3 className="text-sm font-body font-medium text-foreground hover:text-primary transition-colors line-clamp-1">
             {product.name}
