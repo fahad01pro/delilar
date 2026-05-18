@@ -71,28 +71,38 @@ const ProductDetail = () => {
   const { addItem, setIsCartOpen } = useCart();
   const { toggle: toggleWish, has: hasWish } = useWishlist();
 
-  const gallery = useMemo(() => (product ? buildGallery(product) : []), [product]);
-  const fragrances = useMemo(() => (product ? fragranceFor(product) : null), [product]);
-  const materials = useMemo(() => (product ? materialFor(product) : null), [product]);
+  const initialColor = product?.colorVariants?.[0]?.name || product?.colors?.[0] || '';
+  const initialVolume = product?.volumeOptions?.[0] || '';
 
   const [activeImg, setActiveImg] = useState(0);
   const [selectedSize, setSelectedSize] = useState('');
-  const [selectedColor, setSelectedColor] = useState('');
-  const [selectedFragrance, setSelectedFragrance] = useState('');
-  const [selectedMaterial, setSelectedMaterial] = useState('');
+  const [selectedColor, setSelectedColor] = useState(initialColor);
+  const [selectedVolume, setSelectedVolume] = useState(initialVolume);
+  const [selectedFabric, setSelectedFabric] = useState('');
   const [quantity, setQuantity] = useState(1);
   const [zoomOpen, setZoomOpen] = useState(false);
   const [adding, setAdding] = useState(false);
+  const [unit, setUnit] = useState<'in' | 'cm'>('in');
+
+  const gallery = useMemo(
+    () => (product ? buildGallery(product, selectedColor) : []),
+    [product, selectedColor]
+  );
+
+  // Reset image index when variant images change
+  useEffect(() => {
+    setActiveImg(0);
+  }, [selectedColor]);
 
   useEffect(() => {
     setActiveImg(0);
     setQuantity(1);
     setSelectedSize('');
-    setSelectedColor('');
-    setSelectedFragrance('');
-    setSelectedMaterial('');
+    setSelectedColor(product?.colorVariants?.[0]?.name || product?.colors?.[0] || '');
+    setSelectedVolume(product?.volumeOptions?.[0] || '');
+    setSelectedFabric('');
     window.scrollTo({ top: 0, behavior: 'smooth' });
-  }, [id]);
+  }, [id, product]);
 
   if (!product) {
     return (
