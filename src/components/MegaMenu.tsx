@@ -2,7 +2,7 @@ import { useState, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronDown, Shirt, Crown, Sparkles, Droplets, Star, CircleDot, Briefcase, Wallet } from 'lucide-react';
-import { products } from '@/data/products';
+import { useCatalog } from '@/hooks/useCatalog';
 
 interface MenuCategory {
   label: string;
@@ -60,6 +60,7 @@ const menuItems: MenuCategory[] = [
 const MegaMenu = () => {
   const [activeMenu, setActiveMenu] = useState<string | null>(null);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const { data: products = [] } = useCatalog();
 
   const handleEnter = (label: string) => {
     if (timeoutRef.current) clearTimeout(timeoutRef.current);

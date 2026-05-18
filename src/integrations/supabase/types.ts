@@ -14,6 +14,90 @@ export type Database = {
   }
   public: {
     Tables: {
+      category_banners: {
+        Row: {
+          category: string
+          created_at: string
+          enabled: boolean
+          id: string
+          image_url: string
+          subtitle: string | null
+          title: string | null
+          updated_at: string
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          enabled?: boolean
+          id?: string
+          image_url: string
+          subtitle?: string | null
+          title?: string | null
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          enabled?: boolean
+          id?: string
+          image_url?: string
+          subtitle?: string | null
+          title?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      hero_banners: {
+        Row: {
+          created_at: string
+          cta_href: string | null
+          cta_label: string | null
+          enabled: boolean
+          ends_at: string | null
+          eyebrow: string | null
+          id: string
+          image_url: string
+          mobile_image_url: string | null
+          sort_order: number
+          starts_at: string | null
+          subtitle: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          cta_href?: string | null
+          cta_label?: string | null
+          enabled?: boolean
+          ends_at?: string | null
+          eyebrow?: string | null
+          id?: string
+          image_url: string
+          mobile_image_url?: string | null
+          sort_order?: number
+          starts_at?: string | null
+          subtitle?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          cta_href?: string | null
+          cta_label?: string | null
+          enabled?: boolean
+          ends_at?: string | null
+          eyebrow?: string | null
+          id?: string
+          image_url?: string
+          mobile_image_url?: string | null
+          sort_order?: number
+          starts_at?: string | null
+          subtitle?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       orders: {
         Row: {
           created_at: string
@@ -53,6 +137,90 @@ export type Database = {
           total?: number
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      products: {
+        Row: {
+          badge: string | null
+          brand: string | null
+          category: string
+          created_at: string
+          data: Json
+          description: string | null
+          id: string
+          in_stock: boolean
+          is_featured: boolean
+          is_new: boolean
+          is_sale: boolean
+          is_trending: boolean
+          is_visible: boolean
+          name: string
+          original_price: number | null
+          price: number
+          product_type: string
+          rating: number
+          reviews: number
+          sku: string | null
+          sort_order: number
+          stock: number
+          subtitle: string | null
+          tags: string[] | null
+          updated_at: string
+        }
+        Insert: {
+          badge?: string | null
+          brand?: string | null
+          category: string
+          created_at?: string
+          data?: Json
+          description?: string | null
+          id: string
+          in_stock?: boolean
+          is_featured?: boolean
+          is_new?: boolean
+          is_sale?: boolean
+          is_trending?: boolean
+          is_visible?: boolean
+          name: string
+          original_price?: number | null
+          price?: number
+          product_type?: string
+          rating?: number
+          reviews?: number
+          sku?: string | null
+          sort_order?: number
+          stock?: number
+          subtitle?: string | null
+          tags?: string[] | null
+          updated_at?: string
+        }
+        Update: {
+          badge?: string | null
+          brand?: string | null
+          category?: string
+          created_at?: string
+          data?: Json
+          description?: string | null
+          id?: string
+          in_stock?: boolean
+          is_featured?: boolean
+          is_new?: boolean
+          is_sale?: boolean
+          is_trending?: boolean
+          is_visible?: boolean
+          name?: string
+          original_price?: number | null
+          price?: number
+          product_type?: string
+          rating?: number
+          reviews?: number
+          sku?: string | null
+          sort_order?: number
+          stock?: number
+          subtitle?: string | null
+          tags?: string[] | null
+          updated_at?: string
         }
         Relationships: []
       }
@@ -139,7 +307,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      is_admin: { Args: never; Returns: boolean }
     }
     Enums: {
       order_status:

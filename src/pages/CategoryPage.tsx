@@ -1,6 +1,8 @@
 import { useState, useMemo, useEffect, useCallback } from 'react';
 import { useParams, useSearchParams, Link } from 'react-router-dom';
-import { getProductsByCategory, categories, Product } from '@/data/products';
+import { categories, type Product } from '@/data/products';
+import { useProductsByCategory, useCategoryBanner } from '@/hooks/useCatalog';
+import { resolveImage } from '@/lib/imageAssets';
 import ProductCard from '@/components/ProductCard';
 import { SlidersHorizontal, X, ChevronLeft, ChevronRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -12,7 +14,7 @@ const priceRanges = [
   { label: 'Over ৳4,000', min: 4000, max: Infinity },
 ];
 
-const CategoryBanner = ({ products, categoryName }: { products: Product[]; categoryName: string }) => {
+const CategoryBanner = ({ products, categoryName, bannerImage }: { products: Product[]; categoryName: string; bannerImage?: string }) => {
   const [current, setCurrent] = useState(0);
   const bannerProducts = products.slice(0, 4);
 
@@ -38,7 +40,14 @@ const CategoryBanner = ({ products, categoryName }: { products: Product[]; categ
           transition={{ duration: 0.6 }}
           className="absolute inset-0"
         >
-          <div className="absolute inset-0 bg-primary" />
+          {bannerImage ? (
+            <>
+              <img src={bannerImage} alt="" className="absolute inset-0 w-full h-full object-cover" />
+              <div className="absolute inset-0 bg-gradient-to-r from-primary/95 via-primary/70 to-primary/20" />
+            </>
+          ) : (
+            <div className="absolute inset-0 bg-primary" />
+          )}
           <div className="absolute inset-0 flex items-center">
             <div className="container mx-auto px-6 lg:px-10 flex items-center justify-between">
               <div className="max-w-md">
@@ -101,8 +110,8 @@ const CategoryPage = () => {
 
   const subFilter = searchParams.get('sub');
   const cat = categories.find((c) => c.slug === category);
-  const allProducts = getProductsByCategory(category as any);
-
+  const { data: allProducts = [] } = useProductsByCategory(category);
+  const { data: banner } = useCategoryBanner(category);
   const filtered = useMemo(() => {
     const range = priceRanges[priceFilter];
     let result = allProducts.filter((p) => p.price >= range.min && p.price < range.max);
@@ -117,7 +126,7 @@ const CategoryPage = () => {
   return (
     <main className="container mx-auto px-4 lg:px-8 py-8 lg:py-12">
       {/* Dynamic Banner */}
-      <CategoryBanner products={allProducts} categoryName={cat.name} />
+      <CategoryBanner products={allProducts} categoryName={cat.name} bannerImage={banner ? resolveImage(banner.image_url) : undefined} />
 
       {/* Header */}
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="text-center mb-10">

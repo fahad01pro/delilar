@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { getProductById, getProductsByCategory, type Product } from '@/data/products';
+import { type Product } from '@/data/products';
+import { useProduct, useProductsByCategory } from '@/hooks/useCatalog';
 import { useCart } from '@/context/CartContext';
 import { useWishlist } from '@/context/WishlistContext';
 import {
@@ -67,7 +68,8 @@ const buildGallery = (product: Product, activeColor?: string): string[] => {
 
 const ProductDetail = () => {
   const { id } = useParams<{ id: string }>();
-  const product = getProductById(id || '');
+  const { data: product } = useProduct(id);
+  const { data: categoryProducts = [] } = useProductsByCategory(product?.category);
   const { addItem, setIsCartOpen } = useCart();
   const { toggle: toggleWish, has: hasWish } = useWishlist();
 
@@ -115,7 +117,7 @@ const ProductDetail = () => {
     );
   }
 
-  const related = getProductsByCategory(product.category)
+  const related = categoryProducts
     .filter((p) => p.id !== product.id)
     .slice(0, 4);
 
