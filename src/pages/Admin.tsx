@@ -38,8 +38,10 @@ import { resolveImage } from '@/lib/imageAssets';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 
-type AdminTab = 'overview' | 'products' | 'orders' | 'customers' | 'subscribers' | 'inventory' | 'content' | 'settings';
+type AdminTab = 'overview' | 'products' | 'orders' | 'customers' | 'subscribers' | 'inventory' | 'outlets' | 'content' | 'settings';
 type ProductType = 'clothing' | 'accessories' | 'perfume';
+
+type ColorVariantDraft = { name: string; hex: string; sku?: string; stock?: string; images: [string, string] };
 
 type ProductRow = {
   id: string;
