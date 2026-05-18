@@ -326,7 +326,7 @@ const Admin = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const segment = location.pathname.split('/')[2] as AdminTab | undefined;
-  const activeTab: AdminTab = segment && ['overview', 'products', 'orders', 'customers', 'content', 'settings'].includes(segment) ? segment : 'overview';
+  const activeTab: AdminTab = segment && ['overview', 'products', 'orders', 'customers', 'subscribers', 'inventory', 'content', 'settings'].includes(segment) ? segment : 'overview';
 
   const [checkingAdmin, setCheckingAdmin] = useState(true);
   const [hasAdminAccess, setHasAdminAccess] = useState(false);
