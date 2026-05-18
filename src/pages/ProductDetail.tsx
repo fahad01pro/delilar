@@ -117,7 +117,7 @@ const ProductDetail = () => {
     );
   }
 
-  const related = getProductsByCategory(product.category)
+  const related = categoryProducts
     .filter((p) => p.id !== product.id)
     .slice(0, 4);
 
