@@ -1346,6 +1346,64 @@ const SelectField = ({ label, value, onChange, options }: { label: string; value
   </label>
 );
 
+type InfoKey = 'fabricInfo' | 'careInfo' | 'shippingInfo' | 'returnsInfo' | 'faqsInfo';
+const INFO_FIELDS: { key: InfoKey; label: string; hint: string; defaultKey: 'fabric' | 'care' | 'shipping' | 'returns' | 'faqs' }[] = [
+  { key: 'fabricInfo', label: 'Fabric & Material', hint: 'Use "- " for bullets. Auto-filled with brand default — edit for product specifics.', defaultKey: 'fabric' },
+  { key: 'careInfo', label: 'Care Instructions', hint: 'Wash, iron, storage notes. One per line with "- ".', defaultKey: 'care' },
+  { key: 'shippingInfo', label: 'Shipping Information', hint: 'Delivery rules. Edit per-product if needed.', defaultKey: 'shipping' },
+  { key: 'returnsInfo', label: 'Return & Exchange Policy', hint: 'Default Delilar policy — check-at-delivery only. Override only if necessary.', defaultKey: 'returns' },
+  { key: 'faqsInfo', label: 'FAQs', hint: 'Format: "Question?:" on its own line, then the answer below. Blank line between Q&A pairs.', defaultKey: 'faqs' },
+];
+
+const InfoSectionsEditor = ({ draft, setDraft }: { draft: ProductDraft; setDraft: (updater: (d: ProductDraft | null) => ProductDraft | null) => void }) => {
+  const [openKey, setOpenKey] = useState<InfoKey>('fabricInfo');
+  const set = (key: InfoKey, value: string) => setDraft((d) => (d ? { ...d, [key]: value } : d));
+  const resetToDefault = (key: InfoKey, defaultKey: 'fabric' | 'care' | 'shipping' | 'returns' | 'faqs') => {
+    const d = defaultInfoSections();
+    set(key, d[defaultKey]);
+    toast.success('Reset to default');
+  };
+  return (
+    <div className="mt-6 rounded-2xl border border-border bg-background/50 p-4">
+      <div className="flex items-start justify-between gap-3 mb-3">
+        <div>
+          <p className="text-xs uppercase tracking-[0.22em] text-muted-foreground">Product Info Sections</p>
+          <p className="text-sm text-foreground/80 mt-1">Auto-filled with brand defaults. Edit any section for product-specific notes — saved per product.</p>
+        </div>
+      </div>
+      <div className="flex flex-wrap gap-2 mb-4">
+        {INFO_FIELDS.map((f) => (
+          <button
+            key={f.key}
+            type="button"
+            onClick={() => setOpenKey(f.key)}
+            className={`px-3 py-1.5 rounded-full text-xs font-body transition-all ${openKey === f.key ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/80'}`}
+          >
+            {f.label}
+          </button>
+        ))}
+      </div>
+      {INFO_FIELDS.filter((f) => f.key === openKey).map((f) => (
+        <div key={f.key} className="space-y-2">
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] uppercase tracking-[0.22em] text-muted-foreground">{f.label}</span>
+            <button type="button" onClick={() => resetToDefault(f.key, f.defaultKey)} className="text-[11px] text-accent hover:underline">
+              Reset to default
+            </button>
+          </div>
+          <textarea
+            value={draft[f.key]}
+            onChange={(e) => set(f.key, e.target.value)}
+            rows={10}
+            className="w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm font-mono leading-relaxed outline-none focus:border-accent focus:ring-2 focus:ring-accent/20"
+          />
+          <p className="text-[11px] text-muted-foreground">{f.hint}</p>
+        </div>
+      ))}
+    </div>
+  );
+};
+
 const ColorVariantsEditor = ({ variants, setVariants, uploadFn }: { variants: ColorVariantDraft[]; setVariants: (next: ColorVariantDraft[]) => void; uploadFn: (file: File) => Promise<string | null> }) => {
   const update = (idx: number, patch: Partial<ColorVariantDraft>) => {
     setVariants(variants.map((v, i) => (i === idx ? { ...v, ...patch } : v)));
