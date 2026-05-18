@@ -19,6 +19,8 @@ import {
   Dialog, DialogContent, DialogTrigger,
 } from '@/components/ui/dialog';
 import { toast } from '@/hooks/use-toast';
+import RichInfo from '@/components/RichInfo';
+import { mergeInfoSections } from '@/lib/productInfoDefaults';
 import heroImg from '@/assets/hero-main.jpg';
 import tshirtImg from '@/assets/category-tshirts.jpg';
 import jubbaImg from '@/assets/category-jubba.jpg';
