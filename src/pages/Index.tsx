@@ -27,11 +27,6 @@ const fallbackHero = {
   cta: { label: 'Shop Now', href: '/jubba' },
 };
 
-const testimonials = [
-  { name: 'Ahmed R.', text: 'The quality of the Jubba is exceptional. Truly premium fabric and beautiful craftsmanship.', rating: 5 },
-  { name: 'Farhan K.', text: 'Delilar attar collection is unmatched. The Oud Al Majestic is now my signature scent.', rating: 5 },
-  { name: 'Ibrahim S.', text: 'Fast delivery and the Panjabi fit perfectly. Will definitely order again!', rating: 4 },
-];
 
 const Index = () => {
   const { data: catalog = [] } = useCatalog();
