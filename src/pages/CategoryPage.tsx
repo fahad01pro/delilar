@@ -14,7 +14,7 @@ const priceRanges = [
   { label: 'Over ৳4,000', min: 4000, max: Infinity },
 ];
 
-const CategoryBanner = ({ products, categoryName }: { products: Product[]; categoryName: string }) => {
+const CategoryBanner = ({ products, categoryName, bannerImage }: { products: Product[]; categoryName: string; bannerImage?: string }) => {
   const [current, setCurrent] = useState(0);
   const bannerProducts = products.slice(0, 4);
 
