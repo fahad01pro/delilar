@@ -1071,6 +1071,105 @@ const SelectField = ({ label, value, onChange, options }: { label: string; value
   </label>
 );
 
+const ColorVariantsEditor = ({ variants, setVariants, uploadFn }: { variants: ColorVariantDraft[]; setVariants: (next: ColorVariantDraft[]) => void; uploadFn: (file: File) => Promise<string | null> }) => {
+  const update = (idx: number, patch: Partial<ColorVariantDraft>) => {
+    setVariants(variants.map((v, i) => (i === idx ? { ...v, ...patch } : v)));
+  };
+  const updateImage = (idx: number, slot: 0 | 1, url: string) => {
+    const next = [...variants];
+    const imgs: [string, string] = [...next[idx].images] as [string, string];
+    imgs[slot] = url;
+    next[idx] = { ...next[idx], images: imgs };
+    setVariants(next);
+  };
+  const move = (idx: number, dir: -1 | 1) => {
+    const newIdx = idx + dir;
+    if (newIdx < 0 || newIdx >= variants.length) return;
+    const next = [...variants];
+    [next[idx], next[newIdx]] = [next[newIdx], next[idx]];
+    setVariants(next);
+  };
+  const add = () =>
+    setVariants([...variants, { name: '', hex: '#000000', sku: '', stock: '', images: ['', ''] }]);
+  const remove = (idx: number) => setVariants(variants.filter((_, i) => i !== idx));
+
+  return (
+    <div className="mt-6 rounded-2xl border border-border bg-background/60 p-5">
+      <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+        <div>
+          <h4 className="font-heading text-lg">Color Variants</h4>
+          <p className="text-xs text-muted-foreground">Unlimited colors · 2 images per color · stock & SKU per variant.</p>
+        </div>
+        <Button type="button" onClick={add} className="gap-2"><Plus size={14} /> Add Color</Button>
+      </div>
+      {variants.length === 0 && (
+        <p className="text-sm text-muted-foreground py-6 text-center">No color variants yet. Add one to enable image switching on the storefront.</p>
+      )}
+      <div className="space-y-4">
+        {variants.map((variant, idx) => (
+          <div key={idx} className="rounded-xl border border-border bg-card p-4">
+            <div className="grid lg:grid-cols-[1fr_auto] gap-4 items-start">
+              <div className="grid md:grid-cols-4 gap-3">
+                <Field label="Color Name" value={variant.name} onChange={(v) => update(idx, { name: v })} placeholder="Black / Olive / Cream" />
+                <label className="block">
+                  <span className="mb-1.5 block text-[10px] uppercase tracking-[0.22em] text-muted-foreground font-body">Hex Code</span>
+                  <div className="flex items-center gap-2">
+                    <input type="color" value={variant.hex || '#000000'} onChange={(e) => update(idx, { hex: e.target.value })} className="w-12 h-10 rounded-lg border border-border bg-background cursor-pointer" />
+                    <input type="text" value={variant.hex} onChange={(e) => update(idx, { hex: e.target.value })} placeholder="#000000" className="flex-1 rounded-xl border border-border bg-background px-3 py-2.5 text-sm outline-none focus:border-accent focus:ring-2 focus:ring-accent/20" />
+                  </div>
+                </label>
+                <Field label="Variant SKU" value={variant.sku ?? ''} onChange={(v) => update(idx, { sku: v })} placeholder="optional" />
+                <Field label="Variant Stock" type="number" value={variant.stock ?? ''} onChange={(v) => update(idx, { stock: v })} placeholder="0" />
+              </div>
+              <div className="flex lg:flex-col gap-2 lg:items-end">
+                <Button type="button" variant="outline" size="sm" onClick={() => move(idx, -1)} disabled={idx === 0}>↑</Button>
+                <Button type="button" variant="outline" size="sm" onClick={() => move(idx, 1)} disabled={idx === variants.length - 1}>↓</Button>
+                <Button type="button" variant="outline" size="sm" onClick={() => remove(idx)} className="text-destructive hover:text-destructive gap-1"><Trash2 size={13} /></Button>
+              </div>
+            </div>
+            <div className="mt-4 grid md:grid-cols-2 gap-4">
+              {[0, 1].map((slot) => (
+                <div key={slot} className="rounded-xl border border-dashed border-border bg-background/80 p-3">
+                  <p className="text-[10px] uppercase tracking-[0.22em] text-muted-foreground mb-2">Image {slot + 1}</p>
+                  <div className="aspect-square w-full rounded-lg overflow-hidden bg-secondary mb-2 flex items-center justify-center">
+                    {variant.images[slot] ? (
+                      <img src={variant.images[slot]} alt={`${variant.name} ${slot + 1}`} className="w-full h-full object-cover" />
+                    ) : (
+                      <span className="text-xs text-muted-foreground">No image</span>
+                    )}
+                  </div>
+                  <input
+                    type="text"
+                    value={variant.images[slot]}
+                    onChange={(e) => updateImage(idx, slot as 0 | 1, e.target.value)}
+                    placeholder="https://image-url..."
+                    className="w-full rounded-lg border border-border bg-background px-2 py-1.5 text-xs outline-none focus:border-accent mb-2"
+                  />
+                  <label className="flex items-center justify-center gap-2 rounded-lg border border-dashed border-border bg-background px-3 py-2 text-xs text-muted-foreground cursor-pointer hover:border-accent hover:text-foreground transition-all">
+                    <Upload size={13} /> Upload
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={async (e) => {
+                        const file = e.target.files?.[0];
+                        if (!file) return;
+                        const url = await uploadFn(file);
+                        if (url) updateImage(idx, slot as 0 | 1, url);
+                        e.target.value = '';
+                      }}
+                    />
+                  </label>
+                </div>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
 const ProductEditor = ({ draft, setDraft, categories, save, uploading, onUpload, uploadFn }: { draft: ProductDraft; setDraft: (draft: ProductDraft | null | ((draft: ProductDraft | null) => ProductDraft | null)) => void; categories: { id: string; name: string }[]; save: () => void; uploading: boolean; onUpload: (file: File) => void; uploadFn: (file: File) => Promise<string | null> }) => (
   <AdminCard>
     <div className="flex items-start justify-between gap-4 mb-5">
