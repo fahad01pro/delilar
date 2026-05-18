@@ -1546,8 +1546,10 @@ const ProductEditor = ({ draft, setDraft, categories, save, uploading, onUpload,
         <Field label="Gallery Image URLs" value={draft.imagesText} onChange={(v) => setDraft({ ...draft, imagesText: v })} rows={4} placeholder="One image URL per line" />
       </div>
     </div>
+    <div className="mt-4">
+      <SizesPicker value={draft.sizesText} onChange={(v) => setDraft({ ...draft, sizesText: v })} />
+    </div>
     <div className="grid md:grid-cols-2 xl:grid-cols-4 gap-4 mt-4">
-      <Field label="Sizes" value={draft.sizesText} onChange={(v) => setDraft({ ...draft, sizesText: v })} />
       <Field label="Colors" value={draft.colorsText} onChange={(v) => setDraft({ ...draft, colorsText: v })} />
       <Field label="Fabric" value={draft.fabricText} onChange={(v) => setDraft({ ...draft, fabricText: v })} />
       <Field label="Fit Type" value={draft.fitType} onChange={(v) => setDraft({ ...draft, fitType: v })} />
