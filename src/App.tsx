@@ -21,6 +21,8 @@ import Contact from "./pages/Contact";
 import NotFound from "./pages/NotFound";
 import Admin from "./pages/Admin";
 import ResetPassword from "./pages/ResetPassword";
+import PolicyPage from "./pages/PolicyPage";
+import WhatsAppButton from "@/components/WhatsAppButton";
 
 const queryClient = new QueryClient();
 
