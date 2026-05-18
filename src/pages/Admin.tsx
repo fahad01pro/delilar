@@ -1070,7 +1070,7 @@ const SelectField = ({ label, value, onChange, options }: { label: string; value
   </label>
 );
 
-const ProductEditor = ({ draft, setDraft, categories, save, uploading, onUpload }: { draft: ProductDraft; setDraft: (draft: ProductDraft | null | ((draft: ProductDraft | null) => ProductDraft | null)) => void; categories: { id: string; name: string }[]; save: () => void; uploading: boolean; onUpload: (file: File) => void }) => (
+const ProductEditor = ({ draft, setDraft, categories, save, uploading, onUpload, uploadFn }: { draft: ProductDraft; setDraft: (draft: ProductDraft | null | ((draft: ProductDraft | null) => ProductDraft | null)) => void; categories: { id: string; name: string }[]; save: () => void; uploading: boolean; onUpload: (file: File) => void; uploadFn: (file: File) => Promise<string | null> }) => (
   <AdminCard>
     <div className="flex items-start justify-between gap-4 mb-5">
       <PanelTitle icon={PenLine} title={draft.id ? 'Edit Product' : 'Add Product'} subtitle="Manage pricing, stock, variants, images, badges, and category placement." />
