@@ -1109,9 +1109,11 @@ const ProductEditor = ({ draft, setDraft, categories, save, uploading, onUpload 
       <Field label="Material" value={draft.material} onChange={(v) => setDraft({ ...draft, material: v })} />
       <Field label="Volume Options" value={draft.volumeOptionsText} onChange={(v) => setDraft({ ...draft, volumeOptionsText: v })} placeholder="3ml, 6ml, 50ml" />
     </div>
-    <div className="mt-4">
-      <Field label="Color Variants JSON" value={draft.colorVariantsText} onChange={(v) => setDraft({ ...draft, colorVariantsText: v })} rows={5} placeholder='[{"name":"Black","hex":"#111111","images":["url"]}]' />
-    </div>
+    <ColorVariantsEditor
+      variants={draft.colorVariants}
+      setVariants={(next) => setDraft({ ...draft, colorVariants: next })}
+      uploadFn={uploadFn}
+    />
     <div className="mt-5 flex flex-wrap items-center justify-between gap-4">
       <div className="flex flex-wrap gap-2">
         <TogglePill active={draft.is_visible} label="Visible" onClick={() => setDraft({ ...draft, is_visible: !draft.is_visible })} />
