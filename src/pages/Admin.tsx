@@ -37,7 +37,7 @@ import { resolveImage } from '@/lib/imageAssets';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 
-type AdminTab = 'overview' | 'products' | 'orders' | 'customers' | 'content' | 'settings';
+type AdminTab = 'overview' | 'products' | 'orders' | 'customers' | 'subscribers' | 'inventory' | 'content' | 'settings';
 type ProductType = 'clothing' | 'accessories' | 'perfume';
 
 type ProductRow = {
