@@ -569,6 +569,13 @@ const Admin = () => {
       material: productDraft.material.trim() || undefined,
       fitType: productDraft.fitType.trim() || undefined,
       volumeOptions: splitList(productDraft.volumeOptionsText),
+      infoSections: {
+        fabric: productDraft.fabricInfo.trim() || defaultInfoSections().fabric,
+        care: productDraft.careInfo.trim() || defaultInfoSections().care,
+        shipping: productDraft.shippingInfo.trim() || defaultInfoSections().shipping,
+        returns: productDraft.returnsInfo.trim() || defaultInfoSections().returns,
+        faqs: productDraft.faqsInfo.trim() || defaultInfoSections().faqs,
+      },
     };
     if (variants.length) data.colorVariants = variants;
 
