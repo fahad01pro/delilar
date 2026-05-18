@@ -98,6 +98,30 @@ export type Database = {
         }
         Relationships: []
       }
+      newsletter_subscribers: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          source: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id?: string
+          source?: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          source?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       orders: {
         Row: {
           admin_notes: string | null
@@ -217,6 +241,7 @@ export type Database = {
           is_sale: boolean
           is_trending: boolean
           is_visible: boolean
+          low_stock_threshold: number
           name: string
           original_price: number | null
           price: number
@@ -224,6 +249,7 @@ export type Database = {
           rating: number
           reviews: number
           sku: string | null
+          sold_count: number
           sort_order: number
           stock: number
           subtitle: string | null
@@ -244,6 +270,7 @@ export type Database = {
           is_sale?: boolean
           is_trending?: boolean
           is_visible?: boolean
+          low_stock_threshold?: number
           name: string
           original_price?: number | null
           price?: number
@@ -251,6 +278,7 @@ export type Database = {
           rating?: number
           reviews?: number
           sku?: string | null
+          sold_count?: number
           sort_order?: number
           stock?: number
           subtitle?: string | null
@@ -271,6 +299,7 @@ export type Database = {
           is_sale?: boolean
           is_trending?: boolean
           is_visible?: boolean
+          low_stock_threshold?: number
           name?: string
           original_price?: number | null
           price?: number
@@ -278,6 +307,7 @@ export type Database = {
           rating?: number
           reviews?: number
           sku?: string | null
+          sold_count?: number
           sort_order?: number
           stock?: number
           subtitle?: string | null
