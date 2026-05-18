@@ -126,7 +126,6 @@ const ProductDetail = () => {
     : 0;
 
   const sku = `DLR-${product.id.toUpperCase()}`;
-  const soldCount = 50 + (product.reviews * 3);
 
   const handleAddToCart = async (buyNow = false) => {
     if (!product.inStock) return;
