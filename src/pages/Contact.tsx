@@ -47,22 +47,22 @@ const Contact = () => (
 
       <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.3 }} className="space-y-4">
         {[
-          { icon: Mail, title: 'Email', detail: 'support@delilar.com' },
-          { icon: Phone, title: 'Phone', detail: '+880 1234-567890' },
+          { icon: Mail, title: 'Email', detail: 'delilar.shop@gmail.com', href: 'mailto:delilar.shop@gmail.com' },
+          { icon: Phone, title: 'Phone', detail: '+880 1533-413290', href: 'tel:+8801533413290' },
           { icon: MapPin, title: 'Location', detail: 'Dhaka, Bangladesh' },
-        ].map(({ icon: Icon, title, detail }) => (
+        ].map(({ icon: Icon, title, detail, href }) => (
           <div key={title} className="glass rounded-2xl p-5 flex items-start gap-4 shadow-premium hover:shadow-premium-lg transition-all duration-300 hover:-translate-y-0.5">
             <div className="w-10 h-10 rounded-xl bg-accent/10 flex items-center justify-center flex-shrink-0">
               <Icon size={18} className="text-accent" />
             </div>
             <div>
               <h3 className="text-sm font-body font-medium">{title}</h3>
-              <p className="text-sm text-muted-foreground font-body">{detail}</p>
+              {href ? <a href={href} className="text-sm text-muted-foreground font-body hover:text-accent">{detail}</a> : <p className="text-sm text-muted-foreground font-body">{detail}</p>}
             </div>
           </div>
         ))}
         <a
-          href="https://wa.me/8801234567890"
+          href="https://wa.me/8801533413290"
           target="_blank"
           rel="noopener noreferrer"
           className="flex items-center gap-4 p-5 rounded-2xl bg-green-600/90 text-white hover:bg-green-600 transition-all duration-300 shadow-premium hover:shadow-premium-lg hover:-translate-y-0.5"
