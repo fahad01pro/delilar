@@ -9,6 +9,7 @@ import {
   FileText,
   Image as ImageIcon,
   LayoutDashboard,
+  Lock,
   Loader2,
   LogOut,
   Package,
