@@ -1012,6 +1012,17 @@ const Admin = () => {
               <InventoryPanel products={products} />
             )}
 
+            {activeTab === 'outlets' && (
+              <OutletsPanel
+                outlets={outlets}
+                draft={outletDraft}
+                setDraft={setOutletDraft}
+                save={saveOutlet}
+                remove={deleteOutlet}
+                uploadFn={uploadImage}
+              />
+            )}
+
             {activeTab === 'settings' && (
               <SettingsPanel userEmail={user.email ?? ''} signOut={signOut} navigateHome={() => navigate('/')} customerCount={profiles.length} adminCount={adminRoleIds.size + (adminRoleIds.has(user.id) || isAdminUser(user) ? 0 : 1)} />
             )}
@@ -1029,6 +1040,7 @@ const adminTabs: { key: AdminTab; label: string; title: string; icon: any }[] = 
   { key: 'orders', label: 'Orders', title: 'Orders & Delivery', icon: ShoppingBag },
   { key: 'customers', label: 'Customers', title: 'Customers & Purchase History', icon: Users },
   { key: 'subscribers', label: 'Subscribers', title: 'Newsletter Subscribers', icon: Mail },
+  { key: 'outlets', label: 'Outlets', title: 'Outlet & Store Locations', icon: MapPin },
   { key: 'content', label: 'Content', title: 'Website Content', icon: ImageIcon },
   { key: 'settings', label: 'Settings', title: 'Authentication & Settings', icon: Settings },
 ];
