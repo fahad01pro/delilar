@@ -1840,22 +1840,29 @@ const OutletsPanel = ({ outlets, draft, setDraft, save, remove, uploadFn }: { ou
       </AdminCard>
     )}
 
-    <div className="grid gap-3">
-      {outlets.length === 0 && <AdminCard><p className="text-center text-muted-foreground py-10">No outlets yet.</p></AdminCard>}
+    <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+      {outlets.length === 0 && <div className="md:col-span-2 xl:col-span-3"><AdminCard><p className="text-center text-muted-foreground py-10">No outlets yet.</p></AdminCard></div>}
       {outlets.map((o) => (
-        <AdminCard key={o.id} className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div>
-            <div className="flex flex-wrap items-center gap-2 mb-1">
-              <h3 className="font-heading text-lg">{o.name}</h3>
-              {o.is_primary && <Badge>Flagship</Badge>}
-              {!o.enabled && <Badge variant="outline">Hidden</Badge>}
+        <AdminCard key={o.id} className="group flex flex-col gap-4 p-4 transition-all hover:shadow-lg">
+          <div className="relative overflow-hidden rounded-xl bg-secondary aspect-[16/9]">
+            {o.image_url ? (
+              <img src={o.image_url} alt={o.name} className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" />
+            ) : (
+              <div className="absolute inset-0 flex items-center justify-center text-muted-foreground"><MapPin size={32} /></div>
+            )}
+            <div className="absolute top-2 left-2 flex gap-1">
+              {o.is_primary && <Badge className="text-[10px] px-1.5 py-0">Flagship</Badge>}
+              {!o.enabled && <Badge variant="outline" className="text-[10px] px-1.5 py-0 bg-background/80">Hidden</Badge>}
             </div>
-            <p className="text-sm text-muted-foreground">{o.address}{o.city ? `, ${o.city}` : ''}</p>
-            <p className="text-xs text-muted-foreground mt-1">{o.phone || '—'} · {o.hours || 'Hours not set'}</p>
           </div>
-          <div className="flex gap-2">
-            <Button variant="outline" size="sm" onClick={() => setDraft(outletToDraft(o))} className="gap-2"><PenLine size={14} /> Edit</Button>
-            <Button variant="outline" size="sm" onClick={() => remove(o.id)} className="gap-2 text-destructive hover:text-destructive"><Trash2 size={14} /> Delete</Button>
+          <div className="flex-1 space-y-1">
+            <h3 className="font-heading text-lg leading-tight">{o.name}</h3>
+            <p className="text-sm text-muted-foreground line-clamp-2">{o.address}{o.city ? `, ${o.city}` : ''}</p>
+            <p className="text-xs text-muted-foreground pt-1">{o.phone || '—'} · {o.hours || 'Hours not set'}</p>
+          </div>
+          <div className="flex gap-2 pt-2 border-t border-border">
+            <Button variant="outline" size="sm" onClick={() => setDraft(outletToDraft(o))} className="flex-1 gap-1.5 h-8 text-xs"><PenLine size={12} /> Edit</Button>
+            <Button variant="outline" size="sm" onClick={() => remove(o.id)} className="h-8 w-8 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"><Trash2 size={12} /></Button>
           </div>
         </AdminCard>
       ))}
