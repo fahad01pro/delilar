@@ -2,7 +2,7 @@ import { useState, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronDown, Shirt, Crown, Sparkles, Droplets, Star, CircleDot, Briefcase, Wallet } from 'lucide-react';
-import { products } from '@/data/products';
+import { useCatalog } from '@/hooks/useCatalog';
 
 interface MenuCategory {
   label: string;
