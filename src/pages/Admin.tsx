@@ -210,7 +210,7 @@ const emptyProductDraft = (category = 'jubba'): ProductDraft => ({
   imagesText: '',
   sizesText: 'S, M, L, XL, 2XL',
   colorsText: '',
-  colorVariantsText: '',
+  colorVariants: [],
   fabricText: '',
   material: '',
   fitType: '',
@@ -239,14 +239,18 @@ const splitList = (value: string) =>
 const money = (value: number | string | null | undefined) => `৳${Number(value ?? 0).toLocaleString()}`;
 const shortId = (id: string) => id.slice(0, 8).toUpperCase();
 
-const parseJsonSafe = (value: string) => {
-  if (!value.trim()) return undefined;
-  try {
-    return JSON.parse(value);
-  } catch {
-    toast.error('Color variants must be valid JSON');
-    return null;
-  }
+const normalizeVariants = (raw: any): ColorVariantDraft[] => {
+  if (!Array.isArray(raw)) return [];
+  return raw.map((cv: any) => {
+    const images = Array.isArray(cv?.images) ? cv.images : [];
+    return {
+      name: String(cv?.name ?? ''),
+      hex: String(cv?.hex ?? '#000000'),
+      sku: cv?.sku ? String(cv.sku) : '',
+      stock: cv?.stock !== undefined && cv?.stock !== null ? String(cv.stock) : '',
+      images: [String(images[0] ?? ''), String(images[1] ?? '')] as [string, string],
+    };
+  });
 };
 
 const productToDraft = (product: ProductRow): ProductDraft => ({
@@ -266,7 +270,7 @@ const productToDraft = (product: ProductRow): ProductDraft => ({
   imagesText: (product.data?.images ?? []).join('\n'),
   sizesText: (product.data?.sizes ?? []).join(', '),
   colorsText: (product.data?.colors ?? []).join(', '),
-  colorVariantsText: product.data?.colorVariants ? JSON.stringify(product.data.colorVariants, null, 2) : '',
+  colorVariants: normalizeVariants(product.data?.colorVariants),
   fabricText: (product.data?.fabric ?? []).join(', '),
   material: product.data?.material ?? '',
   fitType: product.data?.fitType ?? '',
