@@ -68,7 +68,8 @@ const buildGallery = (product: Product, activeColor?: string): string[] => {
 
 const ProductDetail = () => {
   const { id } = useParams<{ id: string }>();
-  const product = getProductById(id || '');
+  const { data: product } = useProduct(id);
+  const { data: categoryProducts = [] } = useProductsByCategory(product?.category);
   const { addItem, setIsCartOpen } = useCart();
   const { toggle: toggleWish, has: hasWish } = useWishlist();
 
