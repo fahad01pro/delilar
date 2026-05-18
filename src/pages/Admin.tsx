@@ -337,6 +337,16 @@ const productToDraft = (product: ProductRow): ProductDraft => ({
   material: product.data?.material ?? '',
   fitType: product.data?.fitType ?? '',
   volumeOptionsText: (product.data?.volumeOptions ?? []).join(', '),
+  ...(() => {
+    const info = mergeInfoSections(product.data?.infoSections);
+    return {
+      fabricInfo: info.fabric,
+      careInfo: info.care,
+      shippingInfo: info.shipping,
+      returnsInfo: info.returns,
+      faqsInfo: info.faqs,
+    };
+  })(),
   is_featured: !!product.is_featured,
   is_new: !!product.is_new,
   is_trending: !!product.is_trending,
