@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { BrowserRouter, Route, Routes, useLocation } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -23,6 +23,32 @@ import Admin from "./pages/Admin";
 
 const queryClient = new QueryClient();
 
+const AppShell = () => {
+  const location = useLocation();
+  const isAdminRoute = location.pathname === "/admin" || location.pathname.startsWith("/admin/");
+
+  return (
+    <>
+      {!isAdminRoute && <Navbar />}
+      {!isAdminRoute && <CartDrawer />}
+      <AuthModal />
+      <Routes>
+        <Route path="/" element={<Index />} />
+        <Route path="/admin/*" element={<Admin />} />
+        <Route path="/account" element={<Account />} />
+        <Route path="/wishlist" element={<Wishlist />} />
+        <Route path="/cart" element={<CartPage />} />
+        <Route path="/about" element={<About />} />
+        <Route path="/contact" element={<Contact />} />
+        <Route path="/product/:id" element={<ProductDetail />} />
+        <Route path="/:category" element={<CategoryPage />} />
+        <Route path="*" element={<NotFound />} />
+      </Routes>
+      {!isAdminRoute && <Footer />}
+    </>
+  );
+};
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
@@ -32,22 +58,7 @@ const App = () => (
             <WishlistProvider>
               <Toaster />
               <Sonner />
-              <Navbar />
-              <CartDrawer />
-              <AuthModal />
-              <Routes>
-                <Route path="/" element={<Index />} />
-                <Route path="/admin" element={<Admin />} />
-                <Route path="/account" element={<Account />} />
-                <Route path="/wishlist" element={<Wishlist />} />
-                <Route path="/cart" element={<CartPage />} />
-                <Route path="/about" element={<About />} />
-                <Route path="/contact" element={<Contact />} />
-                <Route path="/product/:id" element={<ProductDetail />} />
-                <Route path="/:category" element={<CategoryPage />} />
-                <Route path="*" element={<NotFound />} />
-              </Routes>
-              <Footer />
+              <AppShell />
             </WishlistProvider>
           </CartProvider>
         </AuthProvider>

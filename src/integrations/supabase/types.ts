@@ -100,45 +100,107 @@ export type Database = {
       }
       orders: {
         Row: {
+          admin_notes: string | null
+          cancelled_at: string | null
+          courier: string | null
           created_at: string
           id: string
           items: Json
           payment_method: string
+          refunded_at: string | null
           shipping: number
           shipping_address: Json | null
           status: Database["public"]["Enums"]["order_status"]
           subtotal: number
           total: number
+          tracking_number: string | null
+          tracking_url: string | null
           updated_at: string
           user_id: string
         }
         Insert: {
+          admin_notes?: string | null
+          cancelled_at?: string | null
+          courier?: string | null
           created_at?: string
           id?: string
           items?: Json
           payment_method?: string
+          refunded_at?: string | null
           shipping?: number
           shipping_address?: Json | null
           status?: Database["public"]["Enums"]["order_status"]
           subtotal?: number
           total?: number
+          tracking_number?: string | null
+          tracking_url?: string | null
           updated_at?: string
           user_id: string
         }
         Update: {
+          admin_notes?: string | null
+          cancelled_at?: string | null
+          courier?: string | null
           created_at?: string
           id?: string
           items?: Json
           payment_method?: string
+          refunded_at?: string | null
           shipping?: number
           shipping_address?: Json | null
           status?: Database["public"]["Enums"]["order_status"]
           subtotal?: number
           total?: number
+          tracking_number?: string | null
+          tracking_url?: string | null
           updated_at?: string
           user_id?: string
         }
         Relationships: []
+      }
+      product_categories: {
+        Row: {
+          created_at: string
+          description: string | null
+          enabled: boolean
+          id: string
+          image_url: string | null
+          name: string
+          parent_id: string | null
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          enabled?: boolean
+          id: string
+          image_url?: string | null
+          name: string
+          parent_id?: string | null
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          enabled?: boolean
+          id?: string
+          image_url?: string | null
+          name?: string
+          parent_id?: string | null
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_categories_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "product_categories"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       products: {
         Row: {
@@ -278,6 +340,78 @@ export type Database = {
         }
         Relationships: []
       }
+      site_content: {
+        Row: {
+          body: string | null
+          content_key: string
+          created_at: string
+          cta_href: string | null
+          cta_label: string | null
+          data: Json
+          enabled: boolean
+          id: string
+          image_url: string | null
+          sort_order: number
+          subtitle: string | null
+          title: string
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          body?: string | null
+          content_key: string
+          created_at?: string
+          cta_href?: string | null
+          cta_label?: string | null
+          data?: Json
+          enabled?: boolean
+          id?: string
+          image_url?: string | null
+          sort_order?: number
+          subtitle?: string | null
+          title: string
+          type?: string
+          updated_at?: string
+        }
+        Update: {
+          body?: string | null
+          content_key?: string
+          created_at?: string
+          cta_href?: string | null
+          cta_label?: string | null
+          data?: Json
+          enabled?: boolean
+          id?: string
+          image_url?: string | null
+          sort_order?: number
+          subtitle?: string | null
+          title?: string
+          type?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
       wishlist: {
         Row: {
           created_at: string
@@ -307,15 +441,24 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
       is_admin: { Args: never; Returns: boolean }
     }
     Enums: {
+      app_role: "admin" | "moderator" | "user"
       order_status:
         | "warehouse"
         | "packaging"
         | "transit"
         | "delivered"
         | "cancelled"
+        | "refunded"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -443,12 +586,14 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      app_role: ["admin", "moderator", "user"],
       order_status: [
         "warehouse",
         "packaging",
         "transit",
         "delivered",
         "cancelled",
+        "refunded",
       ],
     },
   },
