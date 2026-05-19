@@ -1960,3 +1960,187 @@ const OutletsPanel = ({ outlets, draft, setDraft, save, remove, uploadFn }: { ou
 );
 
 export default Admin;
+
+const MFS_KEYS = ['bkash', 'nagad', 'rocket'] as const;
+type MfsKey = typeof MFS_KEYS[number];
+const MFS_LABEL: Record<MfsKey, { name: string; color: string }> = {
+  bkash: { name: 'bKash', color: 'bg-[#E2136E]' },
+  nagad: { name: 'Nagad', color: 'bg-[#EC1C24]' },
+  rocket: { name: 'Rocket', color: 'bg-[#8C3D8B]' },
+};
+
+const paymentStatusStyle = (s?: string) => {
+  switch (s) {
+    case 'paid': return 'bg-emerald-500/15 text-emerald-700 border-emerald-500/30';
+    case 'failed': return 'bg-destructive/15 text-destructive border-destructive/30';
+    case 'refunded': return 'bg-muted text-muted-foreground border-border';
+    default: return 'bg-amber-500/15 text-amber-700 border-amber-500/30';
+  }
+};
+
+const PaymentsPanel = ({ orders, profileById, siteContent, updateOrder, reload }: any) => {
+  const mfsRow = siteContent.find((c: any) => c.content_key === 'mfs_settings');
+  const initial = {
+    bkash: { enabled: true, number: '', type: 'Personal' },
+    nagad: { enabled: true, number: '', type: 'Personal' },
+    rocket: { enabled: true, number: '', type: 'Personal' },
+    ...(mfsRow?.data ?? {}),
+  };
+  const [settings, setSettings] = useState<any>(initial);
+  const [savingSettings, setSavingSettings] = useState(false);
+  const [proofUrls, setProofUrls] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    if (mfsRow?.data) setSettings({ ...initial, ...mfsRow.data });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mfsRow?.id]);
+
+  const saveSettings = async () => {
+    setSavingSettings(true);
+    const payload: any = {
+      content_key: 'mfs_settings',
+      type: 'settings',
+      title: 'MFS Payment Accounts',
+      enabled: true,
+      data: settings,
+    };
+    if (mfsRow?.id) payload.id = mfsRow.id;
+    const { error } = await supabase.from('site_content').upsert(payload);
+    setSavingSettings(false);
+    if (error) return toast.error(error.message);
+    toast.success('Payment settings saved');
+    reload();
+  };
+
+  const verify = async (order: OrderRow) => {
+    await updateOrder(order.id, { payment_status: 'paid' });
+  };
+  const reject = async (order: OrderRow) => {
+    await updateOrder(order.id, { payment_status: 'failed' });
+  };
+
+  const viewProof = async (order: OrderRow) => {
+    if (!order.screenshot_url) return;
+    if (proofUrls[order.id]) {
+      window.open(proofUrls[order.id], '_blank');
+      return;
+    }
+    const { data, error } = await supabase.storage
+      .from('payment-proofs')
+      .createSignedUrl(order.screenshot_url, 3600);
+    if (error || !data) return toast.error('Cannot load screenshot');
+    setProofUrls((p) => ({ ...p, [order.id]: data.signedUrl }));
+    window.open(data.signedUrl, '_blank');
+  };
+
+  const mfsOrders = orders.filter((o: OrderRow) => ['bkash', 'nagad', 'rocket'].includes(o.payment_method));
+  const pending = mfsOrders.filter((o: OrderRow) => (o.payment_status ?? 'pending') === 'pending');
+  const others = mfsOrders.filter((o: OrderRow) => (o.payment_status ?? 'pending') !== 'pending');
+
+  return (
+    <section className="space-y-6">
+      <div>
+        <h2 className="font-heading text-2xl">Payments & MFS Verification</h2>
+        <p className="text-sm text-muted-foreground">Configure bKash/Nagad/Rocket receive numbers and manually verify customer payments.</p>
+      </div>
+
+      <AdminCard>
+        <div className="flex items-center justify-between mb-4">
+          <PanelTitle icon={Wallet} title="Merchant numbers" subtitle="These numbers are shown to customers at checkout." />
+          <Button onClick={saveSettings} disabled={savingSettings} size="sm">{savingSettings ? 'Saving…' : 'Save changes'}</Button>
+        </div>
+        <div className="grid md:grid-cols-3 gap-4">
+          {MFS_KEYS.map((k) => {
+            const v = settings[k] ?? {};
+            return (
+              <div key={k} className="rounded-2xl border border-border bg-background p-4 space-y-3">
+                <div className="flex items-center gap-2">
+                  <div className={`w-9 h-9 rounded-lg ${MFS_LABEL[k].color} text-white flex items-center justify-center font-heading font-bold text-sm`}>
+                    {MFS_LABEL[k].name[0]}
+                  </div>
+                  <p className="font-heading text-base flex-1">{MFS_LABEL[k].name}</p>
+                  <label className="flex items-center gap-1.5 text-xs">
+                    <input
+                      type="checkbox" checked={v.enabled !== false}
+                      onChange={(e) => setSettings({ ...settings, [k]: { ...v, enabled: e.target.checked } })}
+                    />
+                    Enabled
+                  </label>
+                </div>
+                <Field
+                  label="Number" value={String(v.number ?? '')}
+                  onChange={(val: string) => setSettings({ ...settings, [k]: { ...v, number: val } })}
+                />
+                <Field
+                  label="Type (Personal / Merchant)" value={String(v.type ?? 'Personal')}
+                  onChange={(val: string) => setSettings({ ...settings, [k]: { ...v, type: val } })}
+                />
+              </div>
+            );
+          })}
+        </div>
+      </AdminCard>
+
+      <div className="space-y-3">
+        <h3 className="font-heading text-lg">Pending verification <span className="text-sm text-muted-foreground">({pending.length})</span></h3>
+        {pending.length === 0 && <AdminCard><p className="text-sm text-muted-foreground text-center py-6">No payments awaiting verification.</p></AdminCard>}
+        {pending.map((order: OrderRow) => (
+          <PaymentOrderCard
+            key={order.id} order={order} customer={profileById.get(order.user_id)}
+            onVerify={() => verify(order)} onReject={() => reject(order)} onViewProof={() => viewProof(order)}
+          />
+        ))}
+      </div>
+
+      {others.length > 0 && (
+        <div className="space-y-3">
+          <h3 className="font-heading text-lg">Processed payments</h3>
+          {others.map((order: OrderRow) => (
+            <PaymentOrderCard
+              key={order.id} order={order} customer={profileById.get(order.user_id)}
+              onVerify={() => verify(order)} onReject={() => reject(order)} onViewProof={() => viewProof(order)} compact
+            />
+          ))}
+        </div>
+      )}
+    </section>
+  );
+};
+
+const PaymentOrderCard = ({ order, customer, onVerify, onReject, onViewProof, compact }: any) => (
+  <AdminCard className="p-5">
+    <div className="flex flex-col lg:flex-row gap-4 lg:items-center justify-between">
+      <div className="flex items-start gap-3 min-w-0 flex-1">
+        <div className={`w-11 h-11 rounded-xl ${MFS_LABEL[order.payment_method as MfsKey]?.color ?? 'bg-muted'} text-white flex items-center justify-center font-heading font-bold shrink-0`}>
+          {MFS_LABEL[order.payment_method as MfsKey]?.name[0] ?? '?'}
+        </div>
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-2">
+            <p className="font-heading text-base">#{shortId(order.id)}</p>
+            <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${paymentStatusStyle(order.payment_status)}`}>
+              {order.payment_status ?? 'pending'}
+            </span>
+            <span className="text-xs text-muted-foreground">{money(order.total)}</span>
+          </div>
+          <p className="text-xs text-muted-foreground mt-0.5 truncate">{customer?.full_name || 'Customer'} · {new Date(order.created_at).toLocaleString()}</p>
+          <div className="grid sm:grid-cols-3 gap-x-4 gap-y-1 mt-2 text-xs">
+            <InfoRow label="TXN ID" value={order.txn_id || '—'} />
+            <InfoRow label="Paid from" value={order.payer_number || '—'} />
+            <InfoRow label="Receive #" value={order.payment_account || '—'} />
+          </div>
+        </div>
+      </div>
+      <div className="flex flex-wrap gap-2 lg:justify-end">
+        {order.screenshot_url && (
+          <Button variant="outline" size="sm" onClick={onViewProof} className="gap-1.5"><ImageIcon size={12} /> Screenshot</Button>
+        )}
+        {!compact && order.payment_status !== 'paid' && (
+          <Button size="sm" onClick={onVerify} className="bg-emerald-600 hover:bg-emerald-700 text-white gap-1.5"><ShieldCheck size={12} /> Approve</Button>
+        )}
+        {!compact && order.payment_status !== 'failed' && (
+          <Button variant="outline" size="sm" onClick={onReject} className="text-destructive hover:text-destructive">Reject</Button>
+        )}
+      </div>
+    </div>
+  </AdminCard>
+);
