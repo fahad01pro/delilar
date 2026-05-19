@@ -370,22 +370,7 @@ const Account = () => {
                   </div>
                 ) : (
                   <div className="space-y-5">
-                    {orders.map((o) => (
-                      <div key={o.id} className="border border-border/50 rounded-xl p-5 bg-background">
-                        <div className="flex items-start justify-between flex-wrap gap-3">
-                          <div>
-                            <p className="text-[10px] font-body tracking-[0.2em] uppercase text-muted-foreground">Order</p>
-                            <p className="text-sm font-body font-mono text-foreground">#{o.id.slice(0, 8).toUpperCase()}</p>
-                            <p className="text-xs font-body text-muted-foreground mt-1">{new Date(o.created_at).toLocaleDateString()}</p>
-                          </div>
-                          <div className="text-right">
-                            <p className="text-[10px] font-body tracking-[0.2em] uppercase text-muted-foreground">Total</p>
-                            <p className="text-lg font-heading font-semibold text-primary">৳{Number(o.total).toLocaleString()}</p>
-                          </div>
-                        </div>
-                        {o.status !== 'cancelled' && <OrderTracker status={o.status} />}
-                      </div>
-                    ))}
+                    {orders.map((o) => <OrderCard key={o.id} order={o} />)}
                   </div>
                 )}
               </div>
