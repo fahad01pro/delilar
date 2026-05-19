@@ -29,6 +29,7 @@ const customerSchema = z.object({
   address: z.string().trim().min(8, 'Full address required').max(400),
   district: z.string().trim().min(2, 'Select your district'),
   upazila: z.string().trim().min(2, 'Select your upazila / thana'),
+  note: z.string().trim().max(1000).optional().or(z.literal('')),
 });
 
 type CustomerInfo = z.infer<typeof customerSchema>;
