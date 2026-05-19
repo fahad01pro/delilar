@@ -32,6 +32,12 @@ function rowToProduct(row: any): Product {
     badge: row.badge ?? undefined,
     inStock: row.in_stock,
     tags: row.tags ?? undefined,
+    createdAt: row.created_at,
+    isNew: !!row.is_new,
+    isFeatured: !!row.is_featured,
+    isTrending: !!row.is_trending,
+    soldCount: Number(row.sold_count ?? 0),
+    newUntil: data.newUntil,
     fabric: data.fabric,
     careInstructions: data.careInstructions,
     fitType: data.fitType,
@@ -40,6 +46,9 @@ function rowToProduct(row: any): Product {
     longevity: data.longevity,
     projection: data.projection,
     volumeOptions: data.volumeOptions,
+    usageGuide: data.usageGuide,
+    // Admin-editable info sections (fabric, care, shipping, returns, faqs)
+    infoSections: data.infoSections,
     usageGuide: data.usageGuide,
     // Admin-editable info sections (fabric, care, shipping, returns, faqs)
     infoSections: data.infoSections,
