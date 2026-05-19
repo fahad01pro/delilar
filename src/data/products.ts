@@ -61,6 +61,14 @@ export interface Product {
   inStock: boolean;
   tags?: string[];
 
+  // Merchandising flags (mirrored from DB columns)
+  createdAt?: string;
+  isNew?: boolean;
+  isFeatured?: boolean;
+  isTrending?: boolean;
+  soldCount?: number;
+  newUntil?: string; // optional admin-extended ISO date
+
   // Clothing
   fabric?: string[];
   careInstructions?: string[];

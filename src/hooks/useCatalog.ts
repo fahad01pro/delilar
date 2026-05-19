@@ -32,6 +32,12 @@ function rowToProduct(row: any): Product {
     badge: row.badge ?? undefined,
     inStock: row.in_stock,
     tags: row.tags ?? undefined,
+    createdAt: row.created_at,
+    isNew: !!row.is_new,
+    isFeatured: !!row.is_featured,
+    isTrending: !!row.is_trending,
+    soldCount: Number(row.sold_count ?? 0),
+    newUntil: data.newUntil,
     fabric: data.fabric,
     careInstructions: data.careInstructions,
     fitType: data.fitType,
@@ -92,6 +98,49 @@ export function useCatalog() {
     },
     staleTime: 60_000,
   });
+}
+
+// New Arrivals: created within last 120 days, OR manually flagged is_new,
+// OR data.newUntil is in the future. Featured pinned to top.
+const NEW_ARRIVAL_WINDOW_MS = 120 * 24 * 60 * 60 * 1000;
+export function isNewArrival(p: Product): boolean {
+  if (p.isNew) return true;
+  if (p.newUntil) {
+    const until = new Date(p.newUntil).getTime();
+    if (!Number.isNaN(until) && until > Date.now()) return true;
+  }
+  if (p.createdAt) {
+    const created = new Date(p.createdAt).getTime();
+    if (!Number.isNaN(created) && Date.now() - created < NEW_ARRIVAL_WINDOW_MS) return true;
+  }
+  return false;
+}
+
+export function selectNewArrivals(catalog: Product[], limit = 8): Product[] {
+  return catalog
+    .filter(isNewArrival)
+    .sort((a, b) => {
+      // Featured pinned first
+      if (!!b.isFeatured !== !!a.isFeatured) return Number(!!b.isFeatured) - Number(!!a.isFeatured);
+      const ad = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+      const bd = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+      return bd - ad;
+    })
+    .slice(0, limit);
+}
+
+export function selectBestSellers(catalog: Product[], limit = 8): Product[] {
+  return [...catalog]
+    .sort((a, b) => {
+      // Manually featured pinned first
+      if (!!b.isFeatured !== !!a.isFeatured) return Number(!!b.isFeatured) - Number(!!a.isFeatured);
+      const bs = b.soldCount ?? 0;
+      const as = a.soldCount ?? 0;
+      if (bs !== as) return bs - as;
+      // Tie-break by rating × reviews
+      return (b.rating * b.reviews) - (a.rating * a.reviews);
+    })
+    .slice(0, limit);
 }
 
 export function useProduct(id: string | undefined) {

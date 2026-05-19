@@ -103,6 +103,7 @@ type ProductDraft = {
   is_new: boolean;
   is_trending: boolean;
   is_visible: boolean;
+  new_until: string; // ISO date (yyyy-mm-dd) — optional override to extend New Arrival window
   sort_order: string;
 };
 
@@ -281,6 +282,7 @@ const emptyProductDraft = (category = 'jubba'): ProductDraft => ({
   is_new: false,
   is_trending: false,
   is_visible: true,
+  new_until: '',
   sort_order: '0',
 });
 
@@ -351,6 +353,7 @@ const productToDraft = (product: ProductRow): ProductDraft => ({
   is_new: !!product.is_new,
   is_trending: !!product.is_trending,
   is_visible: !!product.is_visible,
+  new_until: product.data?.newUntil ? String(product.data.newUntil).slice(0, 10) : '',
   sort_order: String(product.sort_order ?? 0),
 });
 
@@ -578,6 +581,7 @@ const Admin = () => {
       },
     };
     if (variants.length) data.colorVariants = variants;
+    if (productDraft.new_until) data.newUntil = productDraft.new_until;
 
     const payload = {
       id,
@@ -1595,6 +1599,18 @@ const ProductEditor = ({ draft, setDraft, categories, save, uploading, onUpload,
         <TogglePill active={draft.is_featured} label="Featured" onClick={() => setDraft({ ...draft, is_featured: !draft.is_featured })} />
         <TogglePill active={draft.is_new} label="New" onClick={() => setDraft({ ...draft, is_new: !draft.is_new })} />
         <TogglePill active={draft.is_trending} label="Trending" onClick={() => setDraft({ ...draft, is_trending: !draft.is_trending })} />
+      </div>
+      <div className="flex items-center gap-2">
+        <label className="text-[11px] font-body uppercase tracking-wider text-muted-foreground whitespace-nowrap">
+          New until
+        </label>
+        <input
+          type="date"
+          value={draft.new_until}
+          onChange={(e) => setDraft({ ...draft, new_until: e.target.value })}
+          className="border border-border bg-background rounded-md px-2 py-1.5 text-xs font-body outline-none focus:border-accent"
+          title="Extend New Arrival visibility past the default 120 days"
+        />
       </div>
       <div className="flex gap-2">
         <Button variant="outline" onClick={() => setDraft(null)}>Cancel</Button>
