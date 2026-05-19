@@ -62,6 +62,9 @@ const MegaMenu = () => {
   const [activeMenu, setActiveMenu] = useState<string | null>(null);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const { data: products = [] } = useCatalog();
+  const eid = useMemo(() => getActiveEid(), []);
+  const eidEditLabel = `${eid.name} Edit`;
+  const menuItems = useMemo(() => buildMenuItems(eid.name), [eid.name]);
 
   const handleEnter = (label: string) => {
     if (timeoutRef.current) clearTimeout(timeoutRef.current);
@@ -73,7 +76,7 @@ const MegaMenu = () => {
   };
 
   const getFeaturedForMenu = (label: string) => {
-    if (label === 'Eid Edit') return products.filter((p) => p.category === 'eid').slice(0, 2);
+    if (label === eidEditLabel) return products.filter((p) => p.category === 'eid').slice(0, 2);
     if (label === 'Mens')
       return products
         .filter((p) => ['jubba', 'panjabi', 'polo', 'tshirts', 'shirts', 'pants', 'hoodies'].includes(p.category))
