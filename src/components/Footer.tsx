@@ -1,6 +1,5 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
-import { Mail, Phone, MapPin, Instagram, Facebook, Loader2 } from 'lucide-react';
+import { Mail, Phone, Instagram, Facebook, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -28,6 +27,11 @@ const Footer = () => {
     setEmail('');
   };
 
+  const socials = [
+    { Icon: Facebook, href: 'https://facebook.com/delilar.shop', label: 'Facebook' },
+    { Icon: Instagram, href: 'https://instagram.com/delilar.shop', label: 'Instagram' },
+  ];
+
   return (
     <footer className="bg-primary text-primary-foreground">
       {/* Newsletter */}
@@ -35,7 +39,9 @@ const Footer = () => {
         <div className="container mx-auto px-4 lg:px-8 py-14 text-center">
           <p className="text-xs font-body tracking-[0.3em] uppercase text-accent mb-3">Stay Updated</p>
           <h3 className="text-2xl lg:text-3xl font-heading font-bold mb-3">Join the Delilar Family</h3>
-          <p className="text-primary-foreground/50 font-body text-sm mb-6 max-w-md mx-auto">Get exclusive offers, new arrivals, and style tips delivered to your inbox.</p>
+          <p className="text-primary-foreground/50 font-body text-sm mb-6 max-w-md mx-auto">
+            Get exclusive offers, new arrivals, and style notes delivered to your inbox.
+          </p>
           <form onSubmit={subscribe} className="flex max-w-md mx-auto">
             <input
               type="email"
@@ -56,117 +62,59 @@ const Footer = () => {
         </div>
       </div>
 
-      <div className="container mx-auto px-4 lg:px-8 py-14">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10">
-          {/* Brand */}
-          <div>
-            <div className="flex items-center gap-2 mb-4">
-              <div className="w-8 h-8 rounded-full bg-accent flex items-center justify-center">
-                <span className="text-xs font-heading font-bold text-foreground">D</span>
-              </div>
-              <h3 className="text-2xl font-heading font-bold tracking-[0.15em]">DELILAR</h3>
+      {/* Brand identity */}
+      <div className="container mx-auto px-4 lg:px-8 py-16">
+        <div className="flex flex-col items-center text-center max-w-2xl mx-auto">
+          <div className="flex items-center gap-3 mb-5">
+            <div className="w-10 h-10 rounded-full bg-accent flex items-center justify-center">
+              <span className="text-sm font-heading font-bold text-foreground">D</span>
             </div>
-            <p className="text-primary-foreground/50 text-sm leading-relaxed font-body">
-              Premium Islamic fashion & lifestyle brand. Jubba, Panjabi, T-Shirts, Polo Shirts, Pants, Bags, Attars and more — crafted for the modern Muslim man.
-            </p>
-            <div className="flex gap-3 mt-5">
-              {[
-                { Icon: Facebook, href: 'https://facebook.com/delilar.shop', label: 'Facebook' },
-                { Icon: Instagram, href: 'https://instagram.com/delilar.shop', label: 'Instagram' },
-              ].map(({ Icon, href, label }) => (
-                <a
-                  key={label}
-                  href={href}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  aria-label={label}
-                  className="w-10 h-10 rounded-xl bg-primary-foreground/10 flex items-center justify-center hover:bg-accent hover:text-foreground transition-all duration-300"
-                >
-                  <Icon size={16} />
-                </a>
-              ))}
-            </div>
+            <h3 className="text-3xl font-heading font-bold tracking-[0.2em]">DELILAR</h3>
           </div>
 
-          {/* Shop */}
-          <div>
-            <h4 className="text-sm font-body tracking-widest uppercase mb-5 text-accent font-medium">Shop</h4>
-            <ul className="space-y-3">
-              {[
-                { label: 'Jubba / Thobe', href: '/jubba' },
-                { label: 'Panjabi', href: '/panjabi' },
-                { label: 'T-Shirts', href: '/tshirts' },
-                { label: 'Polo Shirts', href: '/polo' },
-                { label: 'Pants', href: '/pants' },
-                { label: 'Bags', href: '/bags' },
-                { label: 'Attar & Perfume', href: '/attar' },
-              ].map((item) => (
-                <li key={item.label}>
-                  <Link to={item.href} className="text-sm text-primary-foreground/50 hover:text-accent transition-colors font-body">
-                    {item.label}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </div>
+          <p className="text-primary-foreground/60 font-body text-sm md:text-base leading-relaxed mb-3">
+            Premium Islamic fashion & lifestyle — crafted for the modern Muslim, inspired by the Sunnah.
+          </p>
+          <p className="text-xs font-body tracking-[0.35em] uppercase text-accent mb-8">Inspired by Sunnah</p>
 
-          {/* Policies */}
-          <div>
-            <h4 className="text-sm font-body tracking-widest uppercase mb-5 text-accent font-medium">Policies</h4>
-            <ul className="space-y-3">
-              {[
-                { label: 'Shipping Policy', href: '/policies/shipping' },
-                { label: 'Terms & Conditions', href: '/policies/terms' },
-                { label: 'Privacy Policy', href: '/policies/privacy' },
-                { label: 'Payment Policy', href: '/policies/payment' },
-                { label: 'Gift / Reward Policy', href: '/policies/rewards' },
-                { label: 'Exchange & Returns', href: '/policies/exchange' },
-                { label: 'About Delilar', href: '/about' },
-              ].map((item) => (
-                <li key={item.label}>
-                  <Link to={item.href} className="text-sm text-primary-foreground/50 hover:text-accent transition-colors font-body">
-                    {item.label}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          {/* Contact */}
-          <div>
-            <h4 className="text-sm font-body tracking-widest uppercase mb-5 text-accent font-medium">Contact</h4>
-            <div className="space-y-3 text-sm text-primary-foreground/50 font-body">
-              {[
-                { icon: Mail, text: 'delilar.shop@gmail.com', href: 'mailto:delilar.shop@gmail.com' },
-                { icon: Phone, text: '+880 1533-413290', href: 'tel:+8801533413290' },
-                { icon: MapPin, text: 'Dhaka, Bangladesh' },
-              ].map(({ icon: Icon, text, href }) => (
-                <div key={text} className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-lg bg-primary-foreground/10 flex items-center justify-center flex-shrink-0">
-                    <Icon size={14} className="text-accent" />
-                  </div>
-                  {href ? (
-                    <a href={href} className="hover:text-accent transition-colors">{text}</a>
-                  ) : (
-                    <span>{text}</span>
-                  )}
-                </div>
-              ))}
+          {/* Socials */}
+          <div className="flex gap-3 mb-8">
+            {socials.map(({ Icon, href, label }) => (
               <a
-                href="https://wa.me/8801533413290"
+                key={label}
+                href={href}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 mt-2 text-xs font-body tracking-wider uppercase text-accent hover:underline"
+                aria-label={label}
+                className="w-11 h-11 rounded-xl bg-primary-foreground/10 flex items-center justify-center hover:bg-accent hover:text-foreground transition-all duration-300"
               >
-                Chat on WhatsApp →
+                <Icon size={16} />
               </a>
-            </div>
+            ))}
+          </div>
+
+          {/* Contact (email + WhatsApp only) */}
+          <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6 text-sm font-body text-primary-foreground/60">
+            <a href="mailto:delilar.shop@gmail.com" className="inline-flex items-center gap-2 hover:text-accent transition-colors">
+              <Mail size={14} className="text-accent" />
+              delilar.shop@gmail.com
+            </a>
+            <a
+              href="https://wa.me/8801533413290"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 hover:text-accent transition-colors"
+            >
+              <Phone size={14} className="text-accent" />
+              +880 1533-413290
+            </a>
           </div>
         </div>
 
-        <div className="border-t border-primary-foreground/10 mt-12 pt-8 flex flex-col md:flex-row items-center justify-between gap-4">
-          <p className="text-xs text-primary-foreground/30 font-body">
-            © 2026 Delilar. All rights reserved. Crafted with elegance.{' '}
+        {/* Copyright */}
+        <div className="border-t border-primary-foreground/10 mt-14 pt-8 text-center">
+          <p className="text-xs text-primary-foreground/40 font-body">
+            © 2026 Delilar. All rights reserved.{' '}
             <span className="mx-1">·</span>
             Website developed by{' '}
             <a
@@ -178,11 +126,6 @@ const Footer = () => {
               MufaSys
             </a>
           </p>
-          <div className="flex gap-4 text-xs text-primary-foreground/30 font-body">
-            <Link to="/policies/privacy" className="hover:text-accent transition-colors">Privacy</Link>
-            <Link to="/policies/terms" className="hover:text-accent transition-colors">Terms</Link>
-            <Link to="/policies/shipping" className="hover:text-accent transition-colors">Shipping</Link>
-          </div>
         </div>
       </div>
     </footer>
