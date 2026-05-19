@@ -1079,6 +1079,7 @@ const Admin = () => {
                 categoryBannerDraft={categoryBannerDraft}
                 setCategoryBannerDraft={setCategoryBannerDraft}
                 saveCategoryBanner={saveCategoryBanner}
+                deleteCategoryBanner={deleteCategoryBanner}
                 contentDraft={contentDraft}
                 setContentDraft={setContentDraft}
                 saveContent={saveContent}
