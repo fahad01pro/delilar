@@ -2039,15 +2039,59 @@ const ContentPanel = ({ heroBanners, categoryBanners, siteContent, categoryOptio
 
       <AdminCard>
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-          <PanelTitle icon={Boxes} title="Collection Banner Manager" subtitle="Banners shown at the top of each category / collection page." />
-          <Button onClick={() => setCategoryBannerDraft(categoryBannerToDraft())}><Plus size={15} /> Add Collection Banner</Button>
+          <PanelTitle icon={Boxes} title="Collection Banner Manager" subtitle="Up to 2 banners per page. Assign to Home, Shop, or any collection page." />
+          <Button
+            onClick={() => {
+              const firstPage = pageOptions[0]?.value ?? 'home';
+              const existing = categoryBanners.filter((b: CategoryBannerRow) => (b.page ?? b.category) === firstPage);
+              const nextPosition = existing.some((b: CategoryBannerRow) => (b.position ?? 1) === 1) ? 2 : 1;
+              setCategoryBannerDraft({ ...categoryBannerToDraft(), page: firstPage, category: firstPage, position: nextPosition });
+            }}
+          >
+            <Plus size={15} /> Add Collection Banner
+          </Button>
         </div>
-        <div className="mt-5 grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {categoryBanners.length === 0 && <p className="text-sm text-muted-foreground sm:col-span-2 lg:col-span-3">No collection banners yet.</p>}
-          {categoryBanners.map((banner: CategoryBannerRow) => <BannerCard key={banner.id} image={banner.image_url} title={banner.title || banner.category} subtitle={banner.subtitle || ''} tag={`Collection · ${banner.category}`} enabled={banner.enabled} onEdit={() => setCategoryBannerDraft(categoryBannerToDraft(banner))} />)}
+        <div className="mt-5 space-y-6">
+          {bannersByPage.length === 0 && <p className="text-sm text-muted-foreground">No collection banners yet. Click “Add Collection Banner” to create one.</p>}
+          {bannersByPage.map(([pageKey, banners]) => (
+            <div key={pageKey} className="rounded-xl border border-border p-4 bg-background/40">
+              <div className="flex items-center justify-between mb-3">
+                <div>
+                  <p className="text-sm font-semibold">{pageLabel(pageKey)}</p>
+                  <p className="text-xs text-muted-foreground">{banners.length}/2 banners</p>
+                </div>
+                {banners.length < 2 && (
+                  <Button size="sm" variant="outline" onClick={() => {
+                    const nextPosition = banners.some((b) => (b.position ?? 1) === 1) ? 2 : 1;
+                    setCategoryBannerDraft({ ...categoryBannerToDraft(), page: pageKey, category: pageKey, position: nextPosition });
+                  }}><Plus size={14} /> Add to this page</Button>
+                )}
+              </div>
+              <div className="grid sm:grid-cols-2 gap-3">
+                {banners.map((banner) => (
+                  <div key={banner.id} className="rounded-lg border border-border overflow-hidden bg-background">
+                    <div className="aspect-[16/9] bg-secondary overflow-hidden">
+                      <img src={banner.image_url} alt={banner.title || ''} className="w-full h-full object-cover" loading="lazy" />
+                    </div>
+                    <div className="p-3 flex items-start justify-between gap-2">
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium truncate">{banner.title || pageLabel(pageKey)}</p>
+                        <p className="text-xs text-muted-foreground">Banner {banner.position ?? 1} · {banner.enabled ? 'Live' : 'Hidden'}</p>
+                      </div>
+                      <div className="flex gap-1 shrink-0">
+                        <Button size="sm" variant="outline" onClick={() => setCategoryBannerDraft(categoryBannerToDraft(banner))}>Edit</Button>
+                        <Button size="sm" variant="ghost" onClick={() => deleteCategoryBanner(banner.id)} aria-label="Delete banner"><Trash2 size={14} /></Button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
         </div>
-        {categoryBannerDraft && <CategoryBannerEditor draft={categoryBannerDraft} setDraft={setCategoryBannerDraft} save={saveCategoryBanner} categories={categoryOptions} uploadFn={uploadFn} />}
+        <CategoryBannerEditor draft={categoryBannerDraft} setDraft={setCategoryBannerDraft} save={saveCategoryBanner} pageOptions={pageOptions} uploadFn={uploadFn} />
       </AdminCard>
+
 
       <AdminCard>
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
