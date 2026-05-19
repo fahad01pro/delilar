@@ -176,6 +176,8 @@ type HeroBannerRow = {
 type CategoryBannerRow = {
   id: string;
   category: string;
+  page?: string | null;
+  position?: number | null;
   title?: string | null;
   subtitle?: string | null;
   image_url: string;
@@ -201,7 +203,7 @@ type RoleRow = { id: string; user_id: string; role: string };
 
 type CategoryDraft = { id: string; name: string; description: string; image_url: string; sort_order: string; enabled: boolean };
 type BannerDraft = { id?: string; title: string; subtitle: string; eyebrow: string; image_url: string; mobile_image_url: string; cta_label: string; cta_href: string; sort_order: string; enabled: boolean };
-type CategoryBannerDraft = { id?: string; category: string; title: string; subtitle: string; image_url: string; enabled: boolean };
+type CategoryBannerDraft = { id?: string; page: string; position: number; category: string; title: string; subtitle: string; image_url: string; enabled: boolean };
 type ContentDraft = { id?: string; content_key: string; type: string; title: string; subtitle: string; body: string; image_url: string; cta_label: string; cta_href: string; sort_order: string; enabled: boolean };
 
 type OutletRow = {
