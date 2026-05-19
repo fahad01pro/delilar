@@ -28,6 +28,7 @@ import {
   Upload,
   UserCog,
   Users,
+  Wallet,
   X,
 } from 'lucide-react';
 import { toast } from 'sonner';
