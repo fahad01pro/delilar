@@ -49,9 +49,6 @@ function rowToProduct(row: any): Product {
     usageGuide: data.usageGuide,
     // Admin-editable info sections (fabric, care, shipping, returns, faqs)
     infoSections: data.infoSections,
-    usageGuide: data.usageGuide,
-    // Admin-editable info sections (fabric, care, shipping, returns, faqs)
-    infoSections: data.infoSections,
   } as Product;
 }
 
