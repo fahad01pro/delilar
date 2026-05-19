@@ -21,6 +21,8 @@ export type Database = {
           enabled: boolean
           id: string
           image_url: string
+          page: string | null
+          position: number
           subtitle: string | null
           title: string | null
           updated_at: string
@@ -31,6 +33,8 @@ export type Database = {
           enabled?: boolean
           id?: string
           image_url: string
+          page?: string | null
+          position?: number
           subtitle?: string | null
           title?: string | null
           updated_at?: string
@@ -41,6 +45,8 @@ export type Database = {
           enabled?: boolean
           id?: string
           image_url?: string
+          page?: string | null
+          position?: number
           subtitle?: string | null
           title?: string | null
           updated_at?: string
