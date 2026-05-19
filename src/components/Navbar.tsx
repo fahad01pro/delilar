@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Search, ShoppingBag, User, Menu, X, Heart, ChevronDown } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
@@ -6,10 +6,11 @@ import { useWishlist } from '@/context/WishlistContext';
 import { useAuth } from '@/context/AuthContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import MegaMenu from './MegaMenu';
+import { getActiveEid } from '@/lib/hijri';
 
-const mobileNavLinks = [
+const buildMobileNavLinks = (eidName: string) => [
   { label: 'Home', href: '/' },
-  { label: 'Eid Collection', href: '/eid' },
+  { label: `${eidName} Collection`, href: '/eid' },
   {
     label: 'Mens',
     children: [
@@ -35,6 +36,7 @@ const mobileNavLinks = [
   { label: 'About', href: '/about' },
   { label: 'Contact', href: '/contact' },
 ];
+
 
 const Navbar = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
