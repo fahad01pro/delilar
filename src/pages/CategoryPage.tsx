@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect, useCallback } from 'react';
 import { useParams, useSearchParams, Link } from 'react-router-dom';
 import { categories, type Product } from '@/data/products';
-import { useProductsByCategory, useCategoryBanner } from '@/hooks/useCatalog';
+import { useProductsByCategory, useCategoryBanner, useCategoryBanners } from '@/hooks/useCatalog';
 import { resolveImage } from '@/lib/imageAssets';
 import ProductCard from '@/components/ProductCard';
 import { SlidersHorizontal, X, ChevronLeft, ChevronRight } from 'lucide-react';
@@ -113,6 +113,7 @@ const CategoryPage = () => {
   const cat = categories.find((c) => c.slug === category);
   const { data: allProducts = [] } = useProductsByCategory(category);
   const { data: banner } = useCategoryBanner(category);
+  const { data: pageBanners = [] } = useCategoryBanners(category);
   const filtered = useMemo(() => {
     const range = priceRanges[priceFilter];
     let result = allProducts.filter((p) => p.price >= range.min && p.price < range.max);
@@ -128,6 +129,24 @@ const CategoryPage = () => {
     <main className="container mx-auto px-4 lg:px-8 py-8 lg:py-12">
       {/* Dynamic Banner */}
       <CategoryBanner products={allProducts} categoryName={cat.name} bannerImage={banner ? resolveImage(banner.image_url) : undefined} />
+
+      {/* Page Collection Banners (max 2) */}
+      {pageBanners.length > 0 && (
+        <div className="grid gap-4 md:grid-cols-2 mt-6">
+          {pageBanners.map((b) => (
+            <div key={b.id} className="relative rounded-2xl overflow-hidden aspect-[16/9] bg-secondary group">
+              <img src={resolveImage(b.image_url)} alt={b.title || ''} className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" loading="lazy" />
+              {(b.title || b.subtitle) && (
+                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent flex flex-col justify-end p-5">
+                  {b.title && <h3 className="font-heading text-xl lg:text-2xl text-white">{b.title}</h3>}
+                  {b.subtitle && <p className="text-sm text-white/85 mt-1">{b.subtitle}</p>}
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+
 
       {/* Header */}
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="text-center mb-10">

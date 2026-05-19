@@ -206,6 +206,8 @@ export function useHeroBanners() {
 export interface CategoryBanner {
   id: string;
   category: string;
+  page?: string | null;
+  position?: number | null;
   title?: string | null;
   subtitle?: string | null;
   image_url: string;
@@ -220,10 +222,31 @@ export function useCategoryBanner(category: string | undefined) {
       const { data, error } = await supabase
         .from('category_banners')
         .select('*')
-        .eq('category', category!)
+        .or(`page.eq.${category},category.eq.${category}`)
+        .eq('enabled', true)
+        .order('position', { ascending: true })
+        .limit(1)
         .maybeSingle();
       if (error) throw error;
       return data;
+    },
+  });
+}
+
+export function useCategoryBanners(page: string | undefined) {
+  return useQuery({
+    queryKey: ['category_banners_page', page],
+    enabled: !!page,
+    queryFn: async (): Promise<CategoryBanner[]> => {
+      const { data, error } = await supabase
+        .from('category_banners')
+        .select('*')
+        .or(`page.eq.${page},category.eq.${page}`)
+        .eq('enabled', true)
+        .order('position', { ascending: true })
+        .limit(2);
+      if (error) throw error;
+      return data ?? [];
     },
   });
 }

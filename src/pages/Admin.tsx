@@ -42,6 +42,7 @@ import { defaultInfoSections, mergeInfoSections } from '@/lib/productInfoDefault
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
 
 type AdminTab = 'overview' | 'products' | 'orders' | 'payments' | 'customers' | 'subscribers' | 'inventory' | 'outlets' | 'content' | 'settings';
@@ -176,6 +177,8 @@ type HeroBannerRow = {
 type CategoryBannerRow = {
   id: string;
   category: string;
+  page?: string | null;
+  position?: number | null;
   title?: string | null;
   subtitle?: string | null;
   image_url: string;
@@ -201,7 +204,7 @@ type RoleRow = { id: string; user_id: string; role: string };
 
 type CategoryDraft = { id: string; name: string; description: string; image_url: string; sort_order: string; enabled: boolean };
 type BannerDraft = { id?: string; title: string; subtitle: string; eyebrow: string; image_url: string; mobile_image_url: string; cta_label: string; cta_href: string; sort_order: string; enabled: boolean };
-type CategoryBannerDraft = { id?: string; category: string; title: string; subtitle: string; image_url: string; enabled: boolean };
+type CategoryBannerDraft = { id?: string; page: string; position: number; category: string; title: string; subtitle: string; image_url: string; enabled: boolean };
 type ContentDraft = { id?: string; content_key: string; type: string; title: string; subtitle: string; body: string; image_url: string; cta_label: string; cta_href: string; sort_order: string; enabled: boolean };
 
 type OutletRow = {
@@ -390,7 +393,9 @@ const bannerToDraft = (banner?: HeroBannerRow): BannerDraft => ({
 
 const categoryBannerToDraft = (banner?: CategoryBannerRow): CategoryBannerDraft => ({
   id: banner?.id,
-  category: banner?.category ?? 'jubba',
+  page: banner?.page ?? banner?.category ?? 'home',
+  position: (banner?.position as number) ?? 1,
+  category: banner?.category ?? banner?.page ?? 'home',
   title: banner?.title ?? '',
   subtitle: banner?.subtitle ?? '',
   image_url: banner?.image_url ?? '',
@@ -681,9 +686,20 @@ const Admin = () => {
 
   const saveCategoryBanner = async () => {
     if (!categoryBannerDraft) return;
-    if (!categoryBannerDraft.category || !categoryBannerDraft.image_url.trim()) return toast.error('Category and image are required');
+    const page = (categoryBannerDraft.page || categoryBannerDraft.category || '').trim();
+    if (!page || !categoryBannerDraft.image_url.trim()) return toast.error('Page and image are required');
+    const position = categoryBannerDraft.position === 2 ? 2 : 1;
+    // Enforce max 2 banners per page
+    const samePageBanners = categoryBanners.filter((b) => (b.page ?? b.category) === page && b.id !== categoryBannerDraft.id);
+    if (samePageBanners.length >= 2 && !categoryBannerDraft.id) {
+      return toast.error('Only 2 banners allowed per page');
+    }
+    const conflict = samePageBanners.find((b) => (b.position ?? 1) === position);
+    if (conflict) return toast.error(`Position ${position} on this page is already used. Edit or delete it first.`);
     const payload: any = {
-      category: categoryBannerDraft.category,
+      page,
+      position,
+      category: page,
       title: categoryBannerDraft.title.trim() || null,
       subtitle: categoryBannerDraft.subtitle.trim() || null,
       image_url: categoryBannerDraft.image_url.trim(),
@@ -692,8 +708,16 @@ const Admin = () => {
     if (categoryBannerDraft.id) payload.id = categoryBannerDraft.id;
     const { error } = await db.from('category_banners').upsert(payload);
     if (error) return toast.error(error.message);
-    toast.success('Category banner saved');
+    toast.success('Collection banner saved');
     setCategoryBannerDraft(null);
+    loadAdminData();
+  };
+
+  const deleteCategoryBanner = async (id: string) => {
+    if (!confirm('Delete this collection banner?')) return;
+    const { error } = await db.from('category_banners').delete().eq('id', id);
+    if (error) return toast.error(error.message);
+    toast.success('Banner deleted');
     loadAdminData();
   };
 
@@ -1056,6 +1080,7 @@ const Admin = () => {
                 categoryBannerDraft={categoryBannerDraft}
                 setCategoryBannerDraft={setCategoryBannerDraft}
                 saveCategoryBanner={saveCategoryBanner}
+                deleteCategoryBanner={deleteCategoryBanner}
                 contentDraft={contentDraft}
                 setContentDraft={setContentDraft}
                 saveContent={saveContent}
@@ -1968,15 +1993,34 @@ const BannerCard = ({ image, title, subtitle, tag, enabled, onEdit }: any) => (
   </div>
 );
 
-const ContentPanel = ({ heroBanners, categoryBanners, siteContent, categoryOptions, bannerDraft, setBannerDraft, saveHeroBanner, categoryBannerDraft, setCategoryBannerDraft, saveCategoryBanner, contentDraft, setContentDraft, saveContent, uploadFn }: any) => {
+const ContentPanel = ({ heroBanners, categoryBanners, siteContent, categoryOptions, bannerDraft, setBannerDraft, saveHeroBanner, categoryBannerDraft, setCategoryBannerDraft, saveCategoryBanner, deleteCategoryBanner, contentDraft, setContentDraft, saveContent, uploadFn }: any) => {
   const mediaLibrary = useMemo(() => {
     const items: { url: string; source: string; title: string }[] = [];
     heroBanners.forEach((b: HeroBannerRow) => { if (b.image_url) items.push({ url: b.image_url, source: 'Hero', title: b.title }); if (b.mobile_image_url) items.push({ url: b.mobile_image_url, source: 'Hero (Mobile)', title: b.title }); });
-    categoryBanners.forEach((b: CategoryBannerRow) => { if (b.image_url) items.push({ url: b.image_url, source: `Collection · ${b.category}`, title: b.title || b.category }); });
+    categoryBanners.forEach((b: CategoryBannerRow) => { if (b.image_url) items.push({ url: b.image_url, source: `Collection · ${b.page ?? b.category}`, title: b.title || (b.page ?? b.category) }); });
     siteContent.forEach((c: ContentRow) => { if (c.image_url) items.push({ url: c.image_url, source: `Content · ${c.type}`, title: c.title }); });
     const seen = new Set<string>();
     return items.filter((i) => { if (seen.has(i.url)) return false; seen.add(i.url); return true; });
   }, [heroBanners, categoryBanners, siteContent]);
+
+  const pageOptions = useMemo(() => {
+    const opts = [{ value: 'home', label: 'Home Page' }, { value: 'shop', label: 'Shop / All Products' }];
+    categoryOptions.forEach((c: any) => opts.push({ value: c.id, label: `${c.name} Collection` }));
+    return opts;
+  }, [categoryOptions]);
+
+  const bannersByPage = useMemo(() => {
+    const map = new Map<string, CategoryBannerRow[]>();
+    categoryBanners.forEach((b: CategoryBannerRow) => {
+      const key = b.page ?? b.category;
+      if (!map.has(key)) map.set(key, []);
+      map.get(key)!.push(b);
+    });
+    map.forEach((arr) => arr.sort((a, b) => (a.position ?? 1) - (b.position ?? 1)));
+    return Array.from(map.entries());
+  }, [categoryBanners]);
+
+  const pageLabel = (key: string) => pageOptions.find((o) => o.value === key)?.label ?? key;
 
   return (
     <section className="space-y-8">
@@ -1996,15 +2040,59 @@ const ContentPanel = ({ heroBanners, categoryBanners, siteContent, categoryOptio
 
       <AdminCard>
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-          <PanelTitle icon={Boxes} title="Collection Banner Manager" subtitle="Banners shown at the top of each category / collection page." />
-          <Button onClick={() => setCategoryBannerDraft(categoryBannerToDraft())}><Plus size={15} /> Add Collection Banner</Button>
+          <PanelTitle icon={Boxes} title="Collection Banner Manager" subtitle="Up to 2 banners per page. Assign to Home, Shop, or any collection page." />
+          <Button
+            onClick={() => {
+              const firstPage = pageOptions[0]?.value ?? 'home';
+              const existing = categoryBanners.filter((b: CategoryBannerRow) => (b.page ?? b.category) === firstPage);
+              const nextPosition = existing.some((b: CategoryBannerRow) => (b.position ?? 1) === 1) ? 2 : 1;
+              setCategoryBannerDraft({ ...categoryBannerToDraft(), page: firstPage, category: firstPage, position: nextPosition });
+            }}
+          >
+            <Plus size={15} /> Add Collection Banner
+          </Button>
         </div>
-        <div className="mt-5 grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {categoryBanners.length === 0 && <p className="text-sm text-muted-foreground sm:col-span-2 lg:col-span-3">No collection banners yet.</p>}
-          {categoryBanners.map((banner: CategoryBannerRow) => <BannerCard key={banner.id} image={banner.image_url} title={banner.title || banner.category} subtitle={banner.subtitle || ''} tag={`Collection · ${banner.category}`} enabled={banner.enabled} onEdit={() => setCategoryBannerDraft(categoryBannerToDraft(banner))} />)}
+        <div className="mt-5 space-y-6">
+          {bannersByPage.length === 0 && <p className="text-sm text-muted-foreground">No collection banners yet. Click “Add Collection Banner” to create one.</p>}
+          {bannersByPage.map(([pageKey, banners]) => (
+            <div key={pageKey} className="rounded-xl border border-border p-4 bg-background/40">
+              <div className="flex items-center justify-between mb-3">
+                <div>
+                  <p className="text-sm font-semibold">{pageLabel(pageKey)}</p>
+                  <p className="text-xs text-muted-foreground">{banners.length}/2 banners</p>
+                </div>
+                {banners.length < 2 && (
+                  <Button size="sm" variant="outline" onClick={() => {
+                    const nextPosition = banners.some((b) => (b.position ?? 1) === 1) ? 2 : 1;
+                    setCategoryBannerDraft({ ...categoryBannerToDraft(), page: pageKey, category: pageKey, position: nextPosition });
+                  }}><Plus size={14} /> Add to this page</Button>
+                )}
+              </div>
+              <div className="grid sm:grid-cols-2 gap-3">
+                {banners.map((banner) => (
+                  <div key={banner.id} className="rounded-lg border border-border overflow-hidden bg-background">
+                    <div className="aspect-[16/9] bg-secondary overflow-hidden">
+                      <img src={banner.image_url} alt={banner.title || ''} className="w-full h-full object-cover" loading="lazy" />
+                    </div>
+                    <div className="p-3 flex items-start justify-between gap-2">
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium truncate">{banner.title || pageLabel(pageKey)}</p>
+                        <p className="text-xs text-muted-foreground">Banner {banner.position ?? 1} · {banner.enabled ? 'Live' : 'Hidden'}</p>
+                      </div>
+                      <div className="flex gap-1 shrink-0">
+                        <Button size="sm" variant="outline" onClick={() => setCategoryBannerDraft(categoryBannerToDraft(banner))}>Edit</Button>
+                        <Button size="sm" variant="ghost" onClick={() => deleteCategoryBanner(banner.id)} aria-label="Delete banner"><Trash2 size={14} /></Button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
         </div>
-        {categoryBannerDraft && <CategoryBannerEditor draft={categoryBannerDraft} setDraft={setCategoryBannerDraft} save={saveCategoryBanner} categories={categoryOptions} uploadFn={uploadFn} />}
+        <CategoryBannerEditor draft={categoryBannerDraft} setDraft={setCategoryBannerDraft} save={saveCategoryBanner} pageOptions={pageOptions} uploadFn={uploadFn} />
       </AdminCard>
+
 
       <AdminCard>
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
@@ -2039,7 +2127,44 @@ const ContentPanel = ({ heroBanners, categoryBanners, siteContent, categoryOptio
 const ContentListItem = ({ title, subtitle, enabled, onEdit }: any) => <div className="flex items-center justify-between gap-3 rounded-xl border border-border bg-background p-3"><div className="min-w-0"><p className="font-medium text-sm truncate">{title}</p><p className="text-xs text-muted-foreground truncate">{subtitle}</p></div><div className="flex items-center gap-2"><Badge variant={enabled ? 'default' : 'secondary'}>{enabled ? 'Live' : 'Hidden'}</Badge><Button variant="outline" size="sm" onClick={onEdit}>Edit</Button></div></div>;
 
 const HeroBannerEditor = ({ draft, setDraft, save, uploadFn }: any) => <div className="mt-5 grid gap-3 border-t border-border pt-5"><Field label="Eyebrow" value={draft.eyebrow} onChange={(v: string) => setDraft({ ...draft, eyebrow: v })} /><Field label="Title" value={draft.title} onChange={(v: string) => setDraft({ ...draft, title: v })} /><Field label="Subtitle" value={draft.subtitle} onChange={(v: string) => setDraft({ ...draft, subtitle: v })} rows={3} /><UploadPicker label="Desktop Image" value={draft.image_url} onChange={(v) => setDraft({ ...draft, image_url: v })} uploadFn={uploadFn} /><UploadPicker label="Mobile Image" value={draft.mobile_image_url} onChange={(v) => setDraft({ ...draft, mobile_image_url: v })} uploadFn={uploadFn} /><Field label="CTA Label" value={draft.cta_label} onChange={(v: string) => setDraft({ ...draft, cta_label: v })} /><Field label="CTA Link" value={draft.cta_href} onChange={(v: string) => setDraft({ ...draft, cta_href: v })} /><Field label="Sort Order" type="number" value={draft.sort_order} onChange={(v: string) => setDraft({ ...draft, sort_order: v })} /><TogglePill active={draft.enabled} label={draft.enabled ? 'Enabled' : 'Disabled'} onClick={() => setDraft({ ...draft, enabled: !draft.enabled })} /><div className="flex gap-2"><Button onClick={save}>Save Hero</Button><Button variant="outline" onClick={() => setDraft(null)}>Cancel</Button></div></div>;
-const CategoryBannerEditor = ({ draft, setDraft, save, categories, uploadFn }: any) => <div className="mt-5 grid gap-3 border-t border-border pt-5"><SelectField label="Category" value={draft.category} onChange={(v: string) => setDraft({ ...draft, category: v })} options={categories.map((cat: any) => ({ value: cat.id, label: cat.name }))} /><Field label="Title" value={draft.title} onChange={(v: string) => setDraft({ ...draft, title: v })} /><Field label="Subtitle" value={draft.subtitle} onChange={(v: string) => setDraft({ ...draft, subtitle: v })} /><UploadPicker label="Banner Image" value={draft.image_url} onChange={(v) => setDraft({ ...draft, image_url: v })} uploadFn={uploadFn} /><TogglePill active={draft.enabled} label={draft.enabled ? 'Enabled' : 'Disabled'} onClick={() => setDraft({ ...draft, enabled: !draft.enabled })} /><div className="flex gap-2"><Button onClick={save}>Save Banner</Button><Button variant="outline" onClick={() => setDraft(null)}>Cancel</Button></div></div>;
+const CategoryBannerEditor = ({ draft, setDraft, save, pageOptions, uploadFn }: any) => (
+  <Dialog open={!!draft} onOpenChange={(open) => { if (!open) setDraft(null); }}>
+    <DialogContent className="max-w-lg">
+      <DialogHeader>
+        <DialogTitle>{draft?.id ? 'Edit Collection Banner' : 'Add Collection Banner'}</DialogTitle>
+      </DialogHeader>
+      {draft && (
+        <div className="grid gap-3">
+          <SelectField
+            label="Page"
+            value={draft.page}
+            onChange={(v: string) => setDraft({ ...draft, page: v, category: v })}
+            options={pageOptions}
+          />
+          <SelectField
+            label="Position"
+            value={String(draft.position)}
+            onChange={(v: string) => setDraft({ ...draft, position: Number(v) as 1 | 2 })}
+            options={[{ value: '1', label: 'Banner 1' }, { value: '2', label: 'Banner 2' }]}
+          />
+          <Field label="Title (optional)" value={draft.title} onChange={(v: string) => setDraft({ ...draft, title: v })} />
+          <Field label="Subtitle (optional)" value={draft.subtitle} onChange={(v: string) => setDraft({ ...draft, subtitle: v })} />
+          <UploadPicker label="Banner Image" value={draft.image_url} onChange={(v: string) => setDraft({ ...draft, image_url: v })} uploadFn={uploadFn} />
+          {draft.image_url && (
+            <div className="rounded-lg overflow-hidden border border-border aspect-[16/9] bg-secondary">
+              <img src={draft.image_url} alt="preview" className="w-full h-full object-cover" />
+            </div>
+          )}
+          <TogglePill active={draft.enabled} label={draft.enabled ? 'Enabled' : 'Disabled'} onClick={() => setDraft({ ...draft, enabled: !draft.enabled })} />
+          <div className="flex gap-2 justify-end pt-2">
+            <Button variant="outline" onClick={() => setDraft(null)}>Cancel</Button>
+            <Button onClick={save}>Save Banner</Button>
+          </div>
+        </div>
+      )}
+    </DialogContent>
+  </Dialog>
+);
 const SiteContentEditor = ({ draft, setDraft, save, uploadFn }: any) => <div className="mt-5 grid md:grid-cols-2 gap-3 border-t border-border pt-5"><Field label="Content Key" value={draft.content_key} onChange={(v: string) => setDraft({ ...draft, content_key: v })} /><Field label="Type" value={draft.type} onChange={(v: string) => setDraft({ ...draft, type: v })} placeholder="page, footer, policy, section" /><Field label="Title" value={draft.title} onChange={(v: string) => setDraft({ ...draft, title: v })} /><Field label="Subtitle" value={draft.subtitle} onChange={(v: string) => setDraft({ ...draft, subtitle: v })} /><div className="md:col-span-2"><UploadPicker label="Image" value={draft.image_url} onChange={(v) => setDraft({ ...draft, image_url: v })} uploadFn={uploadFn} /></div><Field label="CTA Link" value={draft.cta_href} onChange={(v: string) => setDraft({ ...draft, cta_href: v })} /><Field label="Sort Order" type="number" value={draft.sort_order} onChange={(v: string) => setDraft({ ...draft, sort_order: v })} /><div className="md:col-span-2"><Field label="Body" value={draft.body} onChange={(v: string) => setDraft({ ...draft, body: v })} rows={5} /></div><div className="md:col-span-2 flex items-end gap-2"><TogglePill active={draft.enabled} label={draft.enabled ? 'Enabled' : 'Disabled'} onClick={() => setDraft({ ...draft, enabled: !draft.enabled })} /><Button onClick={save}>Save Content</Button><Button variant="outline" onClick={() => setDraft(null)}>Cancel</Button></div></div>;
 
 
