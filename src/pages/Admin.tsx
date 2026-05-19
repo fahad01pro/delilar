@@ -1992,15 +1992,34 @@ const BannerCard = ({ image, title, subtitle, tag, enabled, onEdit }: any) => (
   </div>
 );
 
-const ContentPanel = ({ heroBanners, categoryBanners, siteContent, categoryOptions, bannerDraft, setBannerDraft, saveHeroBanner, categoryBannerDraft, setCategoryBannerDraft, saveCategoryBanner, contentDraft, setContentDraft, saveContent, uploadFn }: any) => {
+const ContentPanel = ({ heroBanners, categoryBanners, siteContent, categoryOptions, bannerDraft, setBannerDraft, saveHeroBanner, categoryBannerDraft, setCategoryBannerDraft, saveCategoryBanner, deleteCategoryBanner, contentDraft, setContentDraft, saveContent, uploadFn }: any) => {
   const mediaLibrary = useMemo(() => {
     const items: { url: string; source: string; title: string }[] = [];
     heroBanners.forEach((b: HeroBannerRow) => { if (b.image_url) items.push({ url: b.image_url, source: 'Hero', title: b.title }); if (b.mobile_image_url) items.push({ url: b.mobile_image_url, source: 'Hero (Mobile)', title: b.title }); });
-    categoryBanners.forEach((b: CategoryBannerRow) => { if (b.image_url) items.push({ url: b.image_url, source: `Collection · ${b.category}`, title: b.title || b.category }); });
+    categoryBanners.forEach((b: CategoryBannerRow) => { if (b.image_url) items.push({ url: b.image_url, source: `Collection · ${b.page ?? b.category}`, title: b.title || (b.page ?? b.category) }); });
     siteContent.forEach((c: ContentRow) => { if (c.image_url) items.push({ url: c.image_url, source: `Content · ${c.type}`, title: c.title }); });
     const seen = new Set<string>();
     return items.filter((i) => { if (seen.has(i.url)) return false; seen.add(i.url); return true; });
   }, [heroBanners, categoryBanners, siteContent]);
+
+  const pageOptions = useMemo(() => {
+    const opts = [{ value: 'home', label: 'Home Page' }, { value: 'shop', label: 'Shop / All Products' }];
+    categoryOptions.forEach((c: any) => opts.push({ value: c.id, label: `${c.name} Collection` }));
+    return opts;
+  }, [categoryOptions]);
+
+  const bannersByPage = useMemo(() => {
+    const map = new Map<string, CategoryBannerRow[]>();
+    categoryBanners.forEach((b: CategoryBannerRow) => {
+      const key = b.page ?? b.category;
+      if (!map.has(key)) map.set(key, []);
+      map.get(key)!.push(b);
+    });
+    map.forEach((arr) => arr.sort((a, b) => (a.position ?? 1) - (b.position ?? 1)));
+    return Array.from(map.entries());
+  }, [categoryBanners]);
+
+  const pageLabel = (key: string) => pageOptions.find((o) => o.value === key)?.label ?? key;
 
   return (
     <section className="space-y-8">
