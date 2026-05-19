@@ -1,8 +1,9 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronDown, Shirt, Crown, Sparkles, Droplets, Star, CircleDot, Briefcase, Wallet } from 'lucide-react';
 import { useCatalog } from '@/hooks/useCatalog';
+import { getActiveEid } from '@/lib/hijri';
 
 interface MenuCategory {
   label: string;
@@ -14,14 +15,14 @@ interface MenuCategory {
   }[];
 }
 
-const menuItems: MenuCategory[] = [
+const buildMenuItems = (eidName: string): MenuCategory[] => [
   {
-    label: 'Eid Edit',
+    label: `${eidName} Edit`,
     href: '/eid',
     children: [
-      { label: 'Eid Jubba Sets', href: '/eid', icon: <Crown size={16} /> },
-      { label: 'Eid Panjabi', href: '/eid', icon: <Sparkles size={16} /> },
-      { label: 'View All Eid', href: '/eid', icon: <Star size={16} /> },
+      { label: `${eidName} Jubba Sets`, href: '/eid', icon: <Crown size={16} /> },
+      { label: `${eidName} Panjabi`, href: '/eid', icon: <Sparkles size={16} /> },
+      { label: `View All ${eidName}`, href: '/eid', icon: <Star size={16} /> },
     ],
   },
   {
@@ -61,6 +62,9 @@ const MegaMenu = () => {
   const [activeMenu, setActiveMenu] = useState<string | null>(null);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const { data: products = [] } = useCatalog();
+  const eid = useMemo(() => getActiveEid(), []);
+  const eidEditLabel = `${eid.name} Edit`;
+  const menuItems = useMemo(() => buildMenuItems(eid.name), [eid.name]);
 
   const handleEnter = (label: string) => {
     if (timeoutRef.current) clearTimeout(timeoutRef.current);
@@ -72,7 +76,7 @@ const MegaMenu = () => {
   };
 
   const getFeaturedForMenu = (label: string) => {
-    if (label === 'Eid Edit') return products.filter((p) => p.category === 'eid').slice(0, 2);
+    if (label === eidEditLabel) return products.filter((p) => p.category === 'eid').slice(0, 2);
     if (label === 'Mens')
       return products
         .filter((p) => ['jubba', 'panjabi', 'polo', 'tshirts', 'shirts', 'pants', 'hoodies'].includes(p.category))
@@ -108,7 +112,18 @@ const MegaMenu = () => {
                 activeMenu === item.label ? 'text-accent' : 'text-primary-foreground/80 hover:text-accent'
               }`}
             >
-              {item.label}
+              <AnimatePresence mode="wait" initial={false}>
+                <motion.span
+                  key={item.label}
+                  initial={{ opacity: 0, y: -4 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: 4 }}
+                  transition={{ duration: 0.35 }}
+                  className="inline-block"
+                >
+                  {item.label}
+                </motion.span>
+              </AnimatePresence>
               {item.children && (
                 <ChevronDown size={12} className={`transition-transform duration-300 ${activeMenu === item.label ? 'rotate-180' : ''}`} />
               )}

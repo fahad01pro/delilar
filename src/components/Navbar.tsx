@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Search, ShoppingBag, User, Menu, X, Heart, ChevronDown } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
@@ -6,10 +6,11 @@ import { useWishlist } from '@/context/WishlistContext';
 import { useAuth } from '@/context/AuthContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import MegaMenu from './MegaMenu';
+import { getActiveEid } from '@/lib/hijri';
 
-const mobileNavLinks = [
+const buildMobileNavLinks = (eidName: string) => [
   { label: 'Home', href: '/' },
-  { label: 'Eid Collection', href: '/eid' },
+  { label: `${eidName} Collection`, href: '/eid' },
   {
     label: 'Mens',
     children: [
@@ -36,6 +37,7 @@ const mobileNavLinks = [
   { label: 'Contact', href: '/contact' },
 ];
 
+
 const Navbar = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
@@ -46,6 +48,9 @@ const Navbar = () => {
   const { user, openAuthModal } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
+  const eid = useMemo(() => getActiveEid(), []);
+  const mobileNavLinks = useMemo(() => buildMobileNavLinks(eid.name), [eid.name]);
+
 
   const handleProtected = (target: string, msg: string) => {
     if (user) navigate(target);
@@ -75,9 +80,22 @@ const Navbar = () => {
         }}
       >
         {/* Top bar */}
-        <div className="bg-foreground py-1.5">
+        <div className="bg-foreground py-1.5 overflow-hidden">
           <p className="text-center text-background text-[10px] font-body tracking-[0.25em] uppercase">
-            ✦ Free Shipping on Orders Over ৳5,000 ✦ Eid Collection Now Live ✦
+            ✦ Free Shipping on Orders Over ৳5,000 ✦{' '}
+            <AnimatePresence mode="wait" initial={false}>
+              <motion.span
+                key={eid.name}
+                initial={{ opacity: 0, y: -6 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 6 }}
+                transition={{ duration: 0.4 }}
+                className="inline-block"
+              >
+                {eid.name} Collection {eid.isCurrent ? 'Live Now' : 'Now Live'}
+              </motion.span>
+            </AnimatePresence>{' '}
+            ✦
           </p>
         </div>
 
