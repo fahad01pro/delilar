@@ -41,6 +41,8 @@ import { resolveImage } from '@/lib/imageAssets';
 import { defaultInfoSections, mergeInfoSections } from '@/lib/productInfoDefaults';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+
 
 type AdminTab = 'overview' | 'products' | 'orders' | 'payments' | 'customers' | 'subscribers' | 'inventory' | 'outlets' | 'content' | 'settings';
 type ProductType = 'clothing' | 'accessories' | 'perfume';
@@ -1057,6 +1059,8 @@ const Admin = () => {
                 contentDraft={contentDraft}
                 setContentDraft={setContentDraft}
                 saveContent={saveContent}
+                uploadFn={uploadImage}
+
               />
             )}
 
@@ -1708,7 +1712,7 @@ const OrdersPanel = ({ orders, profileById, trackingDrafts, setTrackingDrafts, u
     <section className="space-y-5">
       <div><h2 className="font-heading text-2xl">Orders</h2><p className="text-sm text-muted-foreground">View order details, customer shipping information, delivery tracking, cancellations, and refunds.</p></div>
       {orders.length === 0 && <AdminCard><p className="text-center text-muted-foreground py-10">No orders yet.</p></AdminCard>}
-      <div className="grid gap-4 xl:grid-cols-2">
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         {orders.map((order: OrderRow) => {
           const customer = profileById.get(order.user_id);
           const draft = trackingDrafts[order.id] ?? order;
@@ -1913,22 +1917,131 @@ const CustomersPanel = ({ customers, orders, adminRoleIds, selectedCustomer, sel
 
 const InfoRow = ({ label, value }: { label: string; value: string }) => <div className="flex justify-between gap-4 border-b border-border pb-2"><span className="text-muted-foreground">{label}</span><span className="text-right font-medium">{value}</span></div>;
 
-const ContentPanel = ({ heroBanners, categoryBanners, siteContent, categoryOptions, bannerDraft, setBannerDraft, saveHeroBanner, categoryBannerDraft, setCategoryBannerDraft, saveCategoryBanner, contentDraft, setContentDraft, saveContent }: any) => (
-  <section className="space-y-8">
-    <div><h2 className="font-heading text-2xl">Website Content</h2><p className="text-sm text-muted-foreground">Manage homepage banners, hero sections, collections, footer content, policies, About page, and contact information.</p></div>
-    <div className="grid xl:grid-cols-2 gap-6">
-      <AdminCard><PanelTitle icon={ImageIcon} title="Hero Sections" subtitle="Homepage hero slides and campaign banners." /><Button className="mt-5" onClick={() => setBannerDraft(bannerToDraft())}><Plus size={15} /> Add Hero</Button><div className="mt-5 space-y-3">{heroBanners.map((banner: HeroBannerRow) => <ContentListItem key={banner.id} title={banner.title} subtitle={banner.subtitle || banner.cta_href || 'Hero banner'} enabled={banner.enabled} onEdit={() => setBannerDraft(bannerToDraft(banner))} />)}</div>{bannerDraft && <HeroBannerEditor draft={bannerDraft} setDraft={setBannerDraft} save={saveHeroBanner} />}</AdminCard>
-      <AdminCard><PanelTitle icon={Boxes} title="Collection Banners" subtitle="Category page banner identity for fashion and lifestyle lines." /><Button className="mt-5" onClick={() => setCategoryBannerDraft(categoryBannerToDraft())}><Plus size={15} /> Add Category Banner</Button><div className="mt-5 space-y-3">{categoryBanners.map((banner: CategoryBannerRow) => <ContentListItem key={banner.id} title={banner.category} subtitle={banner.title || banner.subtitle || 'Category banner'} enabled={banner.enabled} onEdit={() => setCategoryBannerDraft(categoryBannerToDraft(banner))} />)}</div>{categoryBannerDraft && <CategoryBannerEditor draft={categoryBannerDraft} setDraft={setCategoryBannerDraft} save={saveCategoryBanner} categories={categoryOptions} />}</AdminCard>
+const UploadPicker = ({ value, onChange, uploadFn, label = 'Image' }: { value: string; onChange: (v: string) => void; uploadFn: (file: File) => Promise<string | null>; label?: string }) => {
+  const [busy, setBusy] = useState(false);
+  return (
+    <div className="space-y-2">
+      <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">{label}</p>
+      <div className="flex gap-3 items-start">
+        <div className="h-20 w-20 shrink-0 overflow-hidden rounded-lg border border-border bg-secondary flex items-center justify-center">
+          {value ? <img src={value} alt="preview" className="h-full w-full object-cover" /> : <ImageIcon size={20} className="text-muted-foreground" />}
+        </div>
+        <div className="flex-1 space-y-2">
+          <Input value={value || ''} onChange={(e) => onChange(e.target.value)} placeholder="Paste image URL or upload" />
+          <div className="flex gap-2">
+            <label className="inline-flex items-center gap-2 rounded-md border border-dashed border-border bg-background px-3 py-1.5 text-xs cursor-pointer hover:border-accent hover:text-foreground transition-all">
+              {busy ? <Loader2 size={12} className="animate-spin" /> : <Upload size={12} />}
+              {value ? 'Replace' : 'Upload from computer'}
+              <input type="file" accept="image/jpeg,image/png,image/webp" className="hidden" disabled={busy} onChange={async (e) => {
+                const f = e.target.files?.[0]; if (!f) return;
+                setBusy(true);
+                const url = await uploadFn(f);
+                setBusy(false);
+                if (url) onChange(url);
+                e.target.value = '';
+              }} />
+            </label>
+            {value && <Button type="button" variant="outline" size="sm" onClick={() => onChange('')}>Remove</Button>}
+          </div>
+        </div>
+      </div>
     </div>
-    <AdminCard><div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between"><PanelTitle icon={FileText} title="Pages, Footer & Policies" subtitle="Edit About, contact info, footer copy, shipping, return, and privacy content." /><Button onClick={() => setContentDraft(contentToDraft())}><Plus size={15} /> Add Content</Button></div><div className="mt-5 grid md:grid-cols-2 gap-3">{siteContent.map((content: ContentRow) => <ContentListItem key={content.id} title={content.title} subtitle={`${content.type} · ${content.content_key}`} enabled={content.enabled} onEdit={() => setContentDraft(contentToDraft(content))} />)}</div>{contentDraft && <SiteContentEditor draft={contentDraft} setDraft={setContentDraft} save={saveContent} />}</AdminCard>
-  </section>
+  );
+};
+
+const BannerCard = ({ image, title, subtitle, tag, enabled, onEdit }: any) => (
+  <div className="rounded-xl border border-border bg-background overflow-hidden flex flex-col">
+    <div className="aspect-[16/9] bg-secondary overflow-hidden">
+      {image ? <img src={image} alt={title} className="h-full w-full object-cover" loading="lazy" /> : <div className="h-full w-full flex items-center justify-center text-muted-foreground"><ImageIcon size={24} /></div>}
+    </div>
+    <div className="p-3 flex items-center justify-between gap-2">
+      <div className="min-w-0">
+        <p className="font-medium text-sm truncate">{title || 'Untitled'}</p>
+        <p className="text-xs text-muted-foreground truncate">{subtitle}</p>
+        <span className="mt-1 inline-block text-[10px] uppercase tracking-wide rounded bg-secondary px-1.5 py-0.5 text-muted-foreground">{tag}</span>
+      </div>
+      <div className="flex flex-col items-end gap-1">
+        <Badge variant={enabled ? 'default' : 'secondary'}>{enabled ? 'Live' : 'Hidden'}</Badge>
+        <Button variant="outline" size="sm" onClick={onEdit}>Edit</Button>
+      </div>
+    </div>
+  </div>
 );
 
-const ContentListItem = ({ title, subtitle, enabled, onEdit }: any) => <div className="flex items-center justify-between gap-3 rounded-xl border border-border bg-background p-3"><div><p className="font-medium text-sm">{title}</p><p className="text-xs text-muted-foreground">{subtitle}</p></div><div className="flex items-center gap-2"><Badge variant={enabled ? 'default' : 'secondary'}>{enabled ? 'Live' : 'Hidden'}</Badge><Button variant="outline" size="sm" onClick={onEdit}>Edit</Button></div></div>;
+const ContentPanel = ({ heroBanners, categoryBanners, siteContent, categoryOptions, bannerDraft, setBannerDraft, saveHeroBanner, categoryBannerDraft, setCategoryBannerDraft, saveCategoryBanner, contentDraft, setContentDraft, saveContent, uploadFn }: any) => {
+  const mediaLibrary = useMemo(() => {
+    const items: { url: string; source: string; title: string }[] = [];
+    heroBanners.forEach((b: HeroBannerRow) => { if (b.image_url) items.push({ url: b.image_url, source: 'Hero', title: b.title }); if (b.mobile_image_url) items.push({ url: b.mobile_image_url, source: 'Hero (Mobile)', title: b.title }); });
+    categoryBanners.forEach((b: CategoryBannerRow) => { if (b.image_url) items.push({ url: b.image_url, source: `Collection · ${b.category}`, title: b.title || b.category }); });
+    siteContent.forEach((c: ContentRow) => { if (c.image_url) items.push({ url: c.image_url, source: `Content · ${c.type}`, title: c.title }); });
+    const seen = new Set<string>();
+    return items.filter((i) => { if (seen.has(i.url)) return false; seen.add(i.url); return true; });
+  }, [heroBanners, categoryBanners, siteContent]);
 
-const HeroBannerEditor = ({ draft, setDraft, save }: any) => <div className="mt-5 grid gap-3"><Field label="Eyebrow" value={draft.eyebrow} onChange={(v) => setDraft({ ...draft, eyebrow: v })} /><Field label="Title" value={draft.title} onChange={(v) => setDraft({ ...draft, title: v })} /><Field label="Subtitle" value={draft.subtitle} onChange={(v) => setDraft({ ...draft, subtitle: v })} rows={3} /><Field label="Desktop Image URL" value={draft.image_url} onChange={(v) => setDraft({ ...draft, image_url: v })} /><Field label="Mobile Image URL" value={draft.mobile_image_url} onChange={(v) => setDraft({ ...draft, mobile_image_url: v })} /><Field label="CTA Label" value={draft.cta_label} onChange={(v) => setDraft({ ...draft, cta_label: v })} /><Field label="CTA Link" value={draft.cta_href} onChange={(v) => setDraft({ ...draft, cta_href: v })} /><Field label="Sort Order" type="number" value={draft.sort_order} onChange={(v) => setDraft({ ...draft, sort_order: v })} /><TogglePill active={draft.enabled} label={draft.enabled ? 'Enabled' : 'Disabled'} onClick={() => setDraft({ ...draft, enabled: !draft.enabled })} /><div className="flex gap-2"><Button onClick={save}>Save Hero</Button><Button variant="outline" onClick={() => setDraft(null)}>Cancel</Button></div></div>;
-const CategoryBannerEditor = ({ draft, setDraft, save, categories }: any) => <div className="mt-5 grid gap-3"><SelectField label="Category" value={draft.category} onChange={(v) => setDraft({ ...draft, category: v })} options={categories.map((cat: any) => ({ value: cat.id, label: cat.name }))} /><Field label="Title" value={draft.title} onChange={(v) => setDraft({ ...draft, title: v })} /><Field label="Subtitle" value={draft.subtitle} onChange={(v) => setDraft({ ...draft, subtitle: v })} /><Field label="Image URL" value={draft.image_url} onChange={(v) => setDraft({ ...draft, image_url: v })} /><TogglePill active={draft.enabled} label={draft.enabled ? 'Enabled' : 'Disabled'} onClick={() => setDraft({ ...draft, enabled: !draft.enabled })} /><div className="flex gap-2"><Button onClick={save}>Save Banner</Button><Button variant="outline" onClick={() => setDraft(null)}>Cancel</Button></div></div>;
-const SiteContentEditor = ({ draft, setDraft, save }: any) => <div className="mt-5 grid md:grid-cols-2 gap-3"><Field label="Content Key" value={draft.content_key} onChange={(v) => setDraft({ ...draft, content_key: v })} /><Field label="Type" value={draft.type} onChange={(v) => setDraft({ ...draft, type: v })} placeholder="page, footer, policy, section" /><Field label="Title" value={draft.title} onChange={(v) => setDraft({ ...draft, title: v })} /><Field label="Subtitle" value={draft.subtitle} onChange={(v) => setDraft({ ...draft, subtitle: v })} /><Field label="Image URL" value={draft.image_url} onChange={(v) => setDraft({ ...draft, image_url: v })} /><Field label="CTA Link" value={draft.cta_href} onChange={(v) => setDraft({ ...draft, cta_href: v })} /><div className="md:col-span-2"><Field label="Body" value={draft.body} onChange={(v) => setDraft({ ...draft, body: v })} rows={5} /></div><Field label="Sort Order" type="number" value={draft.sort_order} onChange={(v) => setDraft({ ...draft, sort_order: v })} /><div className="flex items-end gap-2"><TogglePill active={draft.enabled} label={draft.enabled ? 'Enabled' : 'Disabled'} onClick={() => setDraft({ ...draft, enabled: !draft.enabled })} /><Button onClick={save}>Save Content</Button><Button variant="outline" onClick={() => setDraft(null)}>Cancel</Button></div></div>;
+  return (
+    <section className="space-y-8">
+      <div><h2 className="font-heading text-2xl">Website Content</h2><p className="text-sm text-muted-foreground">Upload, organize, and manage hero banners, collection banners, and site content from one place.</p></div>
+
+      <AdminCard>
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+          <PanelTitle icon={ImageIcon} title="Hero Section Manager" subtitle="Homepage hero slides and campaign banners shown at the top of the site." />
+          <Button onClick={() => setBannerDraft(bannerToDraft())}><Plus size={15} /> Add Hero</Button>
+        </div>
+        <div className="mt-5 grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {heroBanners.length === 0 && <p className="text-sm text-muted-foreground sm:col-span-2 lg:col-span-3">No hero banners yet.</p>}
+          {heroBanners.map((banner: HeroBannerRow) => <BannerCard key={banner.id} image={banner.image_url} title={banner.title} subtitle={banner.subtitle || banner.cta_href || ''} tag="Hero" enabled={banner.enabled} onEdit={() => setBannerDraft(bannerToDraft(banner))} />)}
+        </div>
+        {bannerDraft && <HeroBannerEditor draft={bannerDraft} setDraft={setBannerDraft} save={saveHeroBanner} uploadFn={uploadFn} />}
+      </AdminCard>
+
+      <AdminCard>
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+          <PanelTitle icon={Boxes} title="Collection Banner Manager" subtitle="Banners shown at the top of each category / collection page." />
+          <Button onClick={() => setCategoryBannerDraft(categoryBannerToDraft())}><Plus size={15} /> Add Collection Banner</Button>
+        </div>
+        <div className="mt-5 grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {categoryBanners.length === 0 && <p className="text-sm text-muted-foreground sm:col-span-2 lg:col-span-3">No collection banners yet.</p>}
+          {categoryBanners.map((banner: CategoryBannerRow) => <BannerCard key={banner.id} image={banner.image_url} title={banner.title || banner.category} subtitle={banner.subtitle || ''} tag={`Collection · ${banner.category}`} enabled={banner.enabled} onEdit={() => setCategoryBannerDraft(categoryBannerToDraft(banner))} />)}
+        </div>
+        {categoryBannerDraft && <CategoryBannerEditor draft={categoryBannerDraft} setDraft={setCategoryBannerDraft} save={saveCategoryBanner} categories={categoryOptions} uploadFn={uploadFn} />}
+      </AdminCard>
+
+      <AdminCard>
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+          <PanelTitle icon={FileText} title="Pages, Footer & Policies" subtitle="Edit About, contact info, footer copy, shipping, return, and privacy content." />
+          <Button onClick={() => setContentDraft(contentToDraft())}><Plus size={15} /> Add Content</Button>
+        </div>
+        <div className="mt-5 grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
+          {siteContent.map((content: ContentRow) => <ContentListItem key={content.id} title={content.title} subtitle={`${content.type} · ${content.content_key}`} enabled={content.enabled} onEdit={() => setContentDraft(contentToDraft(content))} />)}
+        </div>
+        {contentDraft && <SiteContentEditor draft={contentDraft} setDraft={setContentDraft} save={saveContent} uploadFn={uploadFn} />}
+      </AdminCard>
+
+      <AdminCard>
+        <PanelTitle icon={ImageIcon} title="General Media Library" subtitle="All images currently used across the site. Click any image to copy its URL for reuse." />
+        {mediaLibrary.length === 0 ? (
+          <p className="mt-5 text-sm text-muted-foreground">No media uploaded yet.</p>
+        ) : (
+          <div className="mt-5 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-3">
+            {mediaLibrary.map((item) => (
+              <button key={item.url} type="button" onClick={() => { navigator.clipboard?.writeText(item.url); toast.success('Image URL copied'); }} className="group text-left rounded-lg overflow-hidden border border-border bg-background hover:border-accent transition-all">
+                <div className="aspect-square bg-secondary overflow-hidden"><img src={item.url} alt={item.title} className="h-full w-full object-cover group-hover:scale-105 transition-transform" loading="lazy" /></div>
+                <div className="p-2"><p className="text-[11px] font-medium truncate">{item.title || 'Untitled'}</p><p className="text-[10px] text-muted-foreground truncate">{item.source}</p></div>
+              </button>
+            ))}
+          </div>
+        )}
+      </AdminCard>
+    </section>
+  );
+};
+
+const ContentListItem = ({ title, subtitle, enabled, onEdit }: any) => <div className="flex items-center justify-between gap-3 rounded-xl border border-border bg-background p-3"><div className="min-w-0"><p className="font-medium text-sm truncate">{title}</p><p className="text-xs text-muted-foreground truncate">{subtitle}</p></div><div className="flex items-center gap-2"><Badge variant={enabled ? 'default' : 'secondary'}>{enabled ? 'Live' : 'Hidden'}</Badge><Button variant="outline" size="sm" onClick={onEdit}>Edit</Button></div></div>;
+
+const HeroBannerEditor = ({ draft, setDraft, save, uploadFn }: any) => <div className="mt-5 grid gap-3 border-t border-border pt-5"><Field label="Eyebrow" value={draft.eyebrow} onChange={(v: string) => setDraft({ ...draft, eyebrow: v })} /><Field label="Title" value={draft.title} onChange={(v: string) => setDraft({ ...draft, title: v })} /><Field label="Subtitle" value={draft.subtitle} onChange={(v: string) => setDraft({ ...draft, subtitle: v })} rows={3} /><UploadPicker label="Desktop Image" value={draft.image_url} onChange={(v) => setDraft({ ...draft, image_url: v })} uploadFn={uploadFn} /><UploadPicker label="Mobile Image" value={draft.mobile_image_url} onChange={(v) => setDraft({ ...draft, mobile_image_url: v })} uploadFn={uploadFn} /><Field label="CTA Label" value={draft.cta_label} onChange={(v: string) => setDraft({ ...draft, cta_label: v })} /><Field label="CTA Link" value={draft.cta_href} onChange={(v: string) => setDraft({ ...draft, cta_href: v })} /><Field label="Sort Order" type="number" value={draft.sort_order} onChange={(v: string) => setDraft({ ...draft, sort_order: v })} /><TogglePill active={draft.enabled} label={draft.enabled ? 'Enabled' : 'Disabled'} onClick={() => setDraft({ ...draft, enabled: !draft.enabled })} /><div className="flex gap-2"><Button onClick={save}>Save Hero</Button><Button variant="outline" onClick={() => setDraft(null)}>Cancel</Button></div></div>;
+const CategoryBannerEditor = ({ draft, setDraft, save, categories, uploadFn }: any) => <div className="mt-5 grid gap-3 border-t border-border pt-5"><SelectField label="Category" value={draft.category} onChange={(v: string) => setDraft({ ...draft, category: v })} options={categories.map((cat: any) => ({ value: cat.id, label: cat.name }))} /><Field label="Title" value={draft.title} onChange={(v: string) => setDraft({ ...draft, title: v })} /><Field label="Subtitle" value={draft.subtitle} onChange={(v: string) => setDraft({ ...draft, subtitle: v })} /><UploadPicker label="Banner Image" value={draft.image_url} onChange={(v) => setDraft({ ...draft, image_url: v })} uploadFn={uploadFn} /><TogglePill active={draft.enabled} label={draft.enabled ? 'Enabled' : 'Disabled'} onClick={() => setDraft({ ...draft, enabled: !draft.enabled })} /><div className="flex gap-2"><Button onClick={save}>Save Banner</Button><Button variant="outline" onClick={() => setDraft(null)}>Cancel</Button></div></div>;
+const SiteContentEditor = ({ draft, setDraft, save, uploadFn }: any) => <div className="mt-5 grid md:grid-cols-2 gap-3 border-t border-border pt-5"><Field label="Content Key" value={draft.content_key} onChange={(v: string) => setDraft({ ...draft, content_key: v })} /><Field label="Type" value={draft.type} onChange={(v: string) => setDraft({ ...draft, type: v })} placeholder="page, footer, policy, section" /><Field label="Title" value={draft.title} onChange={(v: string) => setDraft({ ...draft, title: v })} /><Field label="Subtitle" value={draft.subtitle} onChange={(v: string) => setDraft({ ...draft, subtitle: v })} /><div className="md:col-span-2"><UploadPicker label="Image" value={draft.image_url} onChange={(v) => setDraft({ ...draft, image_url: v })} uploadFn={uploadFn} /></div><Field label="CTA Link" value={draft.cta_href} onChange={(v: string) => setDraft({ ...draft, cta_href: v })} /><Field label="Sort Order" type="number" value={draft.sort_order} onChange={(v: string) => setDraft({ ...draft, sort_order: v })} /><div className="md:col-span-2"><Field label="Body" value={draft.body} onChange={(v: string) => setDraft({ ...draft, body: v })} rows={5} /></div><div className="md:col-span-2 flex items-end gap-2"><TogglePill active={draft.enabled} label={draft.enabled ? 'Enabled' : 'Disabled'} onClick={() => setDraft({ ...draft, enabled: !draft.enabled })} /><Button onClick={save}>Save Content</Button><Button variant="outline" onClick={() => setDraft(null)}>Cancel</Button></div></div>;
+
 
 const SettingsPanel = ({ userEmail, signOut, navigateHome, customerCount, adminCount }: any) => {
   const [newEmail, setNewEmail] = useState(userEmail || '');
