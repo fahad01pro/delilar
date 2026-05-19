@@ -130,8 +130,12 @@ export type Database = {
           created_at: string
           id: string
           items: Json
+          payer_number: string | null
+          payment_account: string | null
           payment_method: string
+          payment_status: string
           refunded_at: string | null
+          screenshot_url: string | null
           shipping: number
           shipping_address: Json | null
           status: Database["public"]["Enums"]["order_status"]
@@ -139,6 +143,7 @@ export type Database = {
           total: number
           tracking_number: string | null
           tracking_url: string | null
+          txn_id: string | null
           updated_at: string
           user_id: string
         }
@@ -149,8 +154,12 @@ export type Database = {
           created_at?: string
           id?: string
           items?: Json
+          payer_number?: string | null
+          payment_account?: string | null
           payment_method?: string
+          payment_status?: string
           refunded_at?: string | null
+          screenshot_url?: string | null
           shipping?: number
           shipping_address?: Json | null
           status?: Database["public"]["Enums"]["order_status"]
@@ -158,6 +167,7 @@ export type Database = {
           total?: number
           tracking_number?: string | null
           tracking_url?: string | null
+          txn_id?: string | null
           updated_at?: string
           user_id: string
         }
@@ -168,8 +178,12 @@ export type Database = {
           created_at?: string
           id?: string
           items?: Json
+          payer_number?: string | null
+          payment_account?: string | null
           payment_method?: string
+          payment_status?: string
           refunded_at?: string | null
+          screenshot_url?: string | null
           shipping?: number
           shipping_address?: Json | null
           status?: Database["public"]["Enums"]["order_status"]
@@ -177,6 +191,7 @@ export type Database = {
           total?: number
           tracking_number?: string | null
           tracking_url?: string | null
+          txn_id?: string | null
           updated_at?: string
           user_id?: string
         }

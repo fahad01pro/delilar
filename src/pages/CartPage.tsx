@@ -1,10 +1,11 @@
 import { useCart } from '@/context/CartContext';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Minus, Plus, X, ArrowLeft, ShieldCheck, Truck } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 const CartPage = () => {
-  const { items, removeItem, updateQuantity, totalPrice, clearCart } = useCart();
+  const navigate = useNavigate();
+  const { items, removeItem, updateQuantity, totalPrice } = useCart();
 
   if (items.length === 0) {
     return (
@@ -66,10 +67,10 @@ const CartPage = () => {
           <h2 className="text-lg font-heading font-bold mb-6">Order Summary</h2>
           <div className="space-y-3 text-sm font-body">
             <div className="flex justify-between"><span className="text-muted-foreground">Subtotal</span><span>৳{totalPrice.toLocaleString()}</span></div>
-            <div className="flex justify-between"><span className="text-muted-foreground">Shipping</span><span className="text-accent font-medium">{totalPrice >= 5000 ? 'Free' : '৳120'}</span></div>
+            <div className="flex justify-between"><span className="text-muted-foreground">Shipping</span><span className="text-accent font-medium">{totalPrice >= 5000 ? 'Free' : '৳150'}</span></div>
             <div className="border-t border-border pt-4 flex justify-between font-semibold text-base">
               <span>Total</span>
-              <span className="font-heading text-xl font-bold text-primary">৳{(totalPrice + (totalPrice >= 5000 ? 0 : 120)).toLocaleString()}</span>
+              <span className="font-heading text-xl font-bold text-primary">৳{(totalPrice + (totalPrice >= 5000 ? 0 : 150)).toLocaleString()}</span>
             </div>
           </div>
           {totalPrice < 5000 && (
@@ -77,11 +78,8 @@ const CartPage = () => {
               <Truck size={14} /> Add ৳{(5000 - totalPrice).toLocaleString()} more for free shipping
             </div>
           )}
-          <button className="w-full btn-primary py-4 text-sm font-body tracking-widest uppercase mt-6 font-semibold">
+          <button onClick={() => navigate('/checkout')} className="w-full btn-primary py-4 text-sm font-body tracking-widest uppercase mt-6 font-semibold">
             Proceed to Checkout
-          </button>
-          <button className="w-full btn-gold py-4 text-sm font-body tracking-widest uppercase mt-3 font-semibold">
-            Cash on Delivery
           </button>
           <Link to="/" className="block text-center text-xs text-muted-foreground font-body mt-4 hover:text-foreground transition-colors">
             Continue Shopping
