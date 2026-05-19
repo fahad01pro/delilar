@@ -282,6 +282,7 @@ const emptyProductDraft = (category = 'jubba'): ProductDraft => ({
   is_new: false,
   is_trending: false,
   is_visible: true,
+  new_until: '',
   sort_order: '0',
 });
 
@@ -352,6 +353,7 @@ const productToDraft = (product: ProductRow): ProductDraft => ({
   is_new: !!product.is_new,
   is_trending: !!product.is_trending,
   is_visible: !!product.is_visible,
+  new_until: product.data?.newUntil ? String(product.data.newUntil).slice(0, 10) : '',
   sort_order: String(product.sort_order ?? 0),
 });
 
