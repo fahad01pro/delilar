@@ -1123,20 +1123,26 @@ const SubscribersPanel = ({ subscribers }: { subscribers: { id: string; email: s
         </div>
         <Button onClick={exportCsv} disabled={!subscribers.length} className="gap-2"><Mail size={15} /> Export CSV</Button>
       </div>
-      <AdminCard>
-        {subscribers.length === 0 ? (
-          <p className="text-center text-muted-foreground py-10">No subscribers yet.</p>
-        ) : (
-          <div className="divide-y divide-border">
-            {subscribers.map((s) => (
-              <div key={s.id} className="flex flex-wrap items-center justify-between gap-3 py-3 text-sm">
-                <span className="font-medium">{s.email}</span>
-                <span className="text-xs text-muted-foreground">{s.source} · {new Date(s.created_at).toLocaleDateString()}</span>
+      {subscribers.length === 0 ? (
+        <AdminCard><p className="text-center text-muted-foreground py-10">No subscribers yet.</p></AdminCard>
+      ) : (
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
+          {subscribers.map((s) => (
+            <div key={s.id} className="rounded-2xl border border-border bg-card p-4 hover:border-accent transition-all">
+              <div className="flex items-start gap-3">
+                <div className="w-10 h-10 rounded-full bg-accent/10 flex items-center justify-center shrink-0">
+                  <Mail size={16} className="text-accent" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-medium truncate">{s.email}</p>
+                  <p className="text-[11px] text-muted-foreground mt-0.5">via {s.source}</p>
+                  <p className="text-[10px] uppercase tracking-wider text-muted-foreground mt-1">{new Date(s.created_at).toLocaleDateString()}</p>
+                </div>
               </div>
-            ))}
-          </div>
-        )}
-      </AdminCard>
+            </div>
+          ))}
+        </div>
+      )}
     </section>
   );
 };
