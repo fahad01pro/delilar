@@ -3,7 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Check, ChevronLeft, ChevronRight, Copy, ShieldCheck, MessageCircle,
-  Loader2, Upload, Sparkles, Phone, Truck, Wallet,
+  Loader2, Upload, Sparkles, Truck, Wallet, Search, Banknote,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { z } from 'zod';
@@ -11,17 +11,24 @@ import { useCart } from '@/context/CartContext';
 import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useMfsSettings, MFS_META, type MfsKey } from '@/hooks/useMfsSettings';
+import { BD_DISTRICTS, BD_LOCATIONS } from '@/data/bangladeshLocations';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
+import { cn } from '@/lib/utils';
 
 const SHIPPING_FEE = 150;
 const FREE_SHIPPING_THRESHOLD = 5000;
 const WHATSAPP = '8801XXXXXXXXX';
+
+type PayMethod = MfsKey | 'cod';
 
 const customerSchema = z.object({
   fullName: z.string().trim().min(2, 'Name required').max(80),
   phone: z.string().trim().regex(/^01[3-9]\d{8}$/, 'Valid BD phone required'),
   email: z.string().trim().email().max(120).optional().or(z.literal('')),
   address: z.string().trim().min(8, 'Full address required').max(400),
-  city: z.string().trim().min(2, 'District/City required').max(60),
+  district: z.string().trim().min(2, 'Select your district'),
+  upazila: z.string().trim().min(2, 'Select your upazila / thana'),
 });
 
 type CustomerInfo = z.infer<typeof customerSchema>;
@@ -39,10 +46,10 @@ const Checkout = () => {
   const [orderId, setOrderId] = useState<string | null>(null);
 
   const [customer, setCustomer] = useState<CustomerInfo>({
-    fullName: '', phone: '', email: '', address: '', city: '',
+    fullName: '', phone: '', email: '', address: '', district: '', upazila: '',
   });
 
-  const [method, setMethod] = useState<MfsKey | null>(null);
+  const [method, setMethod] = useState<PayMethod | null>(null);
   const [txnId, setTxnId] = useState('');
   const [payerNumber, setPayerNumber] = useState('');
   const [proofFile, setProofFile] = useState<File | null>(null);
@@ -51,7 +58,6 @@ const Checkout = () => {
   const shipping = useMemo(() => (totalPrice >= FREE_SHIPPING_THRESHOLD ? 0 : SHIPPING_FEE), [totalPrice]);
   const grandTotal = totalPrice + shipping;
 
-  // Prefill from profile
   useEffect(() => {
     if (!user) return;
     supabase.from('profiles').select('*').eq('id', user.id).maybeSingle().then(({ data }) => {
@@ -60,8 +66,9 @@ const Checkout = () => {
         fullName: c.fullName || data.full_name || '',
         phone: c.phone || data.phone || '',
         email: c.email || data.email || user.email || '',
-        address: c.address || [data.house_number, data.village, data.upazila].filter(Boolean).join(', ') || data.address || '',
-        city: c.city || data.district || data.city || '',
+        address: c.address || [data.house_number, data.village].filter(Boolean).join(', ') || data.address || '',
+        district: c.district || (data.district && BD_DISTRICTS.includes(data.district) ? data.district : '') || '',
+        upazila: c.upazila || data.upazila || '',
       }));
     });
   }, [user]);
@@ -92,14 +99,18 @@ const Checkout = () => {
   const submitOrder = async () => {
     if (!user) return openAuthModal('Please sign in to place your order.');
     if (!method) return toast.error('Choose a payment method');
-    if (!txnId.trim() || txnId.trim().length < 6)
-      return toast.error('Enter a valid Transaction ID');
-    if (!payerNumber.trim()) return toast.error('Enter the number you paid from');
+
+    const isMfs = method !== 'cod';
+
+    if (isMfs) {
+      if (!txnId.trim() || txnId.trim().length < 6) return toast.error('Enter a valid Transaction ID');
+      if (!payerNumber.trim()) return toast.error('Enter the number you paid from');
+    }
 
     setSubmitting(true);
     try {
       let screenshotUrl: string | null = null;
-      if (proofFile) {
+      if (isMfs && proofFile) {
         setUploading(true);
         const ext = proofFile.name.split('.').pop()?.toLowerCase() || 'jpg';
         const path = `${user.id}/${Date.now()}.${ext}`;
@@ -111,7 +122,7 @@ const Checkout = () => {
         setUploading(false);
       }
 
-      const account = mfs?.[method];
+      const account = isMfs ? mfs?.[method as MfsKey] : null;
       const payload = {
         user_id: user.id,
         items: items.map((i) => ({
@@ -127,9 +138,9 @@ const Checkout = () => {
         shipping,
         total: grandTotal,
         payment_method: method,
-        payment_status: 'pending',
-        txn_id: txnId.trim(),
-        payer_number: payerNumber.trim(),
+        payment_status: isMfs ? 'pending' : 'cod_pending',
+        txn_id: isMfs ? txnId.trim() : null,
+        payer_number: isMfs ? payerNumber.trim() : null,
         screenshot_url: screenshotUrl,
         payment_account: account?.number ?? null,
         shipping_address: customer,
@@ -153,10 +164,15 @@ const Checkout = () => {
     }
   };
 
+  const submitLabel = !method
+    ? 'Choose a method'
+    : method === 'cod'
+      ? 'Place Order — Cash on Delivery'
+      : 'I Have Paid — Submit Order';
+
   return (
     <main className="min-h-screen bg-gradient-to-b from-background to-secondary/30">
       <div className="container mx-auto px-4 lg:px-8 py-8 lg:py-14 max-w-5xl">
-        {/* Stepper */}
         <Stepper current={step} />
 
         <AnimatePresence mode="wait">
@@ -175,7 +191,7 @@ const Checkout = () => {
           )}
 
           {step === 2 && (
-            <StepShell key="2" title="Choose payment method" subtitle="Secure mobile banking — fully verified by our team.">
+            <StepShell key="2" title="Choose payment method" subtitle="Mobile banking or pay on delivery — fully verified by our team.">
               <PaymentPicker
                 method={method}
                 onPick={setMethod}
@@ -193,7 +209,7 @@ const Checkout = () => {
               <Actions
                 onBack={() => setStep(1)}
                 onNext={submitOrder}
-                nextLabel={submitting ? (uploading ? 'Uploading…' : 'Submitting…') : 'I Have Paid — Submit Order'}
+                nextLabel={submitting ? (uploading ? 'Uploading…' : 'Submitting…') : submitLabel}
                 nextDisabled={submitting || !method}
                 nextLoading={submitting}
               />
@@ -279,8 +295,69 @@ const Field = ({ label, value, onChange, type = 'text', placeholder, optional, t
   </label>
 );
 
+/* Searchable combobox using cmdk */
+const SearchSelect = ({
+  label, value, onChange, options, placeholder, disabled, emptyText = 'No match found',
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  options: string[];
+  placeholder: string;
+  disabled?: boolean;
+  emptyText?: string;
+}) => {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="block">
+      <span className="block text-[11px] uppercase tracking-[0.18em] font-body text-muted-foreground mb-1.5">
+        {label}
+      </span>
+      <Popover open={open} onOpenChange={disabled ? undefined : setOpen}>
+        <PopoverTrigger asChild>
+          <button
+            type="button"
+            disabled={disabled}
+            className={cn(
+              'w-full flex items-center justify-between rounded-xl border border-border bg-background px-4 py-3 text-sm font-body text-left transition',
+              'focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none',
+              disabled && 'opacity-50 cursor-not-allowed',
+              !value && 'text-muted-foreground',
+            )}
+          >
+            <span className="truncate">{value || placeholder}</span>
+            <Search size={14} className="text-muted-foreground flex-shrink-0 ml-2" />
+          </button>
+        </PopoverTrigger>
+        <PopoverContent className="p-0 w-[var(--radix-popover-trigger-width)]" align="start">
+          <Command>
+            <CommandInput placeholder={`Search ${label.toLowerCase()}…`} />
+            <CommandList className="max-h-64">
+              <CommandEmpty>{emptyText}</CommandEmpty>
+              <CommandGroup>
+                {options.map((opt) => (
+                  <CommandItem
+                    key={opt}
+                    value={opt}
+                    onSelect={() => { onChange(opt); setOpen(false); }}
+                    className="cursor-pointer"
+                  >
+                    <Check size={14} className={cn('mr-2', value === opt ? 'opacity-100 text-primary' : 'opacity-0')} />
+                    {opt}
+                  </CommandItem>
+                ))}
+              </CommandGroup>
+            </CommandList>
+          </Command>
+        </PopoverContent>
+      </Popover>
+    </div>
+  );
+};
+
 const CustomerForm = ({ value, onChange }: { value: CustomerInfo; onChange: (v: CustomerInfo) => void }) => {
   const upd = (k: keyof CustomerInfo) => (v: string) => onChange({ ...value, [k]: v });
+  const upazilas = value.district ? (BD_LOCATIONS[value.district] || []) : [];
   return (
     <div className="glass rounded-2xl p-6 lg:p-8 shadow-premium space-y-4">
       <div className="grid sm:grid-cols-2 gap-4">
@@ -289,7 +366,24 @@ const CustomerForm = ({ value, onChange }: { value: CustomerInfo; onChange: (v: 
       </div>
       <Field label="Email" type="email" optional value={value.email} onChange={upd('email')} placeholder="you@example.com" />
       <Field label="Full delivery address" textarea value={value.address} onChange={upd('address')} placeholder="House, road, area, landmark" />
-      <Field label="District / City" value={value.city} onChange={upd('city')} placeholder="Dhaka" />
+      <div className="grid sm:grid-cols-2 gap-4">
+        <SearchSelect
+          label="District"
+          value={value.district}
+          onChange={(v) => onChange({ ...value, district: v, upazila: '' })}
+          options={BD_DISTRICTS}
+          placeholder="Select district"
+        />
+        <SearchSelect
+          label="Upazila / Thana"
+          value={value.upazila}
+          onChange={upd('upazila')}
+          options={upazilas}
+          placeholder={value.district ? 'Select upazila' : 'Select district first'}
+          disabled={!value.district}
+          emptyText="No upazila match"
+        />
+      </div>
     </div>
   );
 };
@@ -341,11 +435,11 @@ const Row = ({ label, value }: { label: string; value: string }) => (
 const PaymentPicker = ({
   method, onPick, mfs, amount, txnId, setTxnId, payerNumber, setPayerNumber, proofFile, setProofFile, onCopy,
 }: any) => {
-  const methods: MfsKey[] = ['bkash', 'nagad', 'rocket'];
+  const mfsKeys: MfsKey[] = ['bkash', 'nagad', 'rocket'];
   return (
     <div className="space-y-5">
-      <div className="grid sm:grid-cols-3 gap-4">
-        {methods.map((key) => {
+      <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {mfsKeys.map((key) => {
           const m = MFS_META[key];
           const acc = mfs?.[key];
           if (acc && acc.enabled === false) return null;
@@ -367,21 +461,40 @@ const PaymentPicker = ({
                   <p className="font-heading text-base">{m.label}</p>
                   <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Mobile Wallet</p>
                 </div>
-                <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${
-                  selected ? 'border-primary bg-primary' : 'border-border'
-                }`}>
-                  {selected && <Check size={12} className="text-primary-foreground" />}
-                </div>
+                <Radio selected={selected} />
               </div>
               <p className="text-xs text-muted-foreground font-body mt-3">{m.tagline}</p>
               <p className="text-[10px] text-muted-foreground/80 mt-1">Verified manually · Instant order placement</p>
             </motion.button>
           );
         })}
+
+        {/* COD card */}
+        <motion.button
+          type="button" onClick={() => onPick('cod')} whileTap={{ scale: 0.98 }}
+          className={`relative text-left rounded-2xl p-5 border-2 transition-all overflow-hidden ${
+            method === 'cod'
+              ? 'border-primary bg-primary/[0.03] shadow-[0_12px_40px_-12px_hsl(var(--primary)/0.4)]'
+              : 'border-border bg-background hover:border-primary/40'
+          }`}
+        >
+          <div className="flex items-center gap-3">
+            <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-accent to-accent/70 flex items-center justify-center text-accent-foreground shadow-md">
+              <Banknote size={20} />
+            </div>
+            <div className="flex-1">
+              <p className="font-heading text-base">Cash on Delivery</p>
+              <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Pay at doorstep</p>
+            </div>
+            <Radio selected={method === 'cod'} />
+          </div>
+          <p className="text-xs text-muted-foreground font-body mt-3">Pay only when your parcel arrives.</p>
+          <p className="text-[10px] text-muted-foreground/80 mt-1">Available nationwide · No advance payment</p>
+        </motion.button>
       </div>
 
       <AnimatePresence mode="wait">
-        {method && (
+        {method && method !== 'cod' && (
           <motion.div
             key={method}
             initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}
@@ -445,18 +558,60 @@ const PaymentPicker = ({
             </div>
           </motion.div>
         )}
+
+        {method === 'cod' && (
+          <motion.div
+            key="cod"
+            initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.3 }}
+            className="glass rounded-2xl p-6 lg:p-8 shadow-premium-lg space-y-5"
+          >
+            <div className="flex items-start gap-4">
+              <div className="w-14 h-14 rounded-2xl bg-accent/15 flex items-center justify-center flex-shrink-0">
+                <Banknote size={26} className="text-accent" />
+              </div>
+              <div>
+                <p className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground font-body">Cash on Delivery</p>
+                <h3 className="font-heading text-xl mt-1">Pay <span className="text-primary">৳{amount.toLocaleString()}</span> when your order arrives</h3>
+                <p className="text-sm text-muted-foreground font-body mt-2">
+                  No transaction ID required. Our courier will collect the exact amount at your doorstep.
+                </p>
+              </div>
+            </div>
+
+            <div className="grid sm:grid-cols-2 gap-3 pt-2">
+              {[
+                { icon: Truck, label: 'COD available across Bangladesh' },
+                { icon: Wallet, label: 'Please keep exact cash ready' },
+              ].map(({ icon: Icon, label }) => (
+                <div key={label} className="rounded-xl border border-border bg-background/60 px-4 py-3 flex items-center gap-2.5">
+                  <Icon size={16} className="text-accent" />
+                  <span className="text-xs font-body text-foreground/80">{label}</span>
+                </div>
+              ))}
+            </div>
+          </motion.div>
+        )}
       </AnimatePresence>
     </div>
   );
 };
 
+const Radio = ({ selected }: { selected: boolean }) => (
+  <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all flex-shrink-0 ${
+    selected ? 'border-primary bg-primary' : 'border-border'
+  }`}>
+    {selected && <Check size={12} className="text-primary-foreground" />}
+  </div>
+);
+
 const TrustRow = () => (
   <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3">
     {[
-      { icon: ShieldCheck, label: 'Secure mobile banking' },
+      { icon: ShieldCheck, label: 'Secure checkout for Bangladesh' },
       { icon: Check, label: '100% manual verification' },
+      { icon: Truck, label: 'Cash on Delivery nationwide' },
       { icon: MessageCircle, label: 'WhatsApp support 24/7' },
-      { icon: Sparkles, label: 'No hidden charges' },
     ].map(({ icon: Icon, label }) => (
       <div key={label} className="rounded-xl border border-border bg-background/60 px-4 py-3 flex items-center gap-2.5">
         <Icon size={16} className="text-accent" />
@@ -483,44 +638,51 @@ const Actions = ({ onBack, onNext, nextLabel = 'Continue', nextDisabled, nextLoa
   </div>
 );
 
-const SuccessView = ({ orderId, total, method }: { orderId: string; total: number; method: MfsKey | null }) => (
-  <motion.section
-    key="done"
-    initial={{ opacity: 0, scale: 0.96 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }}
-    className="text-center py-10"
-  >
-    <motion.div
-      initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: 'spring', delay: 0.1 }}
-      className="w-20 h-20 rounded-full bg-accent/20 ring-8 ring-accent/10 flex items-center justify-center mx-auto mb-6"
+const SuccessView = ({ orderId, total, method }: { orderId: string; total: number; method: PayMethod | null }) => {
+  const isCod = method === 'cod';
+  const methodLabel = isCod ? 'Cash on Delivery' : method ? MFS_META[method as MfsKey].label : 'payment';
+  return (
+    <motion.section
+      key="done"
+      initial={{ opacity: 0, scale: 0.96 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }}
+      className="text-center py-10"
     >
-      <Check size={36} className="text-accent" strokeWidth={3} />
-    </motion.div>
-    <h1 className="font-heading text-3xl lg:text-4xl font-bold mb-2">Order placed successfully</h1>
-    <p className="text-muted-foreground font-body text-sm mb-8 max-w-md mx-auto">
-      Thank you for shopping with Delilar. Our team will verify your {method ? MFS_META[method].label : 'payment'} within a few hours.
-    </p>
-    <div className="glass rounded-2xl p-6 max-w-md mx-auto shadow-premium-lg space-y-4">
-      <Row label="Order ID" value={`#${orderId.slice(0, 8).toUpperCase()}`} />
-      <Row label="Amount" value={`৳${total.toLocaleString()}`} />
-      <Row label="Payment status" value="⏳ Pending verification" />
-      <Row label="Expected confirmation" value="Within 2–6 hours" />
-      <div className="border-t border-border pt-4 flex flex-col sm:flex-row gap-2">
-        <a
-          href={`https://wa.me/${WHATSAPP}?text=${encodeURIComponent(`Hello Delilar, my order ID is #${orderId.slice(0, 8).toUpperCase()}.`)}`}
-          target="_blank" rel="noopener noreferrer"
-          className="btn-gold px-4 py-3 rounded-xl inline-flex items-center justify-center gap-2 text-xs font-body tracking-wider uppercase flex-1"
-        >
-          <MessageCircle size={14} /> WhatsApp Support
-        </a>
-        <Link to="/account" className="btn-primary px-4 py-3 rounded-xl text-xs font-body tracking-wider uppercase flex-1 inline-flex items-center justify-center gap-2">
-          <Truck size={14} /> Track Order
-        </Link>
+      <motion.div
+        initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: 'spring', delay: 0.1 }}
+        className="w-20 h-20 rounded-full bg-accent/20 ring-8 ring-accent/10 flex items-center justify-center mx-auto mb-6"
+      >
+        <Check size={36} className="text-accent" strokeWidth={3} />
+      </motion.div>
+      <h1 className="font-heading text-3xl lg:text-4xl font-bold mb-2">Order placed successfully</h1>
+      <p className="text-muted-foreground font-body text-sm mb-8 max-w-md mx-auto">
+        {isCod
+          ? 'Thank you for shopping with Delilar. Your Cash on Delivery order is confirmed — please keep exact cash ready.'
+          : `Thank you for shopping with Delilar. Our team will verify your ${methodLabel} payment within a few hours.`}
+      </p>
+      <div className="glass rounded-2xl p-6 max-w-md mx-auto shadow-premium-lg space-y-4">
+        <Row label="Order ID" value={`#${orderId.slice(0, 8).toUpperCase()}`} />
+        <Row label="Amount" value={`৳${total.toLocaleString()}`} />
+        <Row label="Method" value={methodLabel} />
+        <Row label="Payment status" value={isCod ? '💵 Cash on Delivery confirmed' : '⏳ Pending verification'} />
+        <Row label="Expected delivery" value={isCod ? '2–5 business days' : 'Ships after verification'} />
+        <div className="border-t border-border pt-4 flex flex-col sm:flex-row gap-2">
+          <a
+            href={`https://wa.me/${WHATSAPP}?text=${encodeURIComponent(`Hello Delilar, my order ID is #${orderId.slice(0, 8).toUpperCase()}.`)}`}
+            target="_blank" rel="noopener noreferrer"
+            className="btn-gold px-4 py-3 rounded-xl inline-flex items-center justify-center gap-2 text-xs font-body tracking-wider uppercase flex-1"
+          >
+            <MessageCircle size={14} /> WhatsApp Support
+          </a>
+          <Link to="/account" className="btn-primary px-4 py-3 rounded-xl text-xs font-body tracking-wider uppercase flex-1 inline-flex items-center justify-center gap-2">
+            <Truck size={14} /> Track Order
+          </Link>
+        </div>
       </div>
-    </div>
-    <Link to="/" className="inline-block mt-8 text-xs font-body tracking-widest uppercase text-muted-foreground hover:text-primary transition-colors">
-      Continue shopping →
-    </Link>
-  </motion.section>
-);
+      <Link to="/" className="inline-block mt-8 text-xs font-body tracking-widest uppercase text-muted-foreground hover:text-primary transition-colors">
+        Continue shopping →
+      </Link>
+    </motion.section>
+  );
+};
 
 export default Checkout;
