@@ -40,7 +40,7 @@ import { defaultInfoSections, mergeInfoSections } from '@/lib/productInfoDefault
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 
-type AdminTab = 'overview' | 'products' | 'orders' | 'customers' | 'subscribers' | 'inventory' | 'outlets' | 'content' | 'settings';
+type AdminTab = 'overview' | 'products' | 'orders' | 'payments' | 'customers' | 'subscribers' | 'inventory' | 'outlets' | 'content' | 'settings';
 type ProductType = 'clothing' | 'accessories' | 'perfume';
 
 type ColorVariantDraft = { name: string; hex: string; sku?: string; stock?: string; images: [string, string] };
@@ -116,6 +116,11 @@ type OrderRow = {
   total: number;
   shipping_address?: any;
   payment_method: string;
+  payment_status?: string;
+  txn_id?: string | null;
+  payer_number?: string | null;
+  screenshot_url?: string | null;
+  payment_account?: string | null;
   status: string;
   tracking_number?: string | null;
   courier?: string | null;
@@ -407,7 +412,7 @@ const Admin = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const segment = location.pathname.split('/')[2] as AdminTab | undefined;
-  const activeTab: AdminTab = segment && ['overview', 'products', 'orders', 'customers', 'subscribers', 'inventory', 'outlets', 'content', 'settings'].includes(segment) ? segment : 'overview';
+  const activeTab: AdminTab = segment && ['overview', 'products', 'orders', 'payments', 'customers', 'subscribers', 'inventory', 'outlets', 'content', 'settings'].includes(segment) ? segment : 'overview';
 
   const [checkingAdmin, setCheckingAdmin] = useState(true);
   const [hasAdminAccess, setHasAdminAccess] = useState(false);
@@ -1083,6 +1088,7 @@ const adminTabs: { key: AdminTab; label: string; title: string; icon: any }[] = 
   { key: 'products', label: 'Products', title: 'Products & Categories', icon: Package },
   { key: 'inventory', label: 'Inventory', title: 'Inventory & Stock', icon: Boxes },
   { key: 'orders', label: 'Orders', title: 'Orders & Delivery', icon: ShoppingBag },
+  { key: 'payments', label: 'Payments', title: 'Payments & MFS Verification', icon: Wallet },
   { key: 'customers', label: 'Customers', title: 'Customers & Purchase History', icon: Users },
   { key: 'subscribers', label: 'Subscribers', title: 'Newsletter Subscribers', icon: Mail },
   { key: 'outlets', label: 'Outlets', title: 'Outlet & Store Locations', icon: MapPin },
