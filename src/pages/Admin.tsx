@@ -1024,6 +1024,10 @@ const Admin = () => {
               <OrdersPanel orders={orders} profileById={profileById} trackingDrafts={trackingDrafts} setTrackingDrafts={setTrackingDrafts} updateOrder={updateOrder} saveTracking={saveTracking} />
             )}
 
+            {activeTab === 'payments' && (
+              <PaymentsPanel orders={orders} profileById={profileById} siteContent={siteContent} updateOrder={updateOrder} reload={loadAdminData} />
+            )}
+
             {activeTab === 'customers' && (
               <CustomersPanel
                 customers={filteredCustomers}
