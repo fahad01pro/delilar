@@ -48,6 +48,9 @@ const Navbar = () => {
   const { user, openAuthModal } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
+  const eid = useMemo(() => getActiveEid(), []);
+  const mobileNavLinks = useMemo(() => buildMobileNavLinks(eid.name), [eid.name]);
+
 
   const handleProtected = (target: string, msg: string) => {
     if (user) navigate(target);
@@ -77,9 +80,22 @@ const Navbar = () => {
         }}
       >
         {/* Top bar */}
-        <div className="bg-foreground py-1.5">
+        <div className="bg-foreground py-1.5 overflow-hidden">
           <p className="text-center text-background text-[10px] font-body tracking-[0.25em] uppercase">
-            ✦ Free Shipping on Orders Over ৳5,000 ✦ Eid Collection Now Live ✦
+            ✦ Free Shipping on Orders Over ৳5,000 ✦{' '}
+            <AnimatePresence mode="wait" initial={false}>
+              <motion.span
+                key={eid.name}
+                initial={{ opacity: 0, y: -6 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 6 }}
+                transition={{ duration: 0.4 }}
+                className="inline-block"
+              >
+                {eid.name} Collection {eid.isCurrent ? 'Live Now' : 'Now Live'}
+              </motion.span>
+            </AnimatePresence>{' '}
+            ✦
           </p>
         </div>
 
