@@ -443,7 +443,130 @@ const Account = () => {
   );
 };
 
-const FieldLabel = ({ children, required }: { children: React.ReactNode; required?: boolean }) => (
+const PAYMENT_LABEL: Record<string, string> = {
+  paid: 'Paid',
+  pending: 'Pending Verification',
+  cod_pending: 'Cash on Delivery',
+  failed: 'Failed',
+};
+
+const OrderCard = ({ order: o }: { order: Order }) => {
+  const [open, setOpen] = useState(false);
+  const isCancelled = o.status === 'cancelled' || o.status === 'refunded';
+  const isDelivered = o.status === 'delivered';
+  const addr = (o.shipping_address || {}) as any;
+  const headline = isCancelled
+    ? 'Order Cancelled'
+    : isDelivered
+    ? 'Delivered Successfully'
+    : o.status === 'transit'
+    ? 'Your order is on the way'
+    : 'Your order has been received';
+
+  return (
+    <div className="border border-border/50 rounded-2xl bg-background overflow-hidden shadow-sm">
+      <div className="p-5">
+        <div className="flex items-start justify-between flex-wrap gap-3">
+          <div>
+            <p className="text-[10px] font-body tracking-[0.2em] uppercase text-muted-foreground">Order</p>
+            <p className="text-sm font-body font-mono text-foreground">#{o.id.slice(0, 8).toUpperCase()}</p>
+            <p className="text-xs font-body text-muted-foreground mt-1">{new Date(o.created_at).toLocaleString()}</p>
+          </div>
+          <div className="text-right">
+            <p className="text-[10px] font-body tracking-[0.2em] uppercase text-muted-foreground">Total</p>
+            <p className="text-lg font-heading font-semibold text-primary">৳{Number(o.total).toLocaleString()}</p>
+            <span className={`inline-flex mt-1.5 items-center rounded-full border px-2 py-0.5 text-[10px] font-medium ${paymentBadge(o.payment_status)}`}>
+              {PAYMENT_LABEL[o.payment_status || 'pending'] || o.payment_status}
+            </span>
+          </div>
+        </div>
+
+        <p className={`mt-3 text-sm font-body ${isCancelled ? 'text-destructive' : 'text-foreground'}`}>{headline}</p>
+
+        {isCancelled ? (
+          <div className="mt-4 flex items-center gap-2 rounded-xl border border-destructive/30 bg-destructive/5 px-4 py-3 text-xs text-destructive">
+            <XCircle size={14} /> This order was {o.status}. Contact support if you need help.
+          </div>
+        ) : (
+          <OrderTracker status={o.status} />
+        )}
+
+        {isDelivered && o.updated_at && (
+          <p className="mt-3 text-[11px] text-muted-foreground text-center">
+            Delivered on {new Date(o.updated_at).toLocaleString()}
+          </p>
+        )}
+
+        <button
+          onClick={() => setOpen((v) => !v)}
+          className="mt-4 inline-flex items-center gap-1.5 text-[11px] font-body tracking-[0.18em] uppercase text-accent hover:underline"
+        >
+          {open ? 'Hide details' : 'View details'}
+          <ChevronDown size={12} className={`transition-transform ${open ? 'rotate-180' : ''}`} />
+        </button>
+      </div>
+
+      {open && (
+        <motion.div
+          initial={{ opacity: 0, height: 0 }}
+          animate={{ opacity: 1, height: 'auto' }}
+          className="border-t border-border/50 bg-card/40 px-5 py-4 space-y-4"
+        >
+          <div>
+            <p className="text-[10px] font-body tracking-[0.2em] uppercase text-muted-foreground mb-2">Items</p>
+            <div className="space-y-1.5">
+              {(o.items || []).map((it: any, i: number) => (
+                <div key={i} className="flex items-center justify-between text-xs font-body">
+                  <span className="text-foreground">{it.name || it.product?.name || 'Item'} × {it.quantity || 1}</span>
+                  <span className="text-muted-foreground">৳{Number(it.price ?? it.product?.price ?? 0).toLocaleString()}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="grid sm:grid-cols-2 gap-3 text-xs font-body">
+            <div className="rounded-xl border border-border/50 p-3">
+              <p className="text-[10px] tracking-[0.2em] uppercase text-muted-foreground mb-1">Delivery Address</p>
+              <p className="text-foreground">{addr.fullName || addr.full_name || '—'}</p>
+              <p className="text-muted-foreground">{addr.phone || ''}</p>
+              <p className="text-muted-foreground mt-1">
+                {[addr.house_number, addr.village, addr.upazila, addr.district].filter(Boolean).join(', ') || addr.address || 'No address on file'}
+              </p>
+            </div>
+            <div className="rounded-xl border border-border/50 p-3">
+              <p className="text-[10px] tracking-[0.2em] uppercase text-muted-foreground mb-1">Payment</p>
+              <p className="text-foreground capitalize">{o.payment_method || '—'}</p>
+              {o.txn_id && <p className="text-muted-foreground">TXN: {o.txn_id}</p>}
+              {o.payer_number && <p className="text-muted-foreground">From: {o.payer_number}</p>}
+              <p className="text-muted-foreground mt-1">Status: {PAYMENT_LABEL[o.payment_status || 'pending']}</p>
+            </div>
+          </div>
+
+          {addr.note && (
+            <div className="rounded-xl border border-border/50 p-3 text-xs font-body">
+              <p className="text-[10px] tracking-[0.2em] uppercase text-muted-foreground mb-1">Order Note</p>
+              <p className="text-foreground whitespace-pre-wrap">{addr.note}</p>
+            </div>
+          )}
+
+          {(o.tracking_number || o.tracking_url) && (
+            <div className="rounded-xl border border-accent/30 bg-accent/5 p-3 text-xs font-body">
+              <p className="text-[10px] tracking-[0.2em] uppercase text-accent mb-1">Courier Tracking</p>
+              <p className="text-foreground">{o.courier || 'Courier'} · {o.tracking_number}</p>
+              {o.tracking_url && (
+                <a href={o.tracking_url} target="_blank" rel="noopener noreferrer" className="text-accent hover:underline">
+                  Track shipment →
+                </a>
+              )}
+            </div>
+          )}
+        </motion.div>
+      )}
+    </div>
+  );
+};
+
+
   <label className="block text-[11px] font-body tracking-[0.18em] uppercase text-foreground/70 mb-1.5">
     {children}{required && <span className="text-primary ml-1">*</span>}
   </label>
