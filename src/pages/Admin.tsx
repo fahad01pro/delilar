@@ -1804,29 +1804,101 @@ const OrdersPanel = ({ orders, profileById, trackingDrafts, setTrackingDrafts, u
   );
 };
 
-const CustomersPanel = ({ customers, orders, adminRoleIds, selectedCustomer, selectedCustomerOrders, selectCustomer, grantAdmin, revokeAdmin }: any) => (
-  <section className="grid xl:grid-cols-[1fr_420px] gap-6">
-    <div className="space-y-4">
-      <div><h2 className="font-heading text-2xl">Customers</h2><p className="text-sm text-muted-foreground">Customer profiles, contact details, purchase history, and admin management.</p></div>
-      {customers.map((customer: ProfileRow) => (
-        <AdminCard key={customer.id} className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-          <button onClick={() => selectCustomer(customer.id)} className="text-left">
-            <p className="font-heading text-lg">{customer.full_name || 'Unnamed Customer'} {adminRoleIds.has(customer.id) && <Badge className="ml-2">Admin</Badge>}</p>
-            <p className="text-sm text-muted-foreground">{customer.email || 'No email'} · {customer.phone || 'No phone'}</p>
-            <p className="text-xs text-muted-foreground mt-1">{orders.filter((order: OrderRow) => order.user_id === customer.id).length} orders · {customer.district || customer.city || 'No location'}</p>
-          </button>
-          <div className="flex gap-2">
-            <Button variant="outline" size="sm" onClick={() => selectCustomer(customer.id)}>Details</Button>
-            {adminRoleIds.has(customer.id) ? <Button variant="outline" size="sm" onClick={() => revokeAdmin(customer)}>Remove Admin</Button> : <Button size="sm" onClick={() => grantAdmin(customer)}>Make Admin</Button>}
+const CustomersPanel = ({ customers, orders, adminRoleIds, selectedCustomer, selectedCustomerOrders, selectCustomer, grantAdmin, revokeAdmin }: any) => {
+  const exportCsv = () => {
+    const header = ['Name', 'Phone', 'Email', 'House/Village', 'Upazila', 'District', 'Address', 'Orders', 'Total Spend (BDT)', 'Registered'];
+    const rows = customers.map((c: ProfileRow) => {
+      const cOrders = orders.filter((o: OrderRow) => o.user_id === c.id);
+      const spend = cOrders.reduce((s: number, o: OrderRow) => s + Number(o.total || 0), 0);
+      return [
+        c.full_name || '', c.phone || '', c.email || '',
+        [c.house_number, c.village].filter(Boolean).join(' '),
+        c.upazila || '', c.district || c.city || '',
+        c.address || c.detailed_address || '',
+        String(cOrders.length), String(spend),
+        c.created_at ? new Date(c.created_at).toISOString().slice(0, 10) : '',
+      ];
+    });
+    const csv = [header, ...rows].map((r) => r.map((v) => `"${String(v).replace(/"/g, '""')}"`).join(',')).join('\n');
+    const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `delilar-customers-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const initials = (name?: string | null) =>
+    (name || '?').split(' ').filter(Boolean).slice(0, 2).map((s) => s[0]?.toUpperCase()).join('') || '?';
+
+  return (
+    <section className="grid xl:grid-cols-[1fr_420px] gap-6">
+      <div className="space-y-4">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h2 className="font-heading text-2xl">Customers</h2>
+            <p className="text-sm text-muted-foreground">Customer profiles, contact details, purchase history, and admin management.</p>
           </div>
-        </AdminCard>
-      ))}
-    </div>
-    <AdminCard className="xl:sticky xl:top-28 xl:self-start">
-      {selectedCustomer ? <><PanelTitle icon={UserCog} title={selectedCustomer.full_name || 'Customer Profile'} subtitle={selectedCustomer.email || selectedCustomer.id} /><div className="mt-5 space-y-3 text-sm"><InfoRow label="Phone" value={selectedCustomer.phone || '—'} /><InfoRow label="Address" value={[selectedCustomer.house_number, selectedCustomer.village, selectedCustomer.upazila, selectedCustomer.district].filter(Boolean).join(', ') || selectedCustomer.address || '—'} /><InfoRow label="Orders" value={String(selectedCustomerOrders.length)} /><InfoRow label="Total Spend" value={money(selectedCustomerOrders.reduce((sum: number, order: OrderRow) => sum + Number(order.total || 0), 0))} /></div><div className="mt-5 space-y-2"><p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Purchase History</p>{selectedCustomerOrders.map((order: OrderRow) => <div key={order.id} className="rounded-xl border border-border bg-background p-3 text-sm"><p className="font-medium">#{shortId(order.id)} · {money(order.total)}</p><p className="text-muted-foreground">{order.status} · {new Date(order.created_at).toLocaleDateString()}</p></div>)}</div></> : <p className="text-sm text-muted-foreground">Select a customer to view profile and purchase history.</p>}
-    </AdminCard>
-  </section>
-);
+          <Button onClick={exportCsv} disabled={!customers.length} className="gap-2">
+            <Download size={15} /> Export CSV
+          </Button>
+        </div>
+        <div className="grid sm:grid-cols-2 gap-3">
+          {customers.map((customer: ProfileRow) => {
+            const cOrders = orders.filter((o: OrderRow) => o.user_id === customer.id);
+            const spend = cOrders.reduce((s: number, o: OrderRow) => s + Number(o.total || 0), 0);
+            const isAdmin = adminRoleIds.has(customer.id);
+            return (
+              <button
+                key={customer.id}
+                onClick={() => selectCustomer(customer.id)}
+                className={`text-left rounded-2xl border bg-card p-4 transition-all hover:border-accent hover:shadow-md ${selectedCustomer?.id === customer.id ? 'border-accent ring-2 ring-accent/20' : 'border-border'}`}
+              >
+                <div className="flex items-start gap-3">
+                  <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center text-sm font-heading font-semibold text-foreground shrink-0">
+                    {initials(customer.full_name)}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <p className="font-heading text-sm truncate">{customer.full_name || 'Unnamed Customer'}</p>
+                      {isAdmin && <Badge className="text-[10px]">Admin</Badge>}
+                    </div>
+                    <p className="text-xs text-muted-foreground truncate">{customer.email || 'No email'}</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">{customer.phone || 'No phone'}</p>
+                  </div>
+                </div>
+                <div className="mt-3 grid grid-cols-3 gap-2 text-center">
+                  <div className="rounded-lg bg-background border border-border py-1.5">
+                    <p className="text-[9px] uppercase tracking-wider text-muted-foreground">Orders</p>
+                    <p className="text-sm font-semibold">{cOrders.length}</p>
+                  </div>
+                  <div className="rounded-lg bg-background border border-border py-1.5">
+                    <p className="text-[9px] uppercase tracking-wider text-muted-foreground">Spend</p>
+                    <p className="text-sm font-semibold">{money(spend)}</p>
+                  </div>
+                  <div className="rounded-lg bg-background border border-border py-1.5">
+                    <p className="text-[9px] uppercase tracking-wider text-muted-foreground">Area</p>
+                    <p className="text-xs font-medium truncate">{customer.district || customer.city || '—'}</p>
+                  </div>
+                </div>
+                <div className="mt-3 flex gap-2" onClick={(e) => e.stopPropagation()}>
+                  {isAdmin
+                    ? <Button variant="outline" size="sm" className="flex-1 h-8 text-xs" onClick={() => revokeAdmin(customer)}>Remove Admin</Button>
+                    : <Button size="sm" className="flex-1 h-8 text-xs" onClick={() => grantAdmin(customer)}>Make Admin</Button>}
+                </div>
+              </button>
+            );
+          })}
+          {!customers.length && <p className="col-span-full text-center text-muted-foreground py-10">No customers yet.</p>}
+        </div>
+      </div>
+      <AdminCard className="xl:sticky xl:top-28 xl:self-start">
+        {selectedCustomer ? <><PanelTitle icon={UserCog} title={selectedCustomer.full_name || 'Customer Profile'} subtitle={selectedCustomer.email || selectedCustomer.id} /><div className="mt-5 space-y-3 text-sm"><InfoRow label="Phone" value={selectedCustomer.phone || '—'} /><InfoRow label="Address" value={[selectedCustomer.house_number, selectedCustomer.village, selectedCustomer.upazila, selectedCustomer.district].filter(Boolean).join(', ') || selectedCustomer.address || '—'} /><InfoRow label="Orders" value={String(selectedCustomerOrders.length)} /><InfoRow label="Total Spend" value={money(selectedCustomerOrders.reduce((sum: number, order: OrderRow) => sum + Number(order.total || 0), 0))} /></div><div className="mt-5 space-y-2"><p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Purchase History</p>{selectedCustomerOrders.map((order: OrderRow) => <div key={order.id} className="rounded-xl border border-border bg-background p-3 text-sm"><p className="font-medium">#{shortId(order.id)} · {money(order.total)}</p><p className="text-muted-foreground">{order.status} · {new Date(order.created_at).toLocaleDateString()}</p></div>)}</div></> : <p className="text-sm text-muted-foreground">Select a customer to view profile and purchase history.</p>}
+      </AdminCard>
+    </section>
+  );
+};
 
 const InfoRow = ({ label, value }: { label: string; value: string }) => <div className="flex justify-between gap-4 border-b border-border pb-2"><span className="text-muted-foreground">{label}</span><span className="text-right font-medium">{value}</span></div>;
 
