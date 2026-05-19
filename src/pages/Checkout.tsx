@@ -385,6 +385,14 @@ const CustomerForm = ({ value, onChange }: { value: CustomerInfo; onChange: (v: 
           emptyText="No upazila match"
         />
       </div>
+      <Field
+        label="Order Note"
+        textarea
+        optional
+        value={value.note || ''}
+        onChange={upd('note')}
+        placeholder="Write any special instructions for your order…"
+      />
     </div>
   );
 };
