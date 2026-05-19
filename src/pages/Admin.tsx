@@ -685,9 +685,20 @@ const Admin = () => {
 
   const saveCategoryBanner = async () => {
     if (!categoryBannerDraft) return;
-    if (!categoryBannerDraft.category || !categoryBannerDraft.image_url.trim()) return toast.error('Category and image are required');
+    const page = (categoryBannerDraft.page || categoryBannerDraft.category || '').trim();
+    if (!page || !categoryBannerDraft.image_url.trim()) return toast.error('Page and image are required');
+    const position = categoryBannerDraft.position === 2 ? 2 : 1;
+    // Enforce max 2 banners per page
+    const samePageBanners = categoryBanners.filter((b) => (b.page ?? b.category) === page && b.id !== categoryBannerDraft.id);
+    if (samePageBanners.length >= 2 && !categoryBannerDraft.id) {
+      return toast.error('Only 2 banners allowed per page');
+    }
+    const conflict = samePageBanners.find((b) => (b.position ?? 1) === position);
+    if (conflict) return toast.error(`Position ${position} on this page is already used. Edit or delete it first.`);
     const payload: any = {
-      category: categoryBannerDraft.category,
+      page,
+      position,
+      category: page,
       title: categoryBannerDraft.title.trim() || null,
       subtitle: categoryBannerDraft.subtitle.trim() || null,
       image_url: categoryBannerDraft.image_url.trim(),
@@ -696,8 +707,16 @@ const Admin = () => {
     if (categoryBannerDraft.id) payload.id = categoryBannerDraft.id;
     const { error } = await db.from('category_banners').upsert(payload);
     if (error) return toast.error(error.message);
-    toast.success('Category banner saved');
+    toast.success('Collection banner saved');
     setCategoryBannerDraft(null);
+    loadAdminData();
+  };
+
+  const deleteCategoryBanner = async (id: string) => {
+    if (!confirm('Delete this collection banner?')) return;
+    const { error } = await db.from('category_banners').delete().eq('id', id);
+    if (error) return toast.error(error.message);
+    toast.success('Banner deleted');
     loadAdminData();
   };
 
