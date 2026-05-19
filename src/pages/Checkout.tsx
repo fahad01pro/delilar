@@ -47,7 +47,7 @@ const Checkout = () => {
   const [orderId, setOrderId] = useState<string | null>(null);
 
   const [customer, setCustomer] = useState<CustomerInfo>({
-    fullName: '', phone: '', email: '', address: '', district: '', upazila: '',
+    fullName: '', phone: '', email: '', address: '', district: '', upazila: '', note: '',
   });
 
   const [method, setMethod] = useState<PayMethod | null>(null);
