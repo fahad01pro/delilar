@@ -276,15 +276,15 @@ const StepShell = ({ title, subtitle, children }: { title: string; subtitle: str
   </motion.section>
 );
 
-const Field = ({ label, value, onChange, type = 'text', placeholder, optional, textarea }: any) => (
+const Field = ({ label, value, onChange, type = 'text', placeholder, optional, textarea, rows = 3 }: any) => (
   <label className="block">
     <span className="block text-[11px] uppercase tracking-[0.18em] font-body text-muted-foreground mb-1.5">
       {label} {optional && <em className="not-italic text-muted-foreground/60">(optional)</em>}
     </span>
     {textarea ? (
       <textarea
-        value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder} rows={3}
-        className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm font-body focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition resize-none"
+        value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder} rows={rows}
+        className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm font-body focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition resize-y min-h-[88px]"
       />
     ) : (
       <input
