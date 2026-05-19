@@ -1,8 +1,9 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronDown, Shirt, Crown, Sparkles, Droplets, Star, CircleDot, Briefcase, Wallet } from 'lucide-react';
 import { useCatalog } from '@/hooks/useCatalog';
+import { getActiveEid } from '@/lib/hijri';
 
 interface MenuCategory {
   label: string;
@@ -14,14 +15,14 @@ interface MenuCategory {
   }[];
 }
 
-const menuItems: MenuCategory[] = [
+const buildMenuItems = (eidName: string): MenuCategory[] => [
   {
-    label: 'Eid Edit',
+    label: `${eidName} Edit`,
     href: '/eid',
     children: [
-      { label: 'Eid Jubba Sets', href: '/eid', icon: <Crown size={16} /> },
-      { label: 'Eid Panjabi', href: '/eid', icon: <Sparkles size={16} /> },
-      { label: 'View All Eid', href: '/eid', icon: <Star size={16} /> },
+      { label: `${eidName} Jubba Sets`, href: '/eid', icon: <Crown size={16} /> },
+      { label: `${eidName} Panjabi`, href: '/eid', icon: <Sparkles size={16} /> },
+      { label: `View All ${eidName}`, href: '/eid', icon: <Star size={16} /> },
     ],
   },
   {
