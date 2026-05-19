@@ -29,6 +29,7 @@ const customerSchema = z.object({
   address: z.string().trim().min(8, 'Full address required').max(400),
   district: z.string().trim().min(2, 'Select your district'),
   upazila: z.string().trim().min(2, 'Select your upazila / thana'),
+  note: z.string().trim().max(1000).optional().or(z.literal('')),
 });
 
 type CustomerInfo = z.infer<typeof customerSchema>;
@@ -46,7 +47,7 @@ const Checkout = () => {
   const [orderId, setOrderId] = useState<string | null>(null);
 
   const [customer, setCustomer] = useState<CustomerInfo>({
-    fullName: '', phone: '', email: '', address: '', district: '', upazila: '',
+    fullName: '', phone: '', email: '', address: '', district: '', upazila: '', note: '',
   });
 
   const [method, setMethod] = useState<PayMethod | null>(null);
@@ -275,15 +276,15 @@ const StepShell = ({ title, subtitle, children }: { title: string; subtitle: str
   </motion.section>
 );
 
-const Field = ({ label, value, onChange, type = 'text', placeholder, optional, textarea }: any) => (
+const Field = ({ label, value, onChange, type = 'text', placeholder, optional, textarea, rows = 3 }: any) => (
   <label className="block">
     <span className="block text-[11px] uppercase tracking-[0.18em] font-body text-muted-foreground mb-1.5">
       {label} {optional && <em className="not-italic text-muted-foreground/60">(optional)</em>}
     </span>
     {textarea ? (
       <textarea
-        value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder} rows={3}
-        className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm font-body focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition resize-none"
+        value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder} rows={rows}
+        className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm font-body focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition resize-y min-h-[88px]"
       />
     ) : (
       <input
@@ -384,6 +385,15 @@ const CustomerForm = ({ value, onChange }: { value: CustomerInfo; onChange: (v: 
           emptyText="No upazila match"
         />
       </div>
+      <Field
+        label="Order Note"
+        textarea
+        optional
+        rows={4}
+        value={value.note || ''}
+        onChange={upd('note')}
+        placeholder="Write any special instructions for your order…"
+      />
     </div>
   );
 };
