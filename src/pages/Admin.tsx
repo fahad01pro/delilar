@@ -1057,6 +1057,8 @@ const Admin = () => {
                 contentDraft={contentDraft}
                 setContentDraft={setContentDraft}
                 saveContent={saveContent}
+                uploadFn={uploadImage}
+
               />
             )}
 
