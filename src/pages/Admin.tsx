@@ -1515,39 +1515,43 @@ const ColorVariantsEditor = ({ variants, setVariants, uploadFn }: { variants: Co
                 <Button type="button" variant="outline" size="sm" onClick={() => remove(idx)} className="text-destructive hover:text-destructive gap-1"><Trash2 size={13} /></Button>
               </div>
             </div>
-            <div className="mt-4 grid md:grid-cols-2 gap-4">
+            <div className="mt-4 grid grid-cols-2 gap-3 max-w-md">
               {[0, 1].map((slot) => (
-                <div key={slot} className="rounded-xl border border-dashed border-border bg-background/80 p-3">
-                  <p className="text-[10px] uppercase tracking-[0.22em] text-muted-foreground mb-2">Image {slot + 1}</p>
-                  <div className="aspect-square w-full rounded-lg overflow-hidden bg-secondary mb-2 flex items-center justify-center">
-                    {variant.images[slot] ? (
-                      <img src={variant.images[slot]} alt={`${variant.name} ${slot + 1}`} className="w-full h-full object-cover" />
-                    ) : (
-                      <span className="text-xs text-muted-foreground">No image</span>
-                    )}
+                <div key={slot} className="rounded-lg border border-border bg-background/80 p-2">
+                  <div className="flex items-center gap-2">
+                    <div className="h-16 w-16 rounded-md overflow-hidden bg-secondary flex items-center justify-center shrink-0 border border-border">
+                      {variant.images[slot] ? (
+                        <img src={variant.images[slot]} alt={`${variant.name} ${slot + 1}`} className="w-full h-full object-cover" />
+                      ) : (
+                        <ImageIcon size={18} className="text-muted-foreground/60" />
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0 space-y-1.5">
+                      <p className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground">Image {slot + 1}</p>
+                      <label className="flex items-center justify-center gap-1.5 rounded-md border border-dashed border-border bg-background px-2 py-1.5 text-[11px] text-muted-foreground cursor-pointer hover:border-accent hover:text-foreground transition-all">
+                        <Upload size={11} /> {variant.images[slot] ? 'Replace' : 'Upload'}
+                        <input
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          onChange={async (e) => {
+                            const file = e.target.files?.[0];
+                            if (!file) return;
+                            const url = await uploadFn(file);
+                            if (url) updateImage(idx, slot as 0 | 1, url);
+                            e.target.value = '';
+                          }}
+                        />
+                      </label>
+                    </div>
                   </div>
                   <input
                     type="text"
                     value={variant.images[slot]}
                     onChange={(e) => updateImage(idx, slot as 0 | 1, e.target.value)}
-                    placeholder="https://image-url..."
-                    className="w-full rounded-lg border border-border bg-background px-2 py-1.5 text-xs outline-none focus:border-accent mb-2"
+                    placeholder="or paste image URL"
+                    className="mt-2 w-full rounded-md border border-border bg-background px-2 py-1 text-[11px] outline-none focus:border-accent"
                   />
-                  <label className="flex items-center justify-center gap-2 rounded-lg border border-dashed border-border bg-background px-3 py-2 text-xs text-muted-foreground cursor-pointer hover:border-accent hover:text-foreground transition-all">
-                    <Upload size={13} /> Upload
-                    <input
-                      type="file"
-                      accept="image/*"
-                      className="hidden"
-                      onChange={async (e) => {
-                        const file = e.target.files?.[0];
-                        if (!file) return;
-                        const url = await uploadFn(file);
-                        if (url) updateImage(idx, slot as 0 | 1, url);
-                        e.target.value = '';
-                      }}
-                    />
-                  </label>
                 </div>
               ))}
             </div>
