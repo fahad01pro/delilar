@@ -112,7 +112,18 @@ const MegaMenu = () => {
                 activeMenu === item.label ? 'text-accent' : 'text-primary-foreground/80 hover:text-accent'
               }`}
             >
-              {item.label}
+              <AnimatePresence mode="wait" initial={false}>
+                <motion.span
+                  key={item.label}
+                  initial={{ opacity: 0, y: -4 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: 4 }}
+                  transition={{ duration: 0.35 }}
+                  className="inline-block"
+                >
+                  {item.label}
+                </motion.span>
+              </AnimatePresence>
               {item.children && (
                 <ChevronDown size={12} className={`transition-transform duration-300 ${activeMenu === item.label ? 'rotate-180' : ''}`} />
               )}
