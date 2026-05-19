@@ -1710,6 +1710,7 @@ const OrdersPanel = ({ orders, profileById, trackingDrafts, setTrackingDrafts, u
                     <div className="flex flex-wrap items-center gap-2 mb-1">
                       <h3 className="font-heading text-lg">#{shortId(order.id)}</h3>
                       <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${orderStatusStyle(order.status)}`}>{order.status}</span>
+                      <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${paymentStatusStyle(order.payment_status)}`}>{order.payment_status ?? 'pending'}</span>
                     </div>
                     <p className="text-xs text-muted-foreground truncate">{new Date(order.created_at).toLocaleString()}</p>
                   </div>
