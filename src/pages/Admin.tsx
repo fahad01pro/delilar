@@ -2126,7 +2126,44 @@ const ContentPanel = ({ heroBanners, categoryBanners, siteContent, categoryOptio
 const ContentListItem = ({ title, subtitle, enabled, onEdit }: any) => <div className="flex items-center justify-between gap-3 rounded-xl border border-border bg-background p-3"><div className="min-w-0"><p className="font-medium text-sm truncate">{title}</p><p className="text-xs text-muted-foreground truncate">{subtitle}</p></div><div className="flex items-center gap-2"><Badge variant={enabled ? 'default' : 'secondary'}>{enabled ? 'Live' : 'Hidden'}</Badge><Button variant="outline" size="sm" onClick={onEdit}>Edit</Button></div></div>;
 
 const HeroBannerEditor = ({ draft, setDraft, save, uploadFn }: any) => <div className="mt-5 grid gap-3 border-t border-border pt-5"><Field label="Eyebrow" value={draft.eyebrow} onChange={(v: string) => setDraft({ ...draft, eyebrow: v })} /><Field label="Title" value={draft.title} onChange={(v: string) => setDraft({ ...draft, title: v })} /><Field label="Subtitle" value={draft.subtitle} onChange={(v: string) => setDraft({ ...draft, subtitle: v })} rows={3} /><UploadPicker label="Desktop Image" value={draft.image_url} onChange={(v) => setDraft({ ...draft, image_url: v })} uploadFn={uploadFn} /><UploadPicker label="Mobile Image" value={draft.mobile_image_url} onChange={(v) => setDraft({ ...draft, mobile_image_url: v })} uploadFn={uploadFn} /><Field label="CTA Label" value={draft.cta_label} onChange={(v: string) => setDraft({ ...draft, cta_label: v })} /><Field label="CTA Link" value={draft.cta_href} onChange={(v: string) => setDraft({ ...draft, cta_href: v })} /><Field label="Sort Order" type="number" value={draft.sort_order} onChange={(v: string) => setDraft({ ...draft, sort_order: v })} /><TogglePill active={draft.enabled} label={draft.enabled ? 'Enabled' : 'Disabled'} onClick={() => setDraft({ ...draft, enabled: !draft.enabled })} /><div className="flex gap-2"><Button onClick={save}>Save Hero</Button><Button variant="outline" onClick={() => setDraft(null)}>Cancel</Button></div></div>;
-const CategoryBannerEditor = ({ draft, setDraft, save, categories, uploadFn }: any) => <div className="mt-5 grid gap-3 border-t border-border pt-5"><SelectField label="Category" value={draft.category} onChange={(v: string) => setDraft({ ...draft, category: v })} options={categories.map((cat: any) => ({ value: cat.id, label: cat.name }))} /><Field label="Title" value={draft.title} onChange={(v: string) => setDraft({ ...draft, title: v })} /><Field label="Subtitle" value={draft.subtitle} onChange={(v: string) => setDraft({ ...draft, subtitle: v })} /><UploadPicker label="Banner Image" value={draft.image_url} onChange={(v) => setDraft({ ...draft, image_url: v })} uploadFn={uploadFn} /><TogglePill active={draft.enabled} label={draft.enabled ? 'Enabled' : 'Disabled'} onClick={() => setDraft({ ...draft, enabled: !draft.enabled })} /><div className="flex gap-2"><Button onClick={save}>Save Banner</Button><Button variant="outline" onClick={() => setDraft(null)}>Cancel</Button></div></div>;
+const CategoryBannerEditor = ({ draft, setDraft, save, pageOptions, uploadFn }: any) => (
+  <Dialog open={!!draft} onOpenChange={(open) => { if (!open) setDraft(null); }}>
+    <DialogContent className="max-w-lg">
+      <DialogHeader>
+        <DialogTitle>{draft?.id ? 'Edit Collection Banner' : 'Add Collection Banner'}</DialogTitle>
+      </DialogHeader>
+      {draft && (
+        <div className="grid gap-3">
+          <SelectField
+            label="Page"
+            value={draft.page}
+            onChange={(v: string) => setDraft({ ...draft, page: v, category: v })}
+            options={pageOptions}
+          />
+          <SelectField
+            label="Position"
+            value={String(draft.position)}
+            onChange={(v: string) => setDraft({ ...draft, position: Number(v) as 1 | 2 })}
+            options={[{ value: '1', label: 'Banner 1' }, { value: '2', label: 'Banner 2' }]}
+          />
+          <Field label="Title (optional)" value={draft.title} onChange={(v: string) => setDraft({ ...draft, title: v })} />
+          <Field label="Subtitle (optional)" value={draft.subtitle} onChange={(v: string) => setDraft({ ...draft, subtitle: v })} />
+          <UploadPicker label="Banner Image" value={draft.image_url} onChange={(v: string) => setDraft({ ...draft, image_url: v })} uploadFn={uploadFn} />
+          {draft.image_url && (
+            <div className="rounded-lg overflow-hidden border border-border aspect-[16/9] bg-secondary">
+              <img src={draft.image_url} alt="preview" className="w-full h-full object-cover" />
+            </div>
+          )}
+          <TogglePill active={draft.enabled} label={draft.enabled ? 'Enabled' : 'Disabled'} onClick={() => setDraft({ ...draft, enabled: !draft.enabled })} />
+          <div className="flex gap-2 justify-end pt-2">
+            <Button variant="outline" onClick={() => setDraft(null)}>Cancel</Button>
+            <Button onClick={save}>Save Banner</Button>
+          </div>
+        </div>
+      )}
+    </DialogContent>
+  </Dialog>
+);
 const SiteContentEditor = ({ draft, setDraft, save, uploadFn }: any) => <div className="mt-5 grid md:grid-cols-2 gap-3 border-t border-border pt-5"><Field label="Content Key" value={draft.content_key} onChange={(v: string) => setDraft({ ...draft, content_key: v })} /><Field label="Type" value={draft.type} onChange={(v: string) => setDraft({ ...draft, type: v })} placeholder="page, footer, policy, section" /><Field label="Title" value={draft.title} onChange={(v: string) => setDraft({ ...draft, title: v })} /><Field label="Subtitle" value={draft.subtitle} onChange={(v: string) => setDraft({ ...draft, subtitle: v })} /><div className="md:col-span-2"><UploadPicker label="Image" value={draft.image_url} onChange={(v) => setDraft({ ...draft, image_url: v })} uploadFn={uploadFn} /></div><Field label="CTA Link" value={draft.cta_href} onChange={(v: string) => setDraft({ ...draft, cta_href: v })} /><Field label="Sort Order" type="number" value={draft.sort_order} onChange={(v: string) => setDraft({ ...draft, sort_order: v })} /><div className="md:col-span-2"><Field label="Body" value={draft.body} onChange={(v: string) => setDraft({ ...draft, body: v })} rows={5} /></div><div className="md:col-span-2 flex items-end gap-2"><TogglePill active={draft.enabled} label={draft.enabled ? 'Enabled' : 'Disabled'} onClick={() => setDraft({ ...draft, enabled: !draft.enabled })} /><Button onClick={save}>Save Content</Button><Button variant="outline" onClick={() => setDraft(null)}>Cancel</Button></div></div>;
 
 
