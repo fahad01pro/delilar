@@ -190,13 +190,13 @@ const About = () => (
           </p>
 
           <a
-            href="https://muslimfriend.com"
+            href="https://muslimbondhu.org"
             target="_blank"
             rel="noopener noreferrer"
             className="group inline-flex items-center gap-3 px-8 py-4 rounded-full border border-accent/40 bg-accent/5 backdrop-blur-sm text-accent hover:bg-accent hover:text-charcoal hover:border-accent transition-all duration-500 hover:shadow-[0_0_40px_hsl(var(--gold)/0.4)] hover:-translate-y-0.5"
           >
             <HandHeart className="w-5 h-5" />
-            <span className="font-heading text-lg italic">Muslim Friend</span>
+            <span className="font-heading text-lg italic">Muslim Bondhu</span>
             <span className="text-xs tracking-[0.3em] uppercase opacity-70 group-hover:opacity-100">Visit →</span>
           </a>
 
