@@ -103,6 +103,7 @@ type ProductDraft = {
   is_new: boolean;
   is_trending: boolean;
   is_visible: boolean;
+  new_until: string; // ISO date (yyyy-mm-dd) — optional override to extend New Arrival window
   sort_order: string;
 };
 
