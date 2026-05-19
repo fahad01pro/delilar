@@ -25,7 +25,7 @@ const menuItems: MenuCategory[] = [
     ],
   },
   {
-    label: 'Apparel',
+    label: 'Mens',
     children: [
       { label: 'Jubba / Thobe', href: '/jubba', icon: <Crown size={16} /> },
       { label: 'Panjabi', href: '/panjabi', icon: <Sparkles size={16} /> },
@@ -73,7 +73,7 @@ const MegaMenu = () => {
 
   const getFeaturedForMenu = (label: string) => {
     if (label === 'Eid Edit') return products.filter((p) => p.category === 'eid').slice(0, 2);
-    if (label === 'Apparel')
+    if (label === 'Mens')
       return products
         .filter((p) => ['jubba', 'panjabi', 'polo', 'tshirts', 'shirts', 'pants', 'hoodies'].includes(p.category))
         .filter((p) => p.badge === 'Best Seller')
