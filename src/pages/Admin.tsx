@@ -581,6 +581,7 @@ const Admin = () => {
       },
     };
     if (variants.length) data.colorVariants = variants;
+    if (productDraft.new_until) data.newUntil = productDraft.new_until;
 
     const payload = {
       id,
