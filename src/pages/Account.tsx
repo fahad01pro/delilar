@@ -32,59 +32,94 @@ const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const BD_PHONE_RE = /^(?:\+?880|0)?1[3-9]\d{8}$/;
 const sanitizePhone = (v: string) => v.replace(/[^\d+]/g, '').slice(0, 15);
 
+type OrderStatus = 'warehouse' | 'packaging' | 'transit' | 'delivered' | 'cancelled' | 'refunded';
+
 interface Order {
   id: string;
   total: number;
-  status: 'warehouse' | 'packaging' | 'transit' | 'delivered' | 'cancelled';
+  subtotal?: number;
+  shipping?: number;
+  status: OrderStatus;
   items: any[];
   created_at: string;
+  updated_at?: string;
+  cancelled_at?: string | null;
+  payment_method?: string;
+  payment_status?: string;
+  txn_id?: string | null;
+  payer_number?: string | null;
+  shipping_address?: any;
+  admin_notes?: string | null;
+  tracking_number?: string | null;
+  tracking_url?: string | null;
+  courier?: string | null;
 }
 
-const STATUS_STEPS: { key: Order['status']; label: string; icon: any }[] = [
-  { key: 'warehouse', label: 'In Warehouse', icon: Warehouse },
-  { key: 'packaging', label: 'Packaging', icon: Box },
-  { key: 'transit', label: 'In Transit', icon: Truck },
-  { key: 'delivered', label: 'Delivered', icon: CheckCircle2 },
+const TRACK_STEPS: { key: 'received' | 'transit' | 'delivered'; label: string; sub: string; icon: any }[] = [
+  { key: 'received', label: 'Order Received', sub: 'We have your order', icon: ClipboardCheck },
+  { key: 'transit', label: 'In Transit', sub: 'On the way to you', icon: Truck },
+  { key: 'delivered', label: 'Delivered', sub: 'Enjoy your Delilar order', icon: CheckCircle2 },
 ];
 
-const OrderTracker = ({ status }: { status: Order['status'] }) => {
-  const activeIdx = STATUS_STEPS.findIndex((s) => s.key === status);
+const statusToStep = (s: OrderStatus): number => {
+  if (s === 'delivered') return 2;
+  if (s === 'transit') return 1;
+  return 0; // warehouse, packaging → received
+};
+
+const OrderTracker = ({ status }: { status: OrderStatus }) => {
+  const activeIdx = statusToStep(status);
   return (
-    <div className="flex items-center justify-between gap-2 mt-4">
-      {STATUS_STEPS.map((step, i) => {
+    <div className="flex items-start justify-between gap-2 mt-5">
+      {TRACK_STEPS.map((step, i) => {
         const Icon = step.icon;
         const done = i <= activeIdx;
         const current = i === activeIdx;
         return (
           <div key={step.key} className="flex-1 flex flex-col items-center relative">
-            {i < STATUS_STEPS.length - 1 && (
-              <div className="absolute top-5 left-1/2 w-full h-0.5 bg-border z-0">
+            {i < TRACK_STEPS.length - 1 && (
+              <div className="absolute top-6 left-1/2 w-full h-0.5 bg-border z-0">
                 <motion.div
                   initial={{ width: 0 }}
                   animate={{ width: i < activeIdx ? '100%' : '0%' }}
-                  transition={{ duration: 0.6, delay: i * 0.1 }}
+                  transition={{ duration: 0.7, delay: i * 0.15, ease: 'easeOut' }}
                   className="h-full bg-accent"
                 />
               </div>
             )}
-            <div
-              className={`relative z-10 w-10 h-10 rounded-full flex items-center justify-center transition-all ${
+            <motion.div
+              initial={false}
+              animate={current ? { scale: [1, 1.08, 1] } : { scale: 1 }}
+              transition={{ duration: 1.6, repeat: current ? Infinity : 0, ease: 'easeInOut' }}
+              className={`relative z-10 w-12 h-12 rounded-full flex items-center justify-center transition-all ${
                 done
-                  ? 'bg-accent text-foreground shadow-[0_0_20px_hsl(var(--accent)/0.5)]'
+                  ? 'bg-accent text-foreground shadow-[0_0_24px_hsl(var(--accent)/0.55)]'
                   : 'bg-muted text-muted-foreground'
-              } ${current ? 'ring-4 ring-accent/20' : ''}`}
+              } ${current ? 'ring-4 ring-accent/25' : ''}`}
             >
-              <Icon size={16} />
-            </div>
-            <p className={`text-[10px] font-body tracking-wider uppercase mt-2 text-center ${done ? 'text-foreground font-medium' : 'text-muted-foreground'}`}>
+              <Icon size={18} />
+            </motion.div>
+            <p className={`text-[10px] font-body tracking-[0.18em] uppercase mt-2.5 text-center ${done ? 'text-foreground font-medium' : 'text-muted-foreground'}`}>
               {step.label}
             </p>
+            <p className="text-[10px] font-body text-muted-foreground/80 mt-0.5 text-center hidden sm:block">{step.sub}</p>
           </div>
         );
       })}
     </div>
   );
 };
+
+const paymentBadge = (ps?: string) => {
+  const map: Record<string, string> = {
+    paid: 'bg-emerald-500/10 text-emerald-600 border-emerald-500/30',
+    pending: 'bg-amber-500/10 text-amber-600 border-amber-500/30',
+    cod_pending: 'bg-blue-500/10 text-blue-600 border-blue-500/30',
+    failed: 'bg-red-500/10 text-red-600 border-red-500/30',
+  };
+  return map[ps || 'pending'] || map.pending;
+};
+
 
 const Account = () => {
   const { user, loading: authLoading, signOut, openAuthModal } = useAuth();
