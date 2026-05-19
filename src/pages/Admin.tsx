@@ -26,6 +26,7 @@ import {
   Trash2,
   Truck,
   Upload,
+  Download,
   UserCog,
   Users,
   Wallet,
