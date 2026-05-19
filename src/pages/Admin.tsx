@@ -1365,7 +1365,7 @@ const SizesPicker = ({ value, onChange }: { value: string; onChange: (v: string)
     <div className="rounded-xl border border-border bg-background p-4">
       <div className="flex items-center justify-between mb-3">
         <span className="text-[10px] uppercase tracking-[0.22em] text-muted-foreground font-body">Sizes</span>
-        <button type="button" onClick={() => onChange('XS, S, M, L, XL, XXL, XXXL')} className="text-[10px] uppercase tracking-[0.18em] text-accent hover:underline">Select All Apparel</button>
+        <button type="button" onClick={() => onChange('XS, S, M, L, XL, XXL, XXXL')} className="text-[10px] uppercase tracking-[0.18em] text-accent hover:underline">Select All Mens</button>
       </div>
       <div className="flex flex-wrap gap-1.5 mb-3">
         {STANDARD_SIZES.map((size) => {
