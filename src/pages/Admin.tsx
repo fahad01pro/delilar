@@ -41,6 +41,8 @@ import { resolveImage } from '@/lib/imageAssets';
 import { defaultInfoSections, mergeInfoSections } from '@/lib/productInfoDefaults';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+
 
 type AdminTab = 'overview' | 'products' | 'orders' | 'payments' | 'customers' | 'subscribers' | 'inventory' | 'outlets' | 'content' | 'settings';
 type ProductType = 'clothing' | 'accessories' | 'perfume';
