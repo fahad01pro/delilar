@@ -1600,6 +1600,18 @@ const ProductEditor = ({ draft, setDraft, categories, save, uploading, onUpload,
         <TogglePill active={draft.is_new} label="New" onClick={() => setDraft({ ...draft, is_new: !draft.is_new })} />
         <TogglePill active={draft.is_trending} label="Trending" onClick={() => setDraft({ ...draft, is_trending: !draft.is_trending })} />
       </div>
+      <div className="flex items-center gap-2">
+        <label className="text-[11px] font-body uppercase tracking-wider text-muted-foreground whitespace-nowrap">
+          New until
+        </label>
+        <input
+          type="date"
+          value={draft.new_until}
+          onChange={(e) => setDraft({ ...draft, new_until: e.target.value })}
+          className="border border-border bg-background rounded-md px-2 py-1.5 text-xs font-body outline-none focus:border-accent"
+          title="Extend New Arrival visibility past the default 120 days"
+        />
+      </div>
       <div className="flex gap-2">
         <Button variant="outline" onClick={() => setDraft(null)}>Cancel</Button>
         <Button onClick={save}>Save Product</Button>
