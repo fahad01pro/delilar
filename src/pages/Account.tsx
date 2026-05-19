@@ -566,7 +566,7 @@ const OrderCard = ({ order: o }: { order: Order }) => {
   );
 };
 
-
+const FieldLabel = ({ children, required }: { children: React.ReactNode; required?: boolean }) => (
   <label className="block text-[11px] font-body tracking-[0.18em] uppercase text-foreground/70 mb-1.5">
     {children}{required && <span className="text-primary ml-1">*</span>}
   </label>
