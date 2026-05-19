@@ -389,6 +389,7 @@ const CustomerForm = ({ value, onChange }: { value: CustomerInfo; onChange: (v: 
         label="Order Note"
         textarea
         optional
+        rows={4}
         value={value.note || ''}
         onChange={upd('note')}
         placeholder="Write any special instructions for your order…"
