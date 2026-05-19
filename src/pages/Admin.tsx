@@ -392,7 +392,9 @@ const bannerToDraft = (banner?: HeroBannerRow): BannerDraft => ({
 
 const categoryBannerToDraft = (banner?: CategoryBannerRow): CategoryBannerDraft => ({
   id: banner?.id,
-  category: banner?.category ?? 'jubba',
+  page: banner?.page ?? banner?.category ?? 'home',
+  position: (banner?.position as number) ?? 1,
+  category: banner?.category ?? banner?.page ?? 'home',
   title: banner?.title ?? '',
   subtitle: banner?.subtitle ?? '',
   image_url: banner?.image_url ?? '',
