@@ -1708,7 +1708,7 @@ const OrdersPanel = ({ orders, profileById, trackingDrafts, setTrackingDrafts, u
     <section className="space-y-5">
       <div><h2 className="font-heading text-2xl">Orders</h2><p className="text-sm text-muted-foreground">View order details, customer shipping information, delivery tracking, cancellations, and refunds.</p></div>
       {orders.length === 0 && <AdminCard><p className="text-center text-muted-foreground py-10">No orders yet.</p></AdminCard>}
-      <div className="grid gap-4 xl:grid-cols-2">
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         {orders.map((order: OrderRow) => {
           const customer = profileById.get(order.user_id);
           const draft = trackingDrafts[order.id] ?? order;
