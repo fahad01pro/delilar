@@ -100,6 +100,49 @@ export function useCatalog() {
   });
 }
 
+// New Arrivals: created within last 120 days, OR manually flagged is_new,
+// OR data.newUntil is in the future. Featured pinned to top.
+const NEW_ARRIVAL_WINDOW_MS = 120 * 24 * 60 * 60 * 1000;
+export function isNewArrival(p: Product): boolean {
+  if (p.isNew) return true;
+  if (p.newUntil) {
+    const until = new Date(p.newUntil).getTime();
+    if (!Number.isNaN(until) && until > Date.now()) return true;
+  }
+  if (p.createdAt) {
+    const created = new Date(p.createdAt).getTime();
+    if (!Number.isNaN(created) && Date.now() - created < NEW_ARRIVAL_WINDOW_MS) return true;
+  }
+  return false;
+}
+
+export function selectNewArrivals(catalog: Product[], limit = 8): Product[] {
+  return catalog
+    .filter(isNewArrival)
+    .sort((a, b) => {
+      // Featured pinned first
+      if (!!b.isFeatured !== !!a.isFeatured) return Number(!!b.isFeatured) - Number(!!a.isFeatured);
+      const ad = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+      const bd = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+      return bd - ad;
+    })
+    .slice(0, limit);
+}
+
+export function selectBestSellers(catalog: Product[], limit = 8): Product[] {
+  return [...catalog]
+    .sort((a, b) => {
+      // Manually featured pinned first
+      if (!!b.isFeatured !== !!a.isFeatured) return Number(!!b.isFeatured) - Number(!!a.isFeatured);
+      const bs = b.soldCount ?? 0;
+      const as = a.soldCount ?? 0;
+      if (bs !== as) return bs - as;
+      // Tie-break by rating × reviews
+      return (b.rating * b.reviews) - (a.rating * a.reviews);
+    })
+    .slice(0, limit);
+}
+
 export function useProduct(id: string | undefined) {
   return useQuery({
     queryKey: ['product', id],
