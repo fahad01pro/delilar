@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { User, Package, Heart, ShoppingBag, Lock, LogOut, MapPin, Phone, Mail, Loader2, CheckCircle2, Truck, Box, Warehouse, Home, Hash, Building2, PhoneCall, Info } from 'lucide-react';
+import { User, Package, Heart, ShoppingBag, Lock, LogOut, MapPin, Phone, Mail, Loader2, CheckCircle2, Truck, Home, Hash, Building2, PhoneCall, Info, ClipboardCheck, XCircle, ChevronDown } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '@/context/AuthContext';
 import { useWishlist } from '@/context/WishlistContext';
@@ -32,59 +32,94 @@ const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const BD_PHONE_RE = /^(?:\+?880|0)?1[3-9]\d{8}$/;
 const sanitizePhone = (v: string) => v.replace(/[^\d+]/g, '').slice(0, 15);
 
+type OrderStatus = 'warehouse' | 'packaging' | 'transit' | 'delivered' | 'cancelled' | 'refunded';
+
 interface Order {
   id: string;
   total: number;
-  status: 'warehouse' | 'packaging' | 'transit' | 'delivered' | 'cancelled';
+  subtotal?: number;
+  shipping?: number;
+  status: OrderStatus;
   items: any[];
   created_at: string;
+  updated_at?: string;
+  cancelled_at?: string | null;
+  payment_method?: string;
+  payment_status?: string;
+  txn_id?: string | null;
+  payer_number?: string | null;
+  shipping_address?: any;
+  admin_notes?: string | null;
+  tracking_number?: string | null;
+  tracking_url?: string | null;
+  courier?: string | null;
 }
 
-const STATUS_STEPS: { key: Order['status']; label: string; icon: any }[] = [
-  { key: 'warehouse', label: 'In Warehouse', icon: Warehouse },
-  { key: 'packaging', label: 'Packaging', icon: Box },
-  { key: 'transit', label: 'In Transit', icon: Truck },
-  { key: 'delivered', label: 'Delivered', icon: CheckCircle2 },
+const TRACK_STEPS: { key: 'received' | 'transit' | 'delivered'; label: string; sub: string; icon: any }[] = [
+  { key: 'received', label: 'Order Received', sub: 'We have your order', icon: ClipboardCheck },
+  { key: 'transit', label: 'In Transit', sub: 'On the way to you', icon: Truck },
+  { key: 'delivered', label: 'Delivered', sub: 'Enjoy your Delilar order', icon: CheckCircle2 },
 ];
 
-const OrderTracker = ({ status }: { status: Order['status'] }) => {
-  const activeIdx = STATUS_STEPS.findIndex((s) => s.key === status);
+const statusToStep = (s: OrderStatus): number => {
+  if (s === 'delivered') return 2;
+  if (s === 'transit') return 1;
+  return 0; // warehouse, packaging → received
+};
+
+const OrderTracker = ({ status }: { status: OrderStatus }) => {
+  const activeIdx = statusToStep(status);
   return (
-    <div className="flex items-center justify-between gap-2 mt-4">
-      {STATUS_STEPS.map((step, i) => {
+    <div className="flex items-start justify-between gap-2 mt-5">
+      {TRACK_STEPS.map((step, i) => {
         const Icon = step.icon;
         const done = i <= activeIdx;
         const current = i === activeIdx;
         return (
           <div key={step.key} className="flex-1 flex flex-col items-center relative">
-            {i < STATUS_STEPS.length - 1 && (
-              <div className="absolute top-5 left-1/2 w-full h-0.5 bg-border z-0">
+            {i < TRACK_STEPS.length - 1 && (
+              <div className="absolute top-6 left-1/2 w-full h-0.5 bg-border z-0">
                 <motion.div
                   initial={{ width: 0 }}
                   animate={{ width: i < activeIdx ? '100%' : '0%' }}
-                  transition={{ duration: 0.6, delay: i * 0.1 }}
+                  transition={{ duration: 0.7, delay: i * 0.15, ease: 'easeOut' }}
                   className="h-full bg-accent"
                 />
               </div>
             )}
-            <div
-              className={`relative z-10 w-10 h-10 rounded-full flex items-center justify-center transition-all ${
+            <motion.div
+              initial={false}
+              animate={current ? { scale: [1, 1.08, 1] } : { scale: 1 }}
+              transition={{ duration: 1.6, repeat: current ? Infinity : 0, ease: 'easeInOut' }}
+              className={`relative z-10 w-12 h-12 rounded-full flex items-center justify-center transition-all ${
                 done
-                  ? 'bg-accent text-foreground shadow-[0_0_20px_hsl(var(--accent)/0.5)]'
+                  ? 'bg-accent text-foreground shadow-[0_0_24px_hsl(var(--accent)/0.55)]'
                   : 'bg-muted text-muted-foreground'
-              } ${current ? 'ring-4 ring-accent/20' : ''}`}
+              } ${current ? 'ring-4 ring-accent/25' : ''}`}
             >
-              <Icon size={16} />
-            </div>
-            <p className={`text-[10px] font-body tracking-wider uppercase mt-2 text-center ${done ? 'text-foreground font-medium' : 'text-muted-foreground'}`}>
+              <Icon size={18} />
+            </motion.div>
+            <p className={`text-[10px] font-body tracking-[0.18em] uppercase mt-2.5 text-center ${done ? 'text-foreground font-medium' : 'text-muted-foreground'}`}>
               {step.label}
             </p>
+            <p className="text-[10px] font-body text-muted-foreground/80 mt-0.5 text-center hidden sm:block">{step.sub}</p>
           </div>
         );
       })}
     </div>
   );
 };
+
+const paymentBadge = (ps?: string) => {
+  const map: Record<string, string> = {
+    paid: 'bg-emerald-500/10 text-emerald-600 border-emerald-500/30',
+    pending: 'bg-amber-500/10 text-amber-600 border-amber-500/30',
+    cod_pending: 'bg-blue-500/10 text-blue-600 border-blue-500/30',
+    failed: 'bg-red-500/10 text-red-600 border-red-500/30',
+  };
+  return map[ps || 'pending'] || map.pending;
+};
+
 
 const Account = () => {
   const { user, loading: authLoading, signOut, openAuthModal } = useAuth();
@@ -335,22 +370,7 @@ const Account = () => {
                   </div>
                 ) : (
                   <div className="space-y-5">
-                    {orders.map((o) => (
-                      <div key={o.id} className="border border-border/50 rounded-xl p-5 bg-background">
-                        <div className="flex items-start justify-between flex-wrap gap-3">
-                          <div>
-                            <p className="text-[10px] font-body tracking-[0.2em] uppercase text-muted-foreground">Order</p>
-                            <p className="text-sm font-body font-mono text-foreground">#{o.id.slice(0, 8).toUpperCase()}</p>
-                            <p className="text-xs font-body text-muted-foreground mt-1">{new Date(o.created_at).toLocaleDateString()}</p>
-                          </div>
-                          <div className="text-right">
-                            <p className="text-[10px] font-body tracking-[0.2em] uppercase text-muted-foreground">Total</p>
-                            <p className="text-lg font-heading font-semibold text-primary">৳{Number(o.total).toLocaleString()}</p>
-                          </div>
-                        </div>
-                        {o.status !== 'cancelled' && <OrderTracker status={o.status} />}
-                      </div>
-                    ))}
+                    {orders.map((o) => <OrderCard key={o.id} order={o} />)}
                   </div>
                 )}
               </div>
@@ -419,6 +439,129 @@ const Account = () => {
           </motion.div>
         </div>
       </div>
+    </div>
+  );
+};
+
+const PAYMENT_LABEL: Record<string, string> = {
+  paid: 'Paid',
+  pending: 'Pending Verification',
+  cod_pending: 'Cash on Delivery',
+  failed: 'Failed',
+};
+
+const OrderCard = ({ order: o }: { order: Order }) => {
+  const [open, setOpen] = useState(false);
+  const isCancelled = o.status === 'cancelled' || o.status === 'refunded';
+  const isDelivered = o.status === 'delivered';
+  const addr = (o.shipping_address || {}) as any;
+  const headline = isCancelled
+    ? 'Order Cancelled'
+    : isDelivered
+    ? 'Delivered Successfully'
+    : o.status === 'transit'
+    ? 'Your order is on the way'
+    : 'Your order has been received';
+
+  return (
+    <div className="border border-border/50 rounded-2xl bg-background overflow-hidden shadow-sm">
+      <div className="p-5">
+        <div className="flex items-start justify-between flex-wrap gap-3">
+          <div>
+            <p className="text-[10px] font-body tracking-[0.2em] uppercase text-muted-foreground">Order</p>
+            <p className="text-sm font-body font-mono text-foreground">#{o.id.slice(0, 8).toUpperCase()}</p>
+            <p className="text-xs font-body text-muted-foreground mt-1">{new Date(o.created_at).toLocaleString()}</p>
+          </div>
+          <div className="text-right">
+            <p className="text-[10px] font-body tracking-[0.2em] uppercase text-muted-foreground">Total</p>
+            <p className="text-lg font-heading font-semibold text-primary">৳{Number(o.total).toLocaleString()}</p>
+            <span className={`inline-flex mt-1.5 items-center rounded-full border px-2 py-0.5 text-[10px] font-medium ${paymentBadge(o.payment_status)}`}>
+              {PAYMENT_LABEL[o.payment_status || 'pending'] || o.payment_status}
+            </span>
+          </div>
+        </div>
+
+        <p className={`mt-3 text-sm font-body ${isCancelled ? 'text-destructive' : 'text-foreground'}`}>{headline}</p>
+
+        {isCancelled ? (
+          <div className="mt-4 flex items-center gap-2 rounded-xl border border-destructive/30 bg-destructive/5 px-4 py-3 text-xs text-destructive">
+            <XCircle size={14} /> This order was {o.status}. Contact support if you need help.
+          </div>
+        ) : (
+          <OrderTracker status={o.status} />
+        )}
+
+        {isDelivered && o.updated_at && (
+          <p className="mt-3 text-[11px] text-muted-foreground text-center">
+            Delivered on {new Date(o.updated_at).toLocaleString()}
+          </p>
+        )}
+
+        <button
+          onClick={() => setOpen((v) => !v)}
+          className="mt-4 inline-flex items-center gap-1.5 text-[11px] font-body tracking-[0.18em] uppercase text-accent hover:underline"
+        >
+          {open ? 'Hide details' : 'View details'}
+          <ChevronDown size={12} className={`transition-transform ${open ? 'rotate-180' : ''}`} />
+        </button>
+      </div>
+
+      {open && (
+        <motion.div
+          initial={{ opacity: 0, height: 0 }}
+          animate={{ opacity: 1, height: 'auto' }}
+          className="border-t border-border/50 bg-card/40 px-5 py-4 space-y-4"
+        >
+          <div>
+            <p className="text-[10px] font-body tracking-[0.2em] uppercase text-muted-foreground mb-2">Items</p>
+            <div className="space-y-1.5">
+              {(o.items || []).map((it: any, i: number) => (
+                <div key={i} className="flex items-center justify-between text-xs font-body">
+                  <span className="text-foreground">{it.name || it.product?.name || 'Item'} × {it.quantity || 1}</span>
+                  <span className="text-muted-foreground">৳{Number(it.price ?? it.product?.price ?? 0).toLocaleString()}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="grid sm:grid-cols-2 gap-3 text-xs font-body">
+            <div className="rounded-xl border border-border/50 p-3">
+              <p className="text-[10px] tracking-[0.2em] uppercase text-muted-foreground mb-1">Delivery Address</p>
+              <p className="text-foreground">{addr.fullName || addr.full_name || '—'}</p>
+              <p className="text-muted-foreground">{addr.phone || ''}</p>
+              <p className="text-muted-foreground mt-1">
+                {[addr.house_number, addr.village, addr.upazila, addr.district].filter(Boolean).join(', ') || addr.address || 'No address on file'}
+              </p>
+            </div>
+            <div className="rounded-xl border border-border/50 p-3">
+              <p className="text-[10px] tracking-[0.2em] uppercase text-muted-foreground mb-1">Payment</p>
+              <p className="text-foreground capitalize">{o.payment_method || '—'}</p>
+              {o.txn_id && <p className="text-muted-foreground">TXN: {o.txn_id}</p>}
+              {o.payer_number && <p className="text-muted-foreground">From: {o.payer_number}</p>}
+              <p className="text-muted-foreground mt-1">Status: {PAYMENT_LABEL[o.payment_status || 'pending']}</p>
+            </div>
+          </div>
+
+          {addr.note && (
+            <div className="rounded-xl border border-border/50 p-3 text-xs font-body">
+              <p className="text-[10px] tracking-[0.2em] uppercase text-muted-foreground mb-1">Order Note</p>
+              <p className="text-foreground whitespace-pre-wrap">{addr.note}</p>
+            </div>
+          )}
+
+          {(o.tracking_number || o.tracking_url) && (
+            <div className="rounded-xl border border-accent/30 bg-accent/5 p-3 text-xs font-body">
+              <p className="text-[10px] tracking-[0.2em] uppercase text-accent mb-1">Courier Tracking</p>
+              <p className="text-foreground">{o.courier || 'Courier'} · {o.tracking_number}</p>
+              {o.tracking_url && (
+                <a href={o.tracking_url} target="_blank" rel="noopener noreferrer" className="text-accent hover:underline">
+                  Track shipment →
+                </a>
+              )}
+            </div>
+          )}
+        </motion.div>
+      )}
     </div>
   );
 };
