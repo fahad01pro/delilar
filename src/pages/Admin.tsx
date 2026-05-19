@@ -1724,10 +1724,25 @@ const OrdersPanel = ({ orders, profileById, trackingDrafts, setTrackingDrafts, u
                   <p className="text-xs text-muted-foreground truncate">{customer?.email || customer?.phone || 'No contact'}</p>
                 </div>
                 <div className="flex flex-wrap gap-2">
-                  <select value={order.status} onChange={(event) => updateOrder(order.id, { status: event.target.value })} className="flex-1 min-w-[120px] rounded-lg border border-border bg-background px-2.5 py-1.5 text-xs">
+                  {(order.status === 'warehouse' || order.status === 'packaging') && (
+                    <>
+                      <Button size="sm" className="h-8 text-xs" onClick={() => updateOrder(order.id, { status: 'packaging' })}>Approve</Button>
+                      <Button size="sm" variant="outline" className="h-8 text-xs" onClick={() => updateOrder(order.id, { status: 'transit' })}>Mark Shipped</Button>
+                    </>
+                  )}
+                  {order.status === 'transit' && (
+                    <Button size="sm" className="h-8 text-xs" onClick={() => updateOrder(order.id, { status: 'delivered' })}>Mark Delivered</Button>
+                  )}
+                  {order.status === 'delivered' && (
+                    <span className="inline-flex items-center rounded-lg bg-emerald-500/10 border border-emerald-500/30 px-2.5 py-1 text-[11px] text-emerald-600">Delivered</span>
+                  )}
+                  {order.status !== 'cancelled' && order.status !== 'refunded' && order.status !== 'delivered' && (
+                    <Button size="sm" variant="outline" className="h-8 text-xs text-destructive border-destructive/40 hover:bg-destructive/10" onClick={() => updateOrder(order.id, { status: 'cancelled', cancelled_at: new Date().toISOString() })}>Reject</Button>
+                  )}
+                  <select value={order.status} onChange={(event) => updateOrder(order.id, { status: event.target.value })} className="rounded-lg border border-border bg-background px-2.5 py-1.5 text-xs">
                     {orderStatuses.map((status) => <option key={status} value={status}>{status}</option>)}
                   </select>
-                  <Button variant="outline" size="sm" className="h-8 text-xs" onClick={() => setExpanded((p) => ({ ...p, [order.id]: !isOpen }))}>
+                  <Button variant="ghost" size="sm" className="h-8 text-xs ml-auto" onClick={() => setExpanded((p) => ({ ...p, [order.id]: !isOpen }))}>
                     {isOpen ? 'Hide' : 'Details'}
                   </Button>
                 </div>
@@ -1735,15 +1750,40 @@ const OrdersPanel = ({ orders, profileById, trackingDrafts, setTrackingDrafts, u
               {isOpen && (
                 <div className="border-t border-border bg-background/40 p-5 space-y-4">
                   <div className="grid sm:grid-cols-2 gap-3">
-                    <div className="rounded-xl border border-border bg-background p-3">
-                      <p className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground mb-1">Shipping</p>
-                      <p className="text-xs text-muted-foreground">{order.shipping_address ? JSON.stringify(order.shipping_address) : [customer?.house_number, customer?.village, customer?.upazila, customer?.district].filter(Boolean).join(', ') || 'No shipping address'}</p>
+                    <div className="rounded-xl border border-border bg-background p-3 text-xs">
+                      <p className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground mb-1">Customer</p>
+                      <p className="font-medium text-foreground">{(order.shipping_address as any)?.fullName || customer?.full_name || '—'}</p>
+                      <p className="text-muted-foreground">{(order.shipping_address as any)?.phone || customer?.phone || '—'}</p>
+                      <p className="text-muted-foreground">{(order.shipping_address as any)?.email || customer?.email || '—'}</p>
                     </div>
-                    <div className="rounded-xl border border-border bg-background p-3">
+                    <div className="rounded-xl border border-border bg-background p-3 text-xs">
+                      <p className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground mb-1">Shipping Address</p>
+                      {(() => {
+                        const a: any = order.shipping_address || {};
+                        const line = [a.house_number, a.village, a.upazila, a.district].filter(Boolean).join(', ');
+                        return <p className="text-muted-foreground">{line || a.address || [customer?.house_number, customer?.village, customer?.upazila, customer?.district].filter(Boolean).join(', ') || '—'}</p>;
+                      })()}
+                    </div>
+                    <div className="rounded-xl border border-border bg-background p-3 text-xs">
+                      <p className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground mb-1">Payment</p>
+                      <p className="text-foreground capitalize">{order.payment_method} · {order.payment_status ?? 'pending'}</p>
+                      {order.txn_id && <p className="text-muted-foreground">TXN: {order.txn_id}</p>}
+                      {order.payer_number && <p className="text-muted-foreground">From: {order.payer_number}</p>}
+                      {order.screenshot_url && (
+                        <a href={order.screenshot_url} target="_blank" rel="noopener noreferrer" className="text-accent hover:underline">View screenshot →</a>
+                      )}
+                    </div>
+                    <div className="rounded-xl border border-border bg-background p-3 text-xs">
                       <p className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground mb-1">Items</p>
-                      <div className="space-y-0.5 text-xs text-muted-foreground max-h-24 overflow-auto">{(order.items ?? []).map((item, index) => <p key={index}>{item.name || item.product?.name || 'Item'} × {item.quantity || 1}</p>)}</div>
+                      <div className="space-y-0.5 text-muted-foreground max-h-24 overflow-auto">{(order.items ?? []).map((item, index) => <p key={index}>{item.name || item.product?.name || 'Item'} × {item.quantity || 1}</p>)}</div>
                     </div>
                   </div>
+                  {(order.shipping_address as any)?.note && (
+                    <div className="rounded-xl border border-accent/30 bg-accent/5 p-3 text-xs">
+                      <p className="text-[10px] uppercase tracking-[0.2em] text-accent mb-1">Customer Order Note</p>
+                      <p className="text-foreground whitespace-pre-wrap">{(order.shipping_address as any).note}</p>
+                    </div>
+                  )}
                   <div className="grid sm:grid-cols-3 gap-2">
                     <Field label="Courier" value={String(draft.courier ?? '')} onChange={(v) => setTrackingDrafts((prev: any) => ({ ...prev, [order.id]: { ...prev[order.id], courier: v } }))} />
                     <Field label="Tracking #" value={String(draft.tracking_number ?? '')} onChange={(v) => setTrackingDrafts((prev: any) => ({ ...prev, [order.id]: { ...prev[order.id], tracking_number: v } }))} />
@@ -1751,7 +1791,6 @@ const OrdersPanel = ({ orders, profileById, trackingDrafts, setTrackingDrafts, u
                   </div>
                   <Field label="Admin Notes" value={String(draft.admin_notes ?? '')} onChange={(v) => setTrackingDrafts((prev: any) => ({ ...prev, [order.id]: { ...prev[order.id], admin_notes: v } }))} rows={2} />
                   <div className="flex flex-wrap gap-2 justify-end">
-                    <Button variant="outline" size="sm" onClick={() => updateOrder(order.id, { status: 'cancelled', cancelled_at: new Date().toISOString() })}>Cancel</Button>
                     <Button variant="outline" size="sm" onClick={() => updateOrder(order.id, { status: 'refunded', refunded_at: new Date().toISOString() })}>Refund</Button>
                     <Button size="sm" onClick={() => saveTracking(order)}>Save Tracking</Button>
                   </div>
