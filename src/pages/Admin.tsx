@@ -26,6 +26,7 @@ import {
   Trash2,
   Truck,
   Upload,
+  Download,
   UserCog,
   Users,
   Wallet,
@@ -1122,20 +1123,26 @@ const SubscribersPanel = ({ subscribers }: { subscribers: { id: string; email: s
         </div>
         <Button onClick={exportCsv} disabled={!subscribers.length} className="gap-2"><Mail size={15} /> Export CSV</Button>
       </div>
-      <AdminCard>
-        {subscribers.length === 0 ? (
-          <p className="text-center text-muted-foreground py-10">No subscribers yet.</p>
-        ) : (
-          <div className="divide-y divide-border">
-            {subscribers.map((s) => (
-              <div key={s.id} className="flex flex-wrap items-center justify-between gap-3 py-3 text-sm">
-                <span className="font-medium">{s.email}</span>
-                <span className="text-xs text-muted-foreground">{s.source} · {new Date(s.created_at).toLocaleDateString()}</span>
+      {subscribers.length === 0 ? (
+        <AdminCard><p className="text-center text-muted-foreground py-10">No subscribers yet.</p></AdminCard>
+      ) : (
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
+          {subscribers.map((s) => (
+            <div key={s.id} className="rounded-2xl border border-border bg-card p-4 hover:border-accent transition-all">
+              <div className="flex items-start gap-3">
+                <div className="w-10 h-10 rounded-full bg-accent/10 flex items-center justify-center shrink-0">
+                  <Mail size={16} className="text-accent" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-medium truncate">{s.email}</p>
+                  <p className="text-[11px] text-muted-foreground mt-0.5">via {s.source}</p>
+                  <p className="text-[10px] uppercase tracking-wider text-muted-foreground mt-1">{new Date(s.created_at).toLocaleDateString()}</p>
+                </div>
               </div>
-            ))}
-          </div>
-        )}
-      </AdminCard>
+            </div>
+          ))}
+        </div>
+      )}
     </section>
   );
 };
@@ -1514,39 +1521,43 @@ const ColorVariantsEditor = ({ variants, setVariants, uploadFn }: { variants: Co
                 <Button type="button" variant="outline" size="sm" onClick={() => remove(idx)} className="text-destructive hover:text-destructive gap-1"><Trash2 size={13} /></Button>
               </div>
             </div>
-            <div className="mt-4 grid md:grid-cols-2 gap-4">
+            <div className="mt-4 grid grid-cols-2 gap-3 max-w-md">
               {[0, 1].map((slot) => (
-                <div key={slot} className="rounded-xl border border-dashed border-border bg-background/80 p-3">
-                  <p className="text-[10px] uppercase tracking-[0.22em] text-muted-foreground mb-2">Image {slot + 1}</p>
-                  <div className="aspect-square w-full rounded-lg overflow-hidden bg-secondary mb-2 flex items-center justify-center">
-                    {variant.images[slot] ? (
-                      <img src={variant.images[slot]} alt={`${variant.name} ${slot + 1}`} className="w-full h-full object-cover" />
-                    ) : (
-                      <span className="text-xs text-muted-foreground">No image</span>
-                    )}
+                <div key={slot} className="rounded-lg border border-border bg-background/80 p-2">
+                  <div className="flex items-center gap-2">
+                    <div className="h-16 w-16 rounded-md overflow-hidden bg-secondary flex items-center justify-center shrink-0 border border-border">
+                      {variant.images[slot] ? (
+                        <img src={variant.images[slot]} alt={`${variant.name} ${slot + 1}`} className="w-full h-full object-cover" />
+                      ) : (
+                        <ImageIcon size={18} className="text-muted-foreground/60" />
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0 space-y-1.5">
+                      <p className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground">Image {slot + 1}</p>
+                      <label className="flex items-center justify-center gap-1.5 rounded-md border border-dashed border-border bg-background px-2 py-1.5 text-[11px] text-muted-foreground cursor-pointer hover:border-accent hover:text-foreground transition-all">
+                        <Upload size={11} /> {variant.images[slot] ? 'Replace' : 'Upload'}
+                        <input
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          onChange={async (e) => {
+                            const file = e.target.files?.[0];
+                            if (!file) return;
+                            const url = await uploadFn(file);
+                            if (url) updateImage(idx, slot as 0 | 1, url);
+                            e.target.value = '';
+                          }}
+                        />
+                      </label>
+                    </div>
                   </div>
                   <input
                     type="text"
                     value={variant.images[slot]}
                     onChange={(e) => updateImage(idx, slot as 0 | 1, e.target.value)}
-                    placeholder="https://image-url..."
-                    className="w-full rounded-lg border border-border bg-background px-2 py-1.5 text-xs outline-none focus:border-accent mb-2"
+                    placeholder="or paste image URL"
+                    className="mt-2 w-full rounded-md border border-border bg-background px-2 py-1 text-[11px] outline-none focus:border-accent"
                   />
-                  <label className="flex items-center justify-center gap-2 rounded-lg border border-dashed border-border bg-background px-3 py-2 text-xs text-muted-foreground cursor-pointer hover:border-accent hover:text-foreground transition-all">
-                    <Upload size={13} /> Upload
-                    <input
-                      type="file"
-                      accept="image/*"
-                      className="hidden"
-                      onChange={async (e) => {
-                        const file = e.target.files?.[0];
-                        if (!file) return;
-                        const url = await uploadFn(file);
-                        if (url) updateImage(idx, slot as 0 | 1, url);
-                        e.target.value = '';
-                      }}
-                    />
-                  </label>
                 </div>
               ))}
             </div>
@@ -1804,29 +1815,101 @@ const OrdersPanel = ({ orders, profileById, trackingDrafts, setTrackingDrafts, u
   );
 };
 
-const CustomersPanel = ({ customers, orders, adminRoleIds, selectedCustomer, selectedCustomerOrders, selectCustomer, grantAdmin, revokeAdmin }: any) => (
-  <section className="grid xl:grid-cols-[1fr_420px] gap-6">
-    <div className="space-y-4">
-      <div><h2 className="font-heading text-2xl">Customers</h2><p className="text-sm text-muted-foreground">Customer profiles, contact details, purchase history, and admin management.</p></div>
-      {customers.map((customer: ProfileRow) => (
-        <AdminCard key={customer.id} className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-          <button onClick={() => selectCustomer(customer.id)} className="text-left">
-            <p className="font-heading text-lg">{customer.full_name || 'Unnamed Customer'} {adminRoleIds.has(customer.id) && <Badge className="ml-2">Admin</Badge>}</p>
-            <p className="text-sm text-muted-foreground">{customer.email || 'No email'} · {customer.phone || 'No phone'}</p>
-            <p className="text-xs text-muted-foreground mt-1">{orders.filter((order: OrderRow) => order.user_id === customer.id).length} orders · {customer.district || customer.city || 'No location'}</p>
-          </button>
-          <div className="flex gap-2">
-            <Button variant="outline" size="sm" onClick={() => selectCustomer(customer.id)}>Details</Button>
-            {adminRoleIds.has(customer.id) ? <Button variant="outline" size="sm" onClick={() => revokeAdmin(customer)}>Remove Admin</Button> : <Button size="sm" onClick={() => grantAdmin(customer)}>Make Admin</Button>}
+const CustomersPanel = ({ customers, orders, adminRoleIds, selectedCustomer, selectedCustomerOrders, selectCustomer, grantAdmin, revokeAdmin }: any) => {
+  const exportCsv = () => {
+    const header = ['Name', 'Phone', 'Email', 'House/Village', 'Upazila', 'District', 'Address', 'Orders', 'Total Spend (BDT)', 'Registered'];
+    const rows = customers.map((c: ProfileRow) => {
+      const cOrders = orders.filter((o: OrderRow) => o.user_id === c.id);
+      const spend = cOrders.reduce((s: number, o: OrderRow) => s + Number(o.total || 0), 0);
+      return [
+        c.full_name || '', c.phone || '', c.email || '',
+        [c.house_number, c.village].filter(Boolean).join(' '),
+        c.upazila || '', c.district || c.city || '',
+        c.address || c.detailed_address || '',
+        String(cOrders.length), String(spend),
+        c.created_at ? new Date(c.created_at).toISOString().slice(0, 10) : '',
+      ];
+    });
+    const csv = [header, ...rows].map((r) => r.map((v) => `"${String(v).replace(/"/g, '""')}"`).join(',')).join('\n');
+    const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `delilar-customers-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const initials = (name?: string | null) =>
+    (name || '?').split(' ').filter(Boolean).slice(0, 2).map((s) => s[0]?.toUpperCase()).join('') || '?';
+
+  return (
+    <section className="grid xl:grid-cols-[1fr_420px] gap-6">
+      <div className="space-y-4">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h2 className="font-heading text-2xl">Customers</h2>
+            <p className="text-sm text-muted-foreground">Customer profiles, contact details, purchase history, and admin management.</p>
           </div>
-        </AdminCard>
-      ))}
-    </div>
-    <AdminCard className="xl:sticky xl:top-28 xl:self-start">
-      {selectedCustomer ? <><PanelTitle icon={UserCog} title={selectedCustomer.full_name || 'Customer Profile'} subtitle={selectedCustomer.email || selectedCustomer.id} /><div className="mt-5 space-y-3 text-sm"><InfoRow label="Phone" value={selectedCustomer.phone || '—'} /><InfoRow label="Address" value={[selectedCustomer.house_number, selectedCustomer.village, selectedCustomer.upazila, selectedCustomer.district].filter(Boolean).join(', ') || selectedCustomer.address || '—'} /><InfoRow label="Orders" value={String(selectedCustomerOrders.length)} /><InfoRow label="Total Spend" value={money(selectedCustomerOrders.reduce((sum: number, order: OrderRow) => sum + Number(order.total || 0), 0))} /></div><div className="mt-5 space-y-2"><p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Purchase History</p>{selectedCustomerOrders.map((order: OrderRow) => <div key={order.id} className="rounded-xl border border-border bg-background p-3 text-sm"><p className="font-medium">#{shortId(order.id)} · {money(order.total)}</p><p className="text-muted-foreground">{order.status} · {new Date(order.created_at).toLocaleDateString()}</p></div>)}</div></> : <p className="text-sm text-muted-foreground">Select a customer to view profile and purchase history.</p>}
-    </AdminCard>
-  </section>
-);
+          <Button onClick={exportCsv} disabled={!customers.length} className="gap-2">
+            <Download size={15} /> Export CSV
+          </Button>
+        </div>
+        <div className="grid sm:grid-cols-2 gap-3">
+          {customers.map((customer: ProfileRow) => {
+            const cOrders = orders.filter((o: OrderRow) => o.user_id === customer.id);
+            const spend = cOrders.reduce((s: number, o: OrderRow) => s + Number(o.total || 0), 0);
+            const isAdmin = adminRoleIds.has(customer.id);
+            return (
+              <button
+                key={customer.id}
+                onClick={() => selectCustomer(customer.id)}
+                className={`text-left rounded-2xl border bg-card p-4 transition-all hover:border-accent hover:shadow-md ${selectedCustomer?.id === customer.id ? 'border-accent ring-2 ring-accent/20' : 'border-border'}`}
+              >
+                <div className="flex items-start gap-3">
+                  <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center text-sm font-heading font-semibold text-foreground shrink-0">
+                    {initials(customer.full_name)}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <p className="font-heading text-sm truncate">{customer.full_name || 'Unnamed Customer'}</p>
+                      {isAdmin && <Badge className="text-[10px]">Admin</Badge>}
+                    </div>
+                    <p className="text-xs text-muted-foreground truncate">{customer.email || 'No email'}</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">{customer.phone || 'No phone'}</p>
+                  </div>
+                </div>
+                <div className="mt-3 grid grid-cols-3 gap-2 text-center">
+                  <div className="rounded-lg bg-background border border-border py-1.5">
+                    <p className="text-[9px] uppercase tracking-wider text-muted-foreground">Orders</p>
+                    <p className="text-sm font-semibold">{cOrders.length}</p>
+                  </div>
+                  <div className="rounded-lg bg-background border border-border py-1.5">
+                    <p className="text-[9px] uppercase tracking-wider text-muted-foreground">Spend</p>
+                    <p className="text-sm font-semibold">{money(spend)}</p>
+                  </div>
+                  <div className="rounded-lg bg-background border border-border py-1.5">
+                    <p className="text-[9px] uppercase tracking-wider text-muted-foreground">Area</p>
+                    <p className="text-xs font-medium truncate">{customer.district || customer.city || '—'}</p>
+                  </div>
+                </div>
+                <div className="mt-3 flex gap-2" onClick={(e) => e.stopPropagation()}>
+                  {isAdmin
+                    ? <Button variant="outline" size="sm" className="flex-1 h-8 text-xs" onClick={() => revokeAdmin(customer)}>Remove Admin</Button>
+                    : <Button size="sm" className="flex-1 h-8 text-xs" onClick={() => grantAdmin(customer)}>Make Admin</Button>}
+                </div>
+              </button>
+            );
+          })}
+          {!customers.length && <p className="col-span-full text-center text-muted-foreground py-10">No customers yet.</p>}
+        </div>
+      </div>
+      <AdminCard className="xl:sticky xl:top-28 xl:self-start">
+        {selectedCustomer ? <><PanelTitle icon={UserCog} title={selectedCustomer.full_name || 'Customer Profile'} subtitle={selectedCustomer.email || selectedCustomer.id} /><div className="mt-5 space-y-3 text-sm"><InfoRow label="Phone" value={selectedCustomer.phone || '—'} /><InfoRow label="Address" value={[selectedCustomer.house_number, selectedCustomer.village, selectedCustomer.upazila, selectedCustomer.district].filter(Boolean).join(', ') || selectedCustomer.address || '—'} /><InfoRow label="Orders" value={String(selectedCustomerOrders.length)} /><InfoRow label="Total Spend" value={money(selectedCustomerOrders.reduce((sum: number, order: OrderRow) => sum + Number(order.total || 0), 0))} /></div><div className="mt-5 space-y-2"><p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Purchase History</p>{selectedCustomerOrders.map((order: OrderRow) => <div key={order.id} className="rounded-xl border border-border bg-background p-3 text-sm"><p className="font-medium">#{shortId(order.id)} · {money(order.total)}</p><p className="text-muted-foreground">{order.status} · {new Date(order.created_at).toLocaleDateString()}</p></div>)}</div></> : <p className="text-sm text-muted-foreground">Select a customer to view profile and purchase history.</p>}
+      </AdminCard>
+    </section>
+  );
+};
 
 const InfoRow = ({ label, value }: { label: string; value: string }) => <div className="flex justify-between gap-4 border-b border-border pb-2"><span className="text-muted-foreground">{label}</span><span className="text-right font-medium">{value}</span></div>;
 
