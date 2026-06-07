@@ -45,7 +45,7 @@ import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
 
-type AdminTab = 'overview' | 'products' | 'orders' | 'payments' | 'customers' | 'subscribers' | 'inventory' | 'outlets' | 'content' | 'settings';
+type AdminTab = 'overview' | 'products' | 'orders' | 'payments' | 'customers' | 'subscribers' | 'inventory' | 'outlets' | 'content' | 'admins' | 'settings';
 type ProductType = 'clothing' | 'accessories' | 'perfume';
 
 type ColorVariantDraft = { name: string; hex: string; sku?: string; stock?: string; images: [string, string] };
@@ -421,7 +421,7 @@ const Admin = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const segment = location.pathname.split('/')[2] as AdminTab | undefined;
-  const activeTab: AdminTab = segment && ['overview', 'products', 'orders', 'payments', 'customers', 'subscribers', 'inventory', 'outlets', 'content', 'settings'].includes(segment) ? segment : 'overview';
+  const activeTab: AdminTab = segment && ['overview', 'products', 'orders', 'payments', 'customers', 'subscribers', 'inventory', 'outlets', 'content', 'admins', 'settings'].includes(segment) ? segment : 'overview';
 
   const [checkingAdmin, setCheckingAdmin] = useState(true);
   const [hasAdminAccess, setHasAdminAccess] = useState(false);
@@ -1059,12 +1059,19 @@ const Admin = () => {
               <CustomersPanel
                 customers={filteredCustomers}
                 orders={orders}
-                adminRoleIds={adminRoleIds}
                 selectedCustomer={selectedCustomer}
                 selectedCustomerOrders={selectedCustomerOrders}
                 selectCustomer={setSelectedCustomerId}
+              />
+            )}
+
+            {activeTab === 'admins' && (
+              <AdminManagementPanel
+                profiles={profiles}
+                adminRoleIds={adminRoleIds}
                 grantAdmin={grantAdmin}
                 revokeAdmin={revokeAdmin}
+                currentUserEmail={user.email ?? ''}
               />
             )}
 
@@ -1128,6 +1135,7 @@ const adminTabs: { key: AdminTab; label: string; title: string; icon: any }[] = 
   { key: 'subscribers', label: 'Subscribers', title: 'Newsletter Subscribers', icon: Mail },
   { key: 'outlets', label: 'Outlets', title: 'Outlet & Store Locations', icon: MapPin },
   { key: 'content', label: 'Content', title: 'Website Content', icon: ImageIcon },
+  { key: 'admins', label: 'Admin Management', title: 'Administrators & Access Control', icon: ShieldCheck },
   { key: 'settings', label: 'Settings', title: 'Authentication & Settings', icon: Settings },
 ];
 
@@ -1844,7 +1852,43 @@ const OrdersPanel = ({ orders, profileById, trackingDrafts, setTrackingDrafts, u
   );
 };
 
-const CustomersPanel = ({ customers, orders, adminRoleIds, selectedCustomer, selectedCustomerOrders, selectCustomer, grantAdmin, revokeAdmin }: any) => {
+const CustomersPanel = ({ customers, orders, selectedCustomer, selectedCustomerOrders, selectCustomer }: any) => {
+  const [sortKey, setSortKey] = useState<'name' | 'date' | 'orders'>('date');
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
+  const [page, setPage] = useState(1);
+  const pageSize = 15;
+
+  const enriched = useMemo(() => customers.map((c: ProfileRow) => {
+    const cOrders = orders.filter((o: OrderRow) => o.user_id === c.id);
+    return {
+      ...c,
+      _orderCount: cOrders.length,
+      _spend: cOrders.reduce((s: number, o: OrderRow) => s + Number(o.total || 0), 0),
+    };
+  }), [customers, orders]);
+
+  const sorted = useMemo(() => {
+    const arr = [...enriched];
+    arr.sort((a, b) => {
+      let cmp = 0;
+      if (sortKey === 'name') cmp = (a.full_name || '').localeCompare(b.full_name || '');
+      else if (sortKey === 'orders') cmp = a._orderCount - b._orderCount;
+      else cmp = new Date(a.created_at || 0).getTime() - new Date(b.created_at || 0).getTime();
+      return sortDir === 'asc' ? cmp : -cmp;
+    });
+    return arr;
+  }, [enriched, sortKey, sortDir]);
+
+  const totalPages = Math.max(1, Math.ceil(sorted.length / pageSize));
+  const pageRows = sorted.slice((page - 1) * pageSize, page * pageSize);
+
+  useEffect(() => { setPage(1); }, [customers.length, sortKey, sortDir]);
+
+  const toggleSort = (key: typeof sortKey) => {
+    if (sortKey === key) setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'));
+    else { setSortKey(key); setSortDir('desc'); }
+  };
+
   const exportCsv = () => {
     const header = ['Name', 'Phone', 'Email', 'House/Village', 'Upazila', 'District', 'Address', 'Orders', 'Total Spend (BDT)', 'Registered'];
     const rows = customers.map((c: ProfileRow) => {
@@ -1869,72 +1913,173 @@ const CustomersPanel = ({ customers, orders, adminRoleIds, selectedCustomer, sel
     URL.revokeObjectURL(url);
   };
 
-  const initials = (name?: string | null) =>
-    (name || '?').split(' ').filter(Boolean).slice(0, 2).map((s) => s[0]?.toUpperCase()).join('') || '?';
+  const SortHead = ({ k, children }: { k: typeof sortKey; children: any }) => (
+    <button type="button" onClick={() => toggleSort(k)} className="inline-flex items-center gap-1 text-left font-medium uppercase tracking-wider text-[11px] text-muted-foreground hover:text-foreground">
+      {children}
+      {sortKey === k && <span className="text-accent">{sortDir === 'asc' ? '▲' : '▼'}</span>}
+    </button>
+  );
 
   return (
-    <section className="grid xl:grid-cols-[1fr_420px] gap-6">
+    <section className="grid xl:grid-cols-[1fr_380px] gap-6">
       <div className="space-y-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <h2 className="font-heading text-2xl">Customers</h2>
-            <p className="text-sm text-muted-foreground">Customer profiles, contact details, purchase history, and admin management.</p>
+            <p className="text-sm text-muted-foreground">Customer profiles, contact details and purchase history. Administrator accounts are managed separately under Admin Management.</p>
           </div>
           <Button onClick={exportCsv} disabled={!customers.length} className="gap-2">
             <Download size={15} /> Export CSV
           </Button>
         </div>
-        <div className="grid sm:grid-cols-2 gap-3">
-          {customers.map((customer: ProfileRow) => {
-            const cOrders = orders.filter((o: OrderRow) => o.user_id === customer.id);
-            const spend = cOrders.reduce((s: number, o: OrderRow) => s + Number(o.total || 0), 0);
-            const isAdmin = adminRoleIds.has(customer.id);
-            return (
-              <button
-                key={customer.id}
-                onClick={() => selectCustomer(customer.id)}
-                className={`text-left rounded-2xl border bg-card p-4 transition-all hover:border-accent hover:shadow-md ${selectedCustomer?.id === customer.id ? 'border-accent ring-2 ring-accent/20' : 'border-border'}`}
-              >
-                <div className="flex items-start gap-3">
-                  <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center text-sm font-heading font-semibold text-foreground shrink-0">
-                    {initials(customer.full_name)}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <p className="font-heading text-sm truncate">{customer.full_name || 'Unnamed Customer'}</p>
-                      {isAdmin && <Badge className="text-[10px]">Admin</Badge>}
-                    </div>
-                    <p className="text-xs text-muted-foreground truncate">{customer.email || 'No email'}</p>
-                    <p className="text-xs text-muted-foreground mt-0.5">{customer.phone || 'No phone'}</p>
-                  </div>
-                </div>
-                <div className="mt-3 grid grid-cols-3 gap-2 text-center">
-                  <div className="rounded-lg bg-background border border-border py-1.5">
-                    <p className="text-[9px] uppercase tracking-wider text-muted-foreground">Orders</p>
-                    <p className="text-sm font-semibold">{cOrders.length}</p>
-                  </div>
-                  <div className="rounded-lg bg-background border border-border py-1.5">
-                    <p className="text-[9px] uppercase tracking-wider text-muted-foreground">Spend</p>
-                    <p className="text-sm font-semibold">{money(spend)}</p>
-                  </div>
-                  <div className="rounded-lg bg-background border border-border py-1.5">
-                    <p className="text-[9px] uppercase tracking-wider text-muted-foreground">Area</p>
-                    <p className="text-xs font-medium truncate">{customer.district || customer.city || '—'}</p>
-                  </div>
-                </div>
-                <div className="mt-3 flex gap-2" onClick={(e) => e.stopPropagation()}>
-                  {isAdmin
-                    ? <Button variant="outline" size="sm" className="flex-1 h-8 text-xs" onClick={() => revokeAdmin(customer)}>Remove Admin</Button>
-                    : <Button size="sm" className="flex-1 h-8 text-xs" onClick={() => grantAdmin(customer)}>Make Admin</Button>}
-                </div>
-              </button>
-            );
-          })}
-          {!customers.length && <p className="col-span-full text-center text-muted-foreground py-10">No customers yet.</p>}
-        </div>
+        <AdminCard className="p-0 overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead className="bg-secondary/50 border-b border-border sticky top-0">
+                <tr>
+                  <th className="text-left px-4 py-3"><SortHead k="name">Customer</SortHead></th>
+                  <th className="text-left px-4 py-3 hidden md:table-cell text-[11px] uppercase tracking-wider text-muted-foreground font-medium">Contact</th>
+                  <th className="text-left px-4 py-3 hidden lg:table-cell text-[11px] uppercase tracking-wider text-muted-foreground font-medium">Location</th>
+                  <th className="text-left px-4 py-3"><SortHead k="date">Registered</SortHead></th>
+                  <th className="text-right px-4 py-3"><SortHead k="orders">Orders</SortHead></th>
+                  <th className="text-right px-4 py-3 text-[11px] uppercase tracking-wider text-muted-foreground font-medium">Spend</th>
+                  <th className="text-right px-4 py-3 text-[11px] uppercase tracking-wider text-muted-foreground font-medium">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {pageRows.map((customer: any) => (
+                  <tr key={customer.id} className={`border-b border-border hover:bg-secondary/30 transition-colors ${selectedCustomer?.id === customer.id ? 'bg-accent/5' : ''}`}>
+                    <td className="px-4 py-3">
+                      <p className="font-medium">{customer.full_name || 'Unnamed Customer'}</p>
+                      <p className="text-xs text-muted-foreground md:hidden">{customer.email || customer.phone || '—'}</p>
+                    </td>
+                    <td className="px-4 py-3 hidden md:table-cell">
+                      <p className="text-xs">{customer.email || '—'}</p>
+                      <p className="text-xs text-muted-foreground">{customer.phone || '—'}</p>
+                    </td>
+                    <td className="px-4 py-3 hidden lg:table-cell text-xs text-muted-foreground">{customer.district || customer.city || '—'}</td>
+                    <td className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap">{customer.created_at ? new Date(customer.created_at).toLocaleDateString() : '—'}</td>
+                    <td className="px-4 py-3 text-right font-medium">{customer._orderCount}</td>
+                    <td className="px-4 py-3 text-right text-xs">{money(customer._spend)}</td>
+                    <td className="px-4 py-3 text-right">
+                      <Button variant="outline" size="sm" className="h-8 text-xs" onClick={() => selectCustomer(customer.id)}>View</Button>
+                    </td>
+                  </tr>
+                ))}
+                {!pageRows.length && (
+                  <tr><td colSpan={7} className="text-center text-muted-foreground py-10">No customers found.</td></tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+          {totalPages > 1 && (
+            <div className="flex items-center justify-between gap-3 px-4 py-3 border-t border-border">
+              <p className="text-xs text-muted-foreground">Page {page} of {totalPages} · {sorted.length} customers</p>
+              <div className="flex gap-2">
+                <Button variant="outline" size="sm" disabled={page === 1} onClick={() => setPage((p) => p - 1)}>Previous</Button>
+                <Button variant="outline" size="sm" disabled={page === totalPages} onClick={() => setPage((p) => p + 1)}>Next</Button>
+              </div>
+            </div>
+          )}
+        </AdminCard>
       </div>
       <AdminCard className="xl:sticky xl:top-28 xl:self-start">
         {selectedCustomer ? <><PanelTitle icon={UserCog} title={selectedCustomer.full_name || 'Customer Profile'} subtitle={selectedCustomer.email || selectedCustomer.id} /><div className="mt-5 space-y-3 text-sm"><InfoRow label="Phone" value={selectedCustomer.phone || '—'} /><InfoRow label="Address" value={[selectedCustomer.house_number, selectedCustomer.village, selectedCustomer.upazila, selectedCustomer.district].filter(Boolean).join(', ') || selectedCustomer.address || '—'} /><InfoRow label="Orders" value={String(selectedCustomerOrders.length)} /><InfoRow label="Total Spend" value={money(selectedCustomerOrders.reduce((sum: number, order: OrderRow) => sum + Number(order.total || 0), 0))} /></div><div className="mt-5 space-y-2"><p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Purchase History</p>{selectedCustomerOrders.map((order: OrderRow) => <div key={order.id} className="rounded-xl border border-border bg-background p-3 text-sm"><p className="font-medium">#{shortId(order.id)} · {money(order.total)}</p><p className="text-muted-foreground">{order.status} · {new Date(order.created_at).toLocaleDateString()}</p></div>)}</div></> : <p className="text-sm text-muted-foreground">Select a customer to view profile and purchase history.</p>}
+      </AdminCard>
+    </section>
+  );
+};
+
+const AdminManagementPanel = ({ profiles, adminRoleIds, grantAdmin, revokeAdmin, currentUserEmail }: any) => {
+  const [emailInput, setEmailInput] = useState('');
+  const [search, setSearch] = useState('');
+
+  const admins = useMemo(() => profiles.filter((p: ProfileRow) => adminRoleIds.has(p.id) || p.email?.toLowerCase() === ADMIN_EMAIL.toLowerCase()), [profiles, adminRoleIds]);
+
+  const filteredAdmins = useMemo(() => {
+    const q = search.toLowerCase().trim();
+    if (!q) return admins;
+    return admins.filter((a: ProfileRow) => [a.full_name, a.email, a.phone].some((v) => String(v ?? '').toLowerCase().includes(q)));
+  }, [admins, search]);
+
+  const handleGrant = async () => {
+    const email = emailInput.trim().toLowerCase();
+    if (!email) return toast.error('Enter a registered email');
+    const profile = profiles.find((p: ProfileRow) => p.email?.toLowerCase() === email);
+    if (!profile) return toast.error('No customer found with that email. They must register first.');
+    if (adminRoleIds.has(profile.id)) return toast.error('Already an administrator');
+    await grantAdmin(profile);
+    setEmailInput('');
+  };
+
+  return (
+    <section className="space-y-6">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h2 className="font-heading text-2xl">Admin Management</h2>
+          <p className="text-sm text-muted-foreground">Grant or revoke administrator access. Administrators can manage products, orders, customers and site content.</p>
+        </div>
+        <Badge variant="secondary" className="gap-1"><ShieldCheck size={12} /> {admins.length} active</Badge>
+      </div>
+
+      <AdminCard>
+        <PanelTitle icon={Plus} title="Grant Administrator Access" subtitle="Promote an existing customer to administrator by their registered email." />
+        <div className="mt-5 flex flex-col sm:flex-row gap-2">
+          <Input type="email" placeholder="customer@example.com" value={emailInput} onChange={(e) => setEmailInput(e.target.value)} className="flex-1" />
+          <Button onClick={handleGrant} className="gap-2"><ShieldCheck size={15} /> Grant Admin</Button>
+        </div>
+        <p className="text-xs text-muted-foreground mt-3">The user must already have a registered account. New administrators sign in with their existing customer credentials.</p>
+      </AdminCard>
+
+      <AdminCard className="p-0 overflow-hidden">
+        <div className="flex items-center justify-between gap-3 p-4 border-b border-border">
+          <h3 className="font-heading text-lg">Administrators</h3>
+          <div className="relative w-full sm:w-64">
+            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+            <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search admins" className="pl-9 h-9" />
+          </div>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead className="bg-secondary/50 border-b border-border">
+              <tr className="text-[11px] uppercase tracking-wider text-muted-foreground">
+                <th className="text-left font-medium px-4 py-3">Name</th>
+                <th className="text-left font-medium px-4 py-3 hidden md:table-cell">Email</th>
+                <th className="text-left font-medium px-4 py-3 hidden lg:table-cell">Phone</th>
+                <th className="text-left font-medium px-4 py-3">Role</th>
+                <th className="text-left font-medium px-4 py-3 hidden md:table-cell">Status</th>
+                <th className="text-right font-medium px-4 py-3">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredAdmins.map((admin: ProfileRow) => {
+                const isPrimary = admin.email?.toLowerCase() === ADMIN_EMAIL.toLowerCase();
+                const isSelf = admin.email?.toLowerCase() === currentUserEmail.toLowerCase();
+                return (
+                  <tr key={admin.id} className="border-b border-border hover:bg-secondary/30">
+                    <td className="px-4 py-3 font-medium">{admin.full_name || 'Unnamed'}{isSelf && <span className="ml-2 text-[10px] text-muted-foreground">(you)</span>}</td>
+                    <td className="px-4 py-3 hidden md:table-cell text-xs">{admin.email || '—'}</td>
+                    <td className="px-4 py-3 hidden lg:table-cell text-xs text-muted-foreground">{admin.phone || '—'}</td>
+                    <td className="px-4 py-3"><Badge variant={isPrimary ? 'default' : 'secondary'} className="text-[10px]">{isPrimary ? 'Super Admin' : 'Admin'}</Badge></td>
+                    <td className="px-4 py-3 hidden md:table-cell"><span className="inline-flex items-center gap-1 text-xs text-emerald-600"><span className="h-1.5 w-1.5 rounded-full bg-emerald-500" /> Active</span></td>
+                    <td className="px-4 py-3 text-right">
+                      {isPrimary ? (
+                        <span className="text-xs text-muted-foreground">Protected</span>
+                      ) : (
+                        <Button variant="outline" size="sm" className="h-8 text-xs text-destructive hover:text-destructive hover:bg-destructive/10" onClick={() => {
+                          if (confirm(`Revoke admin access for ${admin.email || admin.full_name}?`)) revokeAdmin(admin);
+                        }}>Revoke Admin</Button>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
+              {!filteredAdmins.length && (
+                <tr><td colSpan={6} className="text-center text-muted-foreground py-10">No administrators match your search.</td></tr>
+              )}
+            </tbody>
+          </table>
+        </div>
       </AdminCard>
     </section>
   );
