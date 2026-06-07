@@ -2006,26 +2006,143 @@ const CustomersPanel = ({ customers, orders, selectedCustomer, selectedCustomerO
   );
 };
 
-const AdminManagementPanel = ({ profiles, adminRoleIds, grantAdmin, revokeAdmin, currentUserEmail }: any) => {
-  const [emailInput, setEmailInput] = useState('');
+type AdminFormState = {
+  id?: string;
+  full_name: string;
+  username: string;
+  email: string;
+  phone: string;
+  password: string;
+  confirm: string;
+  role: 'admin' | 'super_admin' | 'manager' | 'editor';
+  status: 'active' | 'inactive' | 'suspended';
+  avatar_url: string;
+  department: string;
+  notes: string;
+};
+
+const emptyAdminForm = (): AdminFormState => ({
+  full_name: '', username: '', email: '', phone: '', password: '', confirm: '',
+  role: 'admin', status: 'active', avatar_url: '', department: '', notes: '',
+});
+
+const AdminManagementPanel = ({ profiles, adminRoleIds, roleByUser, isSuperAdmin, currentUserEmail, currentUserId, reload, uploadFn }: any) => {
   const [search, setSearch] = useState('');
+  const [formOpen, setFormOpen] = useState(false);
+  const [form, setForm] = useState<AdminFormState>(emptyAdminForm());
+  const [busy, setBusy] = useState(false);
+  const [resetFor, setResetFor] = useState<ProfileRow | null>(null);
+  const [resetPwd, setResetPwd] = useState({ password: '', confirm: '' });
 
   const admins = useMemo(() => profiles.filter((p: ProfileRow) => adminRoleIds.has(p.id) || p.email?.toLowerCase() === ADMIN_EMAIL.toLowerCase()), [profiles, adminRoleIds]);
-
   const filteredAdmins = useMemo(() => {
     const q = search.toLowerCase().trim();
     if (!q) return admins;
-    return admins.filter((a: ProfileRow) => [a.full_name, a.email, a.phone].some((v) => String(v ?? '').toLowerCase().includes(q)));
+    return admins.filter((a: ProfileRow) => [a.full_name, a.email, a.phone, a.username, a.department].some((v) => String(v ?? '').toLowerCase().includes(q)));
   }, [admins, search]);
 
-  const handleGrant = async () => {
-    const email = emailInput.trim().toLowerCase();
-    if (!email) return toast.error('Enter a registered email');
-    const profile = profiles.find((p: ProfileRow) => p.email?.toLowerCase() === email);
-    if (!profile) return toast.error('No customer found with that email. They must register first.');
-    if (adminRoleIds.has(profile.id)) return toast.error('Already an administrator');
-    await grantAdmin(profile);
-    setEmailInput('');
+  const callEdge = async (action: string, body: Record<string, any>) => {
+    const { data, error } = await supabase.functions.invoke('admin-manage-user', { body: { action, ...body } });
+    if (error) {
+      const msg = (data as any)?.error || error.message;
+      throw new Error(msg);
+    }
+    if ((data as any)?.error) throw new Error((data as any).error);
+    return data;
+  };
+
+  const openCreate = () => { setForm(emptyAdminForm()); setFormOpen(true); };
+  const openEdit = (p: ProfileRow) => {
+    setForm({
+      id: p.id,
+      full_name: p.full_name ?? '',
+      username: p.username ?? '',
+      email: p.email ?? '',
+      phone: p.phone ?? '',
+      password: '', confirm: '',
+      role: (roleByUser.get(p.id) as any) ?? 'admin',
+      status: (p.status as any) ?? 'active',
+      avatar_url: p.avatar_url ?? '',
+      department: p.department ?? '',
+      notes: p.notes ?? '',
+    });
+    setFormOpen(true);
+  };
+
+  const submit = async () => {
+    if (!form.full_name.trim()) return toast.error('Full name is required');
+    if (!form.id) {
+      if (!form.email.trim()) return toast.error('Email is required');
+      if (form.password.length < 8) return toast.error('Password must be at least 8 characters');
+      if (form.password !== form.confirm) return toast.error('Passwords do not match');
+    }
+    setBusy(true);
+    try {
+      if (form.id) {
+        await callEdge('update', {
+          user_id: form.id,
+          full_name: form.full_name.trim(),
+          username: form.username.trim() || null,
+          phone: form.phone.trim() || null,
+          avatar_url: form.avatar_url || null,
+          department: form.department.trim() || null,
+          notes: form.notes.trim() || null,
+          status: form.status,
+          ...(isSuperAdmin && { role: form.role }),
+        });
+        toast.success('Administrator updated');
+      } else {
+        await callEdge('create', {
+          email: form.email.trim().toLowerCase(),
+          password: form.password,
+          full_name: form.full_name.trim(),
+          username: form.username.trim() || null,
+          phone: form.phone.trim() || null,
+          role: form.role,
+          status: form.status,
+          avatar_url: form.avatar_url || null,
+          department: form.department.trim() || null,
+          notes: form.notes.trim() || null,
+        });
+        toast.success('Administrator created');
+      }
+      setFormOpen(false);
+      reload();
+    } catch (e: any) {
+      toast.error(e.message || 'Failed to save');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const setStatus = async (p: ProfileRow, status: string) => {
+    try {
+      await callEdge('set_status', { user_id: p.id, status });
+      toast.success(`Status set to ${status}`);
+      reload();
+    } catch (e: any) { toast.error(e.message); }
+  };
+
+  const removeAdmin = async (p: ProfileRow) => {
+    if (!confirm(`Permanently delete admin ${p.email || p.full_name}? This cannot be undone.`)) return;
+    try {
+      await callEdge('delete', { user_id: p.id });
+      toast.success('Administrator deleted');
+      reload();
+    } catch (e: any) { toast.error(e.message); }
+  };
+
+  const submitReset = async () => {
+    if (!resetFor) return;
+    if (resetPwd.password.length < 8) return toast.error('Password must be at least 8 characters');
+    if (resetPwd.password !== resetPwd.confirm) return toast.error('Passwords do not match');
+    setBusy(true);
+    try {
+      await callEdge('reset_password', { user_id: resetFor.id, password: resetPwd.password });
+      toast.success('Password reset');
+      setResetFor(null); setResetPwd({ password: '', confirm: '' });
+    } catch (e: any) { toast.error(e.message); }
+    finally { setBusy(false); }
   };
 
   return (
@@ -2033,19 +2150,19 @@ const AdminManagementPanel = ({ profiles, adminRoleIds, grantAdmin, revokeAdmin,
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h2 className="font-heading text-2xl">Admin Management</h2>
-          <p className="text-sm text-muted-foreground">Grant or revoke administrator access. Administrators can manage products, orders, customers and site content.</p>
+          <p className="text-sm text-muted-foreground">Manually create and manage administrators. No email invitations are sent.</p>
         </div>
-        <Badge variant="secondary" className="gap-1"><ShieldCheck size={12} /> {admins.length} active</Badge>
+        <div className="flex items-center gap-2">
+          <Badge variant="secondary" className="gap-1"><ShieldCheck size={12} /> {admins.length} total</Badge>
+          {isSuperAdmin && (
+            <Button onClick={openCreate} className="gap-2"><Plus size={15} /> Add Administrator</Button>
+          )}
+        </div>
       </div>
 
-      <AdminCard>
-        <PanelTitle icon={Plus} title="Grant Administrator Access" subtitle="Promote an existing customer to administrator by their registered email." />
-        <div className="mt-5 flex flex-col sm:flex-row gap-2">
-          <Input type="email" placeholder="customer@example.com" value={emailInput} onChange={(e) => setEmailInput(e.target.value)} className="flex-1" />
-          <Button onClick={handleGrant} className="gap-2"><ShieldCheck size={15} /> Grant Admin</Button>
-        </div>
-        <p className="text-xs text-muted-foreground mt-3">The user must already have a registered account. New administrators sign in with their existing customer credentials.</p>
-      </AdminCard>
+      {!isSuperAdmin && (
+        <AdminCard><p className="text-sm text-muted-foreground">Only super administrators can create or delete admin accounts. You can still view the list and edit your own profile.</p></AdminCard>
+      )}
 
       <AdminCard className="p-0 overflow-hidden">
         <div className="flex items-center justify-between gap-3 p-4 border-b border-border">
@@ -2059,33 +2176,60 @@ const AdminManagementPanel = ({ profiles, adminRoleIds, grantAdmin, revokeAdmin,
           <table className="w-full text-sm">
             <thead className="bg-secondary/50 border-b border-border">
               <tr className="text-[11px] uppercase tracking-wider text-muted-foreground">
-                <th className="text-left font-medium px-4 py-3">Name</th>
-                <th className="text-left font-medium px-4 py-3 hidden md:table-cell">Email</th>
+                <th className="text-left font-medium px-4 py-3">Admin</th>
+                <th className="text-left font-medium px-4 py-3 hidden md:table-cell">Username</th>
                 <th className="text-left font-medium px-4 py-3 hidden lg:table-cell">Phone</th>
                 <th className="text-left font-medium px-4 py-3">Role</th>
-                <th className="text-left font-medium px-4 py-3 hidden md:table-cell">Status</th>
+                <th className="text-left font-medium px-4 py-3">Status</th>
                 <th className="text-right font-medium px-4 py-3">Actions</th>
               </tr>
             </thead>
             <tbody>
               {filteredAdmins.map((admin: ProfileRow) => {
                 const isPrimary = admin.email?.toLowerCase() === ADMIN_EMAIL.toLowerCase();
-                const isSelf = admin.email?.toLowerCase() === currentUserEmail.toLowerCase();
+                const isSelf = admin.id === currentUserId;
+                const role = roleByUser.get(admin.id) ?? (isPrimary ? 'super_admin' : 'admin');
+                const status = admin.status ?? 'active';
+                const statusColor = status === 'active' ? 'text-emerald-600 bg-emerald-500' : status === 'suspended' ? 'text-amber-600 bg-amber-500' : 'text-muted-foreground bg-muted-foreground';
                 return (
                   <tr key={admin.id} className="border-b border-border hover:bg-secondary/30">
-                    <td className="px-4 py-3 font-medium">{admin.full_name || 'Unnamed'}{isSelf && <span className="ml-2 text-[10px] text-muted-foreground">(you)</span>}</td>
-                    <td className="px-4 py-3 hidden md:table-cell text-xs">{admin.email || '—'}</td>
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-3">
+                        <div className="h-9 w-9 rounded-full bg-secondary overflow-hidden flex items-center justify-center text-xs font-medium">
+                          {admin.avatar_url ? <img src={admin.avatar_url} alt="" className="h-full w-full object-cover" /> : (admin.full_name?.[0] || admin.email?.[0] || '?').toUpperCase()}
+                        </div>
+                        <div className="min-w-0">
+                          <div className="font-medium truncate">{admin.full_name || 'Unnamed'}{isSelf && <span className="ml-2 text-[10px] text-muted-foreground">(you)</span>}</div>
+                          <div className="text-xs text-muted-foreground truncate">{admin.email || '—'}</div>
+                          {admin.department && <div className="text-[10px] text-muted-foreground">{admin.department}</div>}
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-4 py-3 hidden md:table-cell text-xs">{admin.username || '—'}</td>
                     <td className="px-4 py-3 hidden lg:table-cell text-xs text-muted-foreground">{admin.phone || '—'}</td>
-                    <td className="px-4 py-3"><Badge variant={isPrimary ? 'default' : 'secondary'} className="text-[10px]">{isPrimary ? 'Super Admin' : 'Admin'}</Badge></td>
-                    <td className="px-4 py-3 hidden md:table-cell"><span className="inline-flex items-center gap-1 text-xs text-emerald-600"><span className="h-1.5 w-1.5 rounded-full bg-emerald-500" /> Active</span></td>
+                    <td className="px-4 py-3"><Badge variant={role === 'super_admin' ? 'default' : 'secondary'} className="text-[10px] capitalize">{role.replace('_', ' ')}</Badge></td>
+                    <td className="px-4 py-3">
+                      <span className={`inline-flex items-center gap-1.5 text-xs ${statusColor.split(' ')[0]}`}>
+                        <span className={`h-1.5 w-1.5 rounded-full ${statusColor.split(' ')[1]}`} />
+                        <span className="capitalize">{status}</span>
+                      </span>
+                    </td>
                     <td className="px-4 py-3 text-right">
-                      {isPrimary ? (
-                        <span className="text-xs text-muted-foreground">Protected</span>
-                      ) : (
-                        <Button variant="outline" size="sm" className="h-8 text-xs text-destructive hover:text-destructive hover:bg-destructive/10" onClick={() => {
-                          if (confirm(`Revoke admin access for ${admin.email || admin.full_name}?`)) revokeAdmin(admin);
-                        }}>Revoke Admin</Button>
-                      )}
+                      <div className="inline-flex gap-1 flex-wrap justify-end">
+                        <Button variant="outline" size="sm" className="h-8 text-xs" onClick={() => openEdit(admin)}>Edit</Button>
+                        {isSuperAdmin && !isPrimary && (
+                          <Button variant="outline" size="sm" className="h-8 text-xs" onClick={() => { setResetFor(admin); setResetPwd({ password: '', confirm: '' }); }}>Reset Pwd</Button>
+                        )}
+                        {isSuperAdmin && !isPrimary && !isSelf && (
+                          <>
+                            <Button variant="outline" size="sm" className="h-8 text-xs" onClick={() => setStatus(admin, status === 'active' ? 'suspended' : 'active')}>
+                              {status === 'active' ? 'Suspend' : 'Activate'}
+                            </Button>
+                            <Button variant="outline" size="sm" className="h-8 text-xs text-destructive hover:text-destructive hover:bg-destructive/10" onClick={() => removeAdmin(admin)}>Delete</Button>
+                          </>
+                        )}
+                        {isPrimary && <span className="text-xs text-muted-foreground self-center">Protected</span>}
+                      </div>
                     </td>
                   </tr>
                 );
@@ -2097,6 +2241,109 @@ const AdminManagementPanel = ({ profiles, adminRoleIds, grantAdmin, revokeAdmin,
           </table>
         </div>
       </AdminCard>
+
+      <Dialog open={formOpen} onOpenChange={(o) => !o && setFormOpen(false)}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>{form.id ? 'Edit Administrator' : 'Create Administrator'}</DialogTitle>
+          </DialogHeader>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-2">
+            <div className="sm:col-span-2">
+              <UploadPicker value={form.avatar_url} onChange={(v) => setForm({ ...form, avatar_url: v })} uploadFn={uploadFn} label="Profile Image (optional)" />
+            </div>
+            <div>
+              <Label className="text-xs">Full Name *</Label>
+              <Input value={form.full_name} onChange={(e) => setForm({ ...form, full_name: e.target.value })} />
+            </div>
+            <div>
+              <Label className="text-xs">Username</Label>
+              <Input value={form.username} onChange={(e) => setForm({ ...form, username: e.target.value })} placeholder="login handle (optional)" />
+            </div>
+            <div>
+              <Label className="text-xs">Email *</Label>
+              <Input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} disabled={!!form.id} />
+            </div>
+            <div>
+              <Label className="text-xs">Phone</Label>
+              <Input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
+            </div>
+            {!form.id && (
+              <>
+                <div>
+                  <Label className="text-xs">Password *</Label>
+                  <Input type="password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} placeholder="min 8 chars" />
+                </div>
+                <div>
+                  <Label className="text-xs">Confirm Password *</Label>
+                  <Input type="password" value={form.confirm} onChange={(e) => setForm({ ...form, confirm: e.target.value })} />
+                </div>
+              </>
+            )}
+            <div>
+              <Label className="text-xs">Role</Label>
+              <Select value={form.role} onValueChange={(v) => setForm({ ...form, role: v as any })} disabled={!isSuperAdmin}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="admin">Admin</SelectItem>
+                  <SelectItem value="super_admin">Super Admin</SelectItem>
+                  <SelectItem value="manager">Manager</SelectItem>
+                  <SelectItem value="editor">Editor</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label className="text-xs">Status</Label>
+              <Select value={form.status} onValueChange={(v) => setForm({ ...form, status: v as any })}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="active">Active</SelectItem>
+                  <SelectItem value="inactive">Inactive</SelectItem>
+                  <SelectItem value="suspended">Suspended</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="sm:col-span-2">
+              <Label className="text-xs">Department (optional)</Label>
+              <Input value={form.department} onChange={(e) => setForm({ ...form, department: e.target.value })} placeholder="e.g. Operations, Content, Support" />
+            </div>
+            <div className="sm:col-span-2">
+              <Label className="text-xs">Notes (optional)</Label>
+              <Textarea value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} rows={3} />
+            </div>
+          </div>
+          <div className="flex justify-end gap-2 mt-4 pt-4 border-t border-border">
+            <Button variant="outline" onClick={() => setFormOpen(false)} disabled={busy}>Cancel</Button>
+            <Button onClick={submit} disabled={busy} className="gap-2">
+              {busy && <Loader2 size={14} className="animate-spin" />}
+              {form.id ? 'Save Changes' : 'Create Administrator'}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!resetFor} onOpenChange={(o) => !o && setResetFor(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader><DialogTitle>Reset Password</DialogTitle></DialogHeader>
+          <p className="text-sm text-muted-foreground">Set a new password for <span className="font-medium text-foreground">{resetFor?.email}</span>. They will need to use this password on next sign-in.</p>
+          <div className="space-y-3 mt-3">
+            <div>
+              <Label className="text-xs">New Password</Label>
+              <Input type="password" value={resetPwd.password} onChange={(e) => setResetPwd({ ...resetPwd, password: e.target.value })} placeholder="min 8 chars" />
+            </div>
+            <div>
+              <Label className="text-xs">Confirm Password</Label>
+              <Input type="password" value={resetPwd.confirm} onChange={(e) => setResetPwd({ ...resetPwd, confirm: e.target.value })} />
+            </div>
+          </div>
+          <div className="flex justify-end gap-2 mt-4">
+            <Button variant="outline" onClick={() => setResetFor(null)} disabled={busy}>Cancel</Button>
+            <Button onClick={submitReset} disabled={busy} className="gap-2">
+              {busy && <Loader2 size={14} className="animate-spin" />}
+              Reset Password
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </section>
   );
 };
