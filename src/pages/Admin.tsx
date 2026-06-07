@@ -45,7 +45,7 @@ import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
 
-type AdminTab = 'overview' | 'products' | 'orders' | 'payments' | 'customers' | 'subscribers' | 'inventory' | 'outlets' | 'content' | 'settings';
+type AdminTab = 'overview' | 'products' | 'orders' | 'payments' | 'customers' | 'subscribers' | 'inventory' | 'outlets' | 'content' | 'admins' | 'settings';
 type ProductType = 'clothing' | 'accessories' | 'perfume';
 
 type ColorVariantDraft = { name: string; hex: string; sku?: string; stock?: string; images: [string, string] };
