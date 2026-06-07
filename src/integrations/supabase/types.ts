@@ -400,16 +400,20 @@ export type Database = {
           avatar_url: string | null
           city: string | null
           created_at: string
+          department: string | null
           detailed_address: string | null
           district: string | null
           email: string | null
           full_name: string | null
           house_number: string | null
           id: string
+          notes: string | null
           phone: string | null
           secondary_phone: string | null
+          status: string
           upazila: string | null
           updated_at: string
+          username: string | null
           village: string | null
         }
         Insert: {
@@ -417,16 +421,20 @@ export type Database = {
           avatar_url?: string | null
           city?: string | null
           created_at?: string
+          department?: string | null
           detailed_address?: string | null
           district?: string | null
           email?: string | null
           full_name?: string | null
           house_number?: string | null
           id: string
+          notes?: string | null
           phone?: string | null
           secondary_phone?: string | null
+          status?: string
           upazila?: string | null
           updated_at?: string
+          username?: string | null
           village?: string | null
         }
         Update: {
@@ -434,16 +442,20 @@ export type Database = {
           avatar_url?: string | null
           city?: string | null
           created_at?: string
+          department?: string | null
           detailed_address?: string | null
           district?: string | null
           email?: string | null
           full_name?: string | null
           house_number?: string | null
           id?: string
+          notes?: string | null
           phone?: string | null
           secondary_phone?: string | null
+          status?: string
           upazila?: string | null
           updated_at?: string
+          username?: string | null
           village?: string | null
         }
         Relationships: []
@@ -549,6 +561,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      email_for_username: { Args: { _username: string }; Returns: string }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -557,6 +570,7 @@ export type Database = {
         Returns: boolean
       }
       is_admin: { Args: never; Returns: boolean }
+      is_super_admin: { Args: never; Returns: boolean }
     }
     Enums: {
       app_role:
