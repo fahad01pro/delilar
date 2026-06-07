@@ -149,6 +149,11 @@ type ProfileRow = {
   address?: string | null;
   city?: string | null;
   created_at?: string;
+  username?: string | null;
+  avatar_url?: string | null;
+  status?: string | null;
+  department?: string | null;
+  notes?: string | null;
 };
 
 type CategoryRow = {
@@ -455,7 +460,15 @@ const Admin = () => {
   }, [productCategories]);
 
   const profileById = useMemo(() => new Map(profiles.map((profile) => [profile.id, profile])), [profiles]);
-  const adminRoleIds = useMemo(() => new Set(roles.filter((role) => role.role === 'admin').map((role) => role.user_id)), [roles]);
+  const adminRoleIds = useMemo(() => new Set(roles.filter((role) => ['admin', 'super_admin', 'manager', 'editor'].includes(role.role)).map((role) => role.user_id)), [roles]);
+  const roleByUser = useMemo(() => {
+    const map = new Map<string, string>();
+    roles.forEach((r) => {
+      if (['admin', 'super_admin', 'manager', 'editor'].includes(r.role)) map.set(r.user_id, r.role);
+    });
+    return map;
+  }, [roles]);
+  const isSuperAdmin = isAdminUser(user) || roleByUser.get(user?.id ?? '') === 'super_admin';
 
   const filteredProducts = useMemo(() => {
     const q = search.toLowerCase().trim();
@@ -1069,9 +1082,12 @@ const Admin = () => {
               <AdminManagementPanel
                 profiles={profiles}
                 adminRoleIds={adminRoleIds}
-                grantAdmin={grantAdmin}
-                revokeAdmin={revokeAdmin}
+                roleByUser={roleByUser}
+                isSuperAdmin={isSuperAdmin}
                 currentUserEmail={user.email ?? ''}
+                currentUserId={user.id}
+                reload={loadAdminData}
+                uploadFn={uploadImage}
               />
             )}
 
