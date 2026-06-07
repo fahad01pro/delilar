@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Mail, Lock, Loader2, Sparkles, ArrowLeft } from 'lucide-react';
+import { Mail, Lock, Loader2, Sparkles, ArrowLeft, User } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { lovable } from '@/integrations/lovable';
@@ -41,7 +41,15 @@ const AuthModal = () => {
     e.preventDefault();
     setLoading(true);
     try {
-      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      let loginEmail = email.trim();
+      // If the identifier isn't an email, try to resolve it as a username
+      if (loginEmail && !loginEmail.includes('@')) {
+        const { data: resolved, error: rpcErr } = await supabase.rpc('email_for_username', { _username: loginEmail });
+        if (rpcErr) throw rpcErr;
+        if (!resolved) throw new Error('No active account found for that username');
+        loginEmail = resolved as string;
+      }
+      const { error } = await supabase.auth.signInWithPassword({ email: loginEmail, password });
       if (error) throw error;
       toast.success('Welcome back');
       closeAuthModal();
@@ -127,7 +135,7 @@ const AuthModal = () => {
             <AnimatePresence mode="wait">
               {mode === 'login' ? (
                 <motion.form key="login" onSubmit={handleLogin} className="space-y-3" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-                  <FloatingInput id="email" type="email" label="Email Address" icon={Mail} value={email} onChange={(e: any) => setEmail(e.target.value)} autoComplete="email" />
+                  <FloatingInput id="email" type="text" label="Email or Username" icon={User} value={email} onChange={(e: any) => setEmail(e.target.value)} autoComplete="username" />
                   <FloatingInput id="password" type="password" label="Password" icon={Lock} value={password} onChange={(e: any) => setPassword(e.target.value)} autoComplete="current-password" />
                   <div className="text-right">
                     <button type="button" onClick={() => setMode('forgot')} className="text-[11px] font-body text-accent hover:underline">
