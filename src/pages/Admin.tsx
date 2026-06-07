@@ -1059,12 +1059,19 @@ const Admin = () => {
               <CustomersPanel
                 customers={filteredCustomers}
                 orders={orders}
-                adminRoleIds={adminRoleIds}
                 selectedCustomer={selectedCustomer}
                 selectedCustomerOrders={selectedCustomerOrders}
                 selectCustomer={setSelectedCustomerId}
+              />
+            )}
+
+            {activeTab === 'admins' && (
+              <AdminManagementPanel
+                profiles={profiles}
+                adminRoleIds={adminRoleIds}
                 grantAdmin={grantAdmin}
                 revokeAdmin={revokeAdmin}
+                currentUserEmail={user.email ?? ''}
               />
             )}
 
