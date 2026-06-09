@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Heart, ShoppingBag, Eye } from 'lucide-react';
 import { Product } from '@/data/products';
@@ -10,6 +11,14 @@ const ProductCard = ({ product, index = 0 }: { product: Product; index?: number 
   const { toggle, has } = useWishlist();
   const wished = has(product.id);
   const oos = product.inStock === false;
+  const [tapped, setTapped] = useState(false);
+
+  // Resolve primary + secondary image (prefer first color variant, fall back to product.images)
+  const variantImages = product.colorVariants?.[0]?.images ?? [];
+  const allImages = variantImages.length > 0 ? variantImages : (product.images ?? []);
+  const primaryImage = (allImages[0] && allImages[0] !== '/placeholder.svg') ? allImages[0] : product.image;
+  const secondaryImage = allImages[1] && allImages[1] !== '/placeholder.svg' && allImages[1] !== primaryImage ? allImages[1] : undefined;
+  const hasHoverImage = !!secondaryImage;
 
   return (
     <motion.div
