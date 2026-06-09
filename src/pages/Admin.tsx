@@ -1624,6 +1624,116 @@ const ColorVariantsEditor = ({ variants, setVariants, uploadFn }: { variants: Co
   );
 };
 
+const ImageSlot = ({ label, value, onChange, uploadFn, uploading }: { label: string; value: string; onChange: (v: string) => void; uploadFn: (file: File) => Promise<string | null>; uploading?: boolean }) => {
+  const [busy, setBusy] = useState(false);
+  return (
+    <div className="rounded-xl border border-border bg-background/80 p-3">
+      <div className="flex items-center justify-between mb-2">
+        <span className="text-[10px] uppercase tracking-[0.22em] text-muted-foreground font-body">{label}</span>
+        {value && (
+          <button type="button" onClick={() => onChange('')} className="text-[10px] uppercase tracking-wider text-destructive hover:underline">Remove</button>
+        )}
+      </div>
+      <div className="aspect-square rounded-lg overflow-hidden bg-secondary border border-border flex items-center justify-center">
+        {value ? (
+          <img src={value} alt={label} className="w-full h-full object-cover" />
+        ) : (
+          <ImageIcon size={28} className="text-muted-foreground/50" />
+        )}
+      </div>
+      <label className="mt-2 flex items-center justify-center gap-1.5 rounded-lg border border-dashed border-border bg-background px-2 py-2 text-[11px] text-muted-foreground cursor-pointer hover:border-accent hover:text-foreground transition-all">
+        {busy || uploading ? <Loader2 className="animate-spin" size={12} /> : <Upload size={12} />}
+        {value ? 'Replace image' : 'Upload image'}
+        <input
+          type="file"
+          accept="image/*"
+          className="hidden"
+          onChange={async (e) => {
+            const file = e.target.files?.[0];
+            if (!file) return;
+            setBusy(true);
+            const url = await uploadFn(file);
+            setBusy(false);
+            if (url) onChange(url);
+            e.target.value = '';
+          }}
+        />
+      </label>
+      <input
+        type="text"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder="or paste image URL"
+        className="mt-1.5 w-full rounded-md border border-border bg-background px-2 py-1 text-[11px] outline-none focus:border-accent"
+      />
+    </div>
+  );
+};
+
+const HoverPreviewCard = ({ primary, hover }: { primary: string; hover?: string }) => {
+  const [hover2, setHover2] = useState(false);
+  return (
+    <div
+      className="relative aspect-[3/4] w-full rounded-xl overflow-hidden border border-border bg-secondary cursor-pointer"
+      onMouseEnter={() => setHover2(true)}
+      onMouseLeave={() => setHover2(false)}
+      onTouchStart={() => setHover2((v) => !v)}
+      title="Hover to preview"
+    >
+      {primary ? (
+        <img src={primary} alt="Primary preview" className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 ease-out" style={{ transform: hover2 && hover ? 'scale(1.05)' : 'scale(1)' }} />
+      ) : (
+        <div className="absolute inset-0 flex items-center justify-center text-muted-foreground text-xs">Upload Image 1 to preview</div>
+      )}
+      {hover && (
+        <img src={hover} alt="Hover preview" className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-500 ease-out ${hover2 ? 'opacity-100' : 'opacity-0'}`} />
+      )}
+      <span className="absolute bottom-2 left-2 text-[10px] uppercase tracking-[0.22em] bg-background/85 backdrop-blur px-2 py-1 rounded-md text-foreground border border-border">
+        {hover2 && hover ? 'Image 2 · Hover' : 'Image 1 · Main'}
+      </span>
+    </div>
+  );
+};
+
+const ProductImagePair = ({ draft, setDraft, uploading, onUpload, uploadFn }: { draft: ProductDraft; setDraft: (draft: ProductDraft) => void; uploading: boolean; onUpload: (file: File) => void; uploadFn: (file: File) => Promise<string | null> }) => {
+  const lines = draft.imagesText.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
+  const hoverImage = lines[0] ?? '';
+  const setHover = (v: string) => {
+    const rest = lines.slice(1);
+    const next = [v, ...rest].filter(Boolean).join('\n');
+    setDraft({ ...draft, imagesText: next });
+  };
+  return (
+    <div className="space-y-3">
+      <div>
+        <h4 className="font-heading text-base">Product Images</h4>
+        <p className="text-[11px] text-muted-foreground">Image 1 shows by default. Image 2 fades in on hover for a premium product card experience. Color variants below override these on the storefront.</p>
+      </div>
+      <div className="grid grid-cols-3 gap-3">
+        <ImageSlot
+          label="Main · Image 1"
+          value={draft.image}
+          onChange={(v) => setDraft({ ...draft, image: v })}
+          uploadFn={async (file) => { onUpload(file); return uploadFn(file); }}
+          uploading={uploading}
+        />
+        <ImageSlot
+          label="Hover · Image 2"
+          value={hoverImage}
+          onChange={setHover}
+          uploadFn={uploadFn}
+        />
+        <div>
+          <p className="text-[10px] uppercase tracking-[0.22em] text-muted-foreground font-body mb-2">Live Preview</p>
+          <HoverPreviewCard primary={draft.image} hover={hoverImage || undefined} />
+        </div>
+      </div>
+    </div>
+  );
+};
+
+
+
 const ProductEditor = ({ draft, setDraft, categories, save, uploading, onUpload, uploadFn }: { draft: ProductDraft; setDraft: (draft: ProductDraft | null | ((draft: ProductDraft | null) => ProductDraft | null)) => void; categories: { id: string; name: string }[]; save: () => void; uploading: boolean; onUpload: (file: File) => void; uploadFn: (file: File) => Promise<string | null> }) => (
   <AdminCard>
     <div className="flex items-start justify-between gap-4 mb-5">
