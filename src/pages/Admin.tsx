@@ -1646,14 +1646,20 @@ const ProductEditor = ({ draft, setDraft, categories, save, uploading, onUpload,
     </div>
     <div className="grid lg:grid-cols-2 gap-4 mt-4">
       <Field label="Description" value={draft.description} onChange={(v) => setDraft({ ...draft, description: v })} rows={5} />
-      <div className="space-y-4">
-        <Field label="Primary Image URL" value={draft.image} onChange={(v) => setDraft({ ...draft, image: v })} />
-        <label className="flex items-center justify-center gap-2 rounded-xl border border-dashed border-border bg-background px-4 py-4 text-sm text-muted-foreground cursor-pointer hover:border-accent hover:text-foreground transition-all">
-          {uploading ? <Loader2 className="animate-spin" size={16} /> : <Upload size={16} />} Upload product image
-          <input type="file" accept="image/*" className="hidden" onChange={(event) => event.target.files?.[0] && onUpload(event.target.files[0])} />
-        </label>
-        <Field label="Gallery Image URLs" value={draft.imagesText} onChange={(v) => setDraft({ ...draft, imagesText: v })} rows={4} placeholder="One image URL per line" />
-      </div>
+      <ProductImagePair
+        draft={draft}
+        setDraft={(next) => setDraft(next)}
+        uploading={uploading}
+        onUpload={onUpload}
+        uploadFn={uploadFn}
+      />
+    </div>
+    <div className="mt-4">
+      <Field label="Additional Gallery Images (optional)" value={(() => { const lines = draft.imagesText.split(/\r?\n/).filter(Boolean); return lines.slice(1).join('\n'); })()} onChange={(v) => {
+        const hover = draft.imagesText.split(/\r?\n/).filter(Boolean)[0] ?? '';
+        const extras = v.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
+        setDraft({ ...draft, imagesText: [hover, ...extras].filter(Boolean).join('\n') });
+      }} rows={3} placeholder="One image URL per line — shown in the product detail gallery" />
     </div>
     <div className="mt-4">
       <SizesPicker value={draft.sizesText} onChange={(v) => setDraft({ ...draft, sizesText: v })} />
