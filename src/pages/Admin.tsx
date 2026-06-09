@@ -1589,7 +1589,7 @@ const ColorVariantsEditor = ({ variants, setVariants, uploadFn }: { variants: Co
                       )}
                     </div>
                     <div className="flex-1 min-w-0 space-y-1.5">
-                      <p className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground">Image {slot + 1}</p>
+                      <p className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground">{slot === 0 ? 'Main · Image 1' : 'Hover · Image 2'}</p>
                       <label className="flex items-center justify-center gap-1.5 rounded-md border border-dashed border-border bg-background px-2 py-1.5 text-[11px] text-muted-foreground cursor-pointer hover:border-accent hover:text-foreground transition-all">
                         <Upload size={11} /> {variant.images[slot] ? 'Replace' : 'Upload'}
                         <input
