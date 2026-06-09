@@ -28,13 +28,23 @@ const ProductCard = ({ product, index = 0 }: { product: Product; index?: number 
       transition={{ delay: index * 0.08, duration: 0.5 }}
       className="group"
     >
-      <Link to={`/product/${product.id}`} className="block">
+      <Link to={`/product/${product.id}`} className="block" onTouchStart={() => hasHoverImage && setTapped((t) => !t)}>
         <div className="relative aspect-[3/4] bg-secondary overflow-hidden rounded-2xl shadow-premium group-hover:shadow-premium-lg transition-all duration-500">
-          {/* Image with zoom */}
+          {/* Primary image with zoom */}
           <div
-            className="absolute inset-0 bg-gradient-to-br from-secondary via-muted to-secondary bg-cover bg-center transition-transform duration-[900ms] ease-out group-hover:scale-110"
-            style={product.image && product.image !== '/placeholder.svg' ? { backgroundImage: `url(${product.image})` } : undefined}
+            className="absolute inset-0 bg-gradient-to-br from-secondary via-muted to-secondary bg-cover bg-center transition-all duration-[700ms] ease-out group-hover:scale-110"
+            style={primaryImage && primaryImage !== '/placeholder.svg' ? { backgroundImage: `url(${primaryImage})` } : undefined}
           />
+
+          {/* Secondary hover image (fades in on hover / tap) */}
+          {hasHoverImage && (
+            <div
+              className={`absolute inset-0 bg-cover bg-center transition-all duration-500 ease-out ${
+                tapped ? 'opacity-100 scale-105' : 'opacity-0 group-hover:opacity-100 group-hover:scale-105'
+              }`}
+              style={{ backgroundImage: `url(${secondaryImage})` }}
+            />
+          )}
 
           {/* Badges */}
           {product.badge && !oos && (
