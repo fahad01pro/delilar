@@ -1714,7 +1714,7 @@ const ProductImagePair = ({ draft, setDraft, uploading, onUpload, uploadFn }: { 
           label="Main · Image 1"
           value={draft.image}
           onChange={(v) => setDraft({ ...draft, image: v })}
-          uploadFn={async (file) => { onUpload(file); return uploadFn(file); }}
+          uploadFn={uploadFn}
           uploading={uploading}
         />
         <ImageSlot
