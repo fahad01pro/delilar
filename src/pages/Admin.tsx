@@ -1121,6 +1121,10 @@ const Admin = () => {
               <SubscribersPanel subscribers={subscribers} />
             )}
 
+            {activeTab === 'campaigns' && (
+              <CampaignsPanel uploadFn={uploadImage} />
+            )}
+
             {activeTab === 'inventory' && (
               <InventoryPanel products={products} />
             )}
@@ -1156,6 +1160,7 @@ const adminTabs: { key: AdminTab; label: string; title: string; icon: any }[] = 
   { key: 'subscribers', label: 'Subscribers', title: 'Newsletter Subscribers', icon: Mail },
   { key: 'outlets', label: 'Outlets', title: 'Outlet & Store Locations', icon: MapPin },
   { key: 'content', label: 'Content', title: 'Website Content', icon: ImageIcon },
+  { key: 'campaigns', label: 'Campaigns', title: 'Featured Campaign Collections', icon: Megaphone },
   { key: 'admins', label: 'Admin Management', title: 'Administrators & Access Control', icon: ShieldCheck },
   { key: 'settings', label: 'Settings', title: 'Authentication & Settings', icon: Settings },
 ];
