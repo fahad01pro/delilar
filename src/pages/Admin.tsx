@@ -46,9 +46,11 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { CampaignsPanel } from '@/components/admin/CampaignsPanel';
+import { Megaphone } from 'lucide-react';
 
 
-type AdminTab = 'overview' | 'products' | 'orders' | 'payments' | 'customers' | 'subscribers' | 'inventory' | 'outlets' | 'content' | 'admins' | 'settings';
+type AdminTab = 'overview' | 'products' | 'orders' | 'payments' | 'customers' | 'subscribers' | 'inventory' | 'outlets' | 'content' | 'campaigns' | 'admins' | 'settings';
 type ProductType = 'clothing' | 'accessories' | 'perfume';
 
 type ColorVariantDraft = { name: string; hex: string; sku?: string; stock?: string; images: [string, string] };
@@ -429,7 +431,7 @@ const Admin = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const segment = location.pathname.split('/')[2] as AdminTab | undefined;
-  const activeTab: AdminTab = segment && ['overview', 'products', 'orders', 'payments', 'customers', 'subscribers', 'inventory', 'outlets', 'content', 'admins', 'settings'].includes(segment) ? segment : 'overview';
+  const activeTab: AdminTab = segment && ['overview', 'products', 'orders', 'payments', 'customers', 'subscribers', 'inventory', 'outlets', 'content', 'campaigns', 'admins', 'settings'].includes(segment) ? segment : 'overview';
 
   const [checkingAdmin, setCheckingAdmin] = useState(true);
   const [hasAdminAccess, setHasAdminAccess] = useState(false);
@@ -1119,6 +1121,10 @@ const Admin = () => {
               <SubscribersPanel subscribers={subscribers} />
             )}
 
+            {activeTab === 'campaigns' && (
+              <CampaignsPanel uploadFn={uploadImage} />
+            )}
+
             {activeTab === 'inventory' && (
               <InventoryPanel products={products} />
             )}
@@ -1154,6 +1160,7 @@ const adminTabs: { key: AdminTab; label: string; title: string; icon: any }[] = 
   { key: 'subscribers', label: 'Subscribers', title: 'Newsletter Subscribers', icon: Mail },
   { key: 'outlets', label: 'Outlets', title: 'Outlet & Store Locations', icon: MapPin },
   { key: 'content', label: 'Content', title: 'Website Content', icon: ImageIcon },
+  { key: 'campaigns', label: 'Campaigns', title: 'Featured Campaign Collections', icon: Megaphone },
   { key: 'admins', label: 'Admin Management', title: 'Administrators & Access Control', icon: ShieldCheck },
   { key: 'settings', label: 'Settings', title: 'Authentication & Settings', icon: Settings },
 ];

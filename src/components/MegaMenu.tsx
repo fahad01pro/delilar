@@ -1,9 +1,9 @@
 import { useState, useRef, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronDown, Shirt, Crown, Sparkles, Droplets, Star, CircleDot, Briefcase, Wallet } from 'lucide-react';
+import { ChevronDown, Shirt, Crown, Sparkles, Droplets, CircleDot, Briefcase, Wallet } from 'lucide-react';
 import { useCatalog } from '@/hooks/useCatalog';
-import { getActiveEid } from '@/lib/hijri';
+import { useFeaturedCampaign, resolveCampaignProducts } from '@/hooks/useCampaigns';
 
 interface MenuCategory {
   label: string;
@@ -15,16 +15,7 @@ interface MenuCategory {
   }[];
 }
 
-const buildMenuItems = (eidName: string): MenuCategory[] => [
-  {
-    label: `${eidName} Edit`,
-    href: '/eid',
-    children: [
-      { label: `${eidName} Jubba Sets`, href: '/eid', icon: <Crown size={16} /> },
-      { label: `${eidName} Panjabi`, href: '/eid', icon: <Sparkles size={16} /> },
-      { label: `View All ${eidName}`, href: '/eid', icon: <Star size={16} /> },
-    ],
-  },
+const buildMenuItems = (): MenuCategory[] => [
   {
     label: 'Mens',
     children: [
@@ -62,9 +53,16 @@ const MegaMenu = () => {
   const [activeMenu, setActiveMenu] = useState<string | null>(null);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const { data: products = [] } = useCatalog();
-  const eid = useMemo(() => getActiveEid(), []);
-  const eidEditLabel = `${eid.name} Edit`;
-  const menuItems = useMemo(() => buildMenuItems(eid.name), [eid.name]);
+  const featuredCampaign = useFeaturedCampaign();
+  const baseItems = useMemo(() => buildMenuItems(), []);
+  const menuItems = useMemo<MenuCategory[]>(() => {
+    if (!featuredCampaign) return baseItems;
+    const campaignItem: MenuCategory = {
+      label: featuredCampaign.title,
+      href: `/collection/${featuredCampaign.slug}`,
+    };
+    return [campaignItem, ...baseItems];
+  }, [baseItems, featuredCampaign]);
 
   const handleEnter = (label: string) => {
     if (timeoutRef.current) clearTimeout(timeoutRef.current);
@@ -76,7 +74,9 @@ const MegaMenu = () => {
   };
 
   const getFeaturedForMenu = (label: string) => {
-    if (label === eidEditLabel) return products.filter((p) => p.category === 'eid').slice(0, 2);
+    if (featuredCampaign && label === featuredCampaign.title) {
+      return resolveCampaignProducts(featuredCampaign, products).slice(0, 2);
+    }
     if (label === 'Mens')
       return products
         .filter((p) => ['jubba', 'panjabi', 'polo', 'tshirts', 'shirts', 'pants', 'hoodies'].includes(p.category))
