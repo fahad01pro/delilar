@@ -1427,7 +1427,11 @@ const Field = ({ label, value, onChange, type = 'text', placeholder, rows }: { l
   </label>
 );
 
-const STANDARD_SIZES = ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL', '2XL', '3XL', '28', '30', '32', '34', '36', '38', '40'];
+const SIZE_GROUPS: { label: string; sizes: string[] }[] = [
+  { label: 'Letter Sizes', sizes: ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL', '2XL', '3XL'] },
+  { label: 'Numeric Sizes', sizes: ['28', '30', '32', '34', '36', '38', '40', '42', '44', '46', '48', '50', '52', '54', '56', '58', '60'] },
+  { label: 'Perfume / Attar', sizes: ['3ml', '6ml', '12ml', '15ml', '30ml', '50ml', '100ml'] },
+];
 const SizesPicker = ({ value, onChange }: { value: string; onChange: (v: string) => void }) => {
   const selected = new Set(value.split(',').map((s) => s.trim()).filter(Boolean));
   const toggle = (size: string) => {
@@ -1435,20 +1439,33 @@ const SizesPicker = ({ value, onChange }: { value: string; onChange: (v: string)
     next.has(size) ? next.delete(size) : next.add(size);
     onChange(Array.from(next).join(', '));
   };
+  const selectGroup = (sizes: string[]) => {
+    const next = new Set(selected);
+    sizes.forEach((s) => next.add(s));
+    onChange(Array.from(next).join(', '));
+  };
   return (
-    <div className="rounded-xl border border-border bg-background p-4">
-      <div className="flex items-center justify-between mb-3">
+    <div className="rounded-xl border border-border bg-background p-4 space-y-4">
+      <div className="flex items-center justify-between">
         <span className="text-[10px] uppercase tracking-[0.22em] text-muted-foreground font-body">Sizes</span>
-        <button type="button" onClick={() => onChange('XS, S, M, L, XL, XXL, XXXL')} className="text-[10px] uppercase tracking-[0.18em] text-accent hover:underline">Select All Mens</button>
+        <button type="button" onClick={() => onChange('')} className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground hover:text-destructive">Clear All</button>
       </div>
-      <div className="flex flex-wrap gap-1.5 mb-3">
-        {STANDARD_SIZES.map((size) => {
-          const active = selected.has(size);
-          return (
-            <button key={size} type="button" onClick={() => toggle(size)} className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-all ${active ? 'bg-accent text-accent-foreground border-accent shadow-sm' : 'bg-background text-muted-foreground border-border hover:border-accent hover:text-foreground'}`}>{size}</button>
-          );
-        })}
-      </div>
+      {SIZE_GROUPS.map((group) => (
+        <div key={group.label}>
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground font-body">{group.label}</span>
+            <button type="button" onClick={() => selectGroup(group.sizes)} className="text-[10px] uppercase tracking-[0.18em] text-accent hover:underline">Select All</button>
+          </div>
+          <div className="flex flex-wrap gap-1.5">
+            {group.sizes.map((size) => {
+              const active = selected.has(size);
+              return (
+                <button key={size} type="button" onClick={() => toggle(size)} className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-all ${active ? 'bg-accent text-accent-foreground border-accent shadow-sm' : 'bg-background text-muted-foreground border-border hover:border-accent hover:text-foreground'}`}>{size}</button>
+              );
+            })}
+          </div>
+        </div>
+      ))}
       <input type="text" value={value} onChange={(e) => onChange(e.target.value)} placeholder="Or type custom sizes, comma-separated" className="w-full rounded-lg border border-border bg-background px-3 py-2 text-xs outline-none focus:border-accent focus:ring-2 focus:ring-accent/20" />
     </div>
   );
