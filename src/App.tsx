@@ -23,6 +23,7 @@ import NotFound from "./pages/NotFound";
 import Admin from "./pages/Admin";
 import ResetPassword from "./pages/ResetPassword";
 import PolicyPage from "./pages/PolicyPage";
+import CollectionPage from "./pages/CollectionPage";
 import WhatsAppButton from "@/components/WhatsAppButton";
 
 const queryClient = new QueryClient();
@@ -41,6 +42,7 @@ const AppShell = () => {
         <Route path="/admin/*" element={<Admin />} />
         <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="/policies/:slug" element={<PolicyPage />} />
+        <Route path="/collection/:slug" element={<CollectionPage />} />
         <Route path="/account" element={<Account />} />
         <Route path="/wishlist" element={<Wishlist />} />
         <Route path="/cart" element={<CartPage />} />
