@@ -1,7 +1,7 @@
 import { useState, useRef, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronDown, Shirt, Crown, Sparkles, Droplets, Star, CircleDot, Briefcase, Wallet } from 'lucide-react';
+import { ChevronDown, Shirt, Crown, Sparkles, Droplets, CircleDot, Briefcase, Wallet } from 'lucide-react';
 import { useCatalog } from '@/hooks/useCatalog';
 import { useFeaturedCampaign, resolveCampaignProducts } from '@/hooks/useCampaigns';
 
