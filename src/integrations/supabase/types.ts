@@ -14,6 +14,81 @@ export type Database = {
   }
   public: {
     Tables: {
+      campaigns: {
+        Row: {
+          auto_categories: string[]
+          auto_tags: string[]
+          banner_url: string | null
+          created_at: string
+          cta_href: string | null
+          cta_label: string | null
+          description: string | null
+          enabled: boolean
+          ends_at: string | null
+          eyebrow: string | null
+          headline: string | null
+          id: string
+          mobile_banner_url: string | null
+          mode: string
+          product_ids: string[]
+          show_in_menu: boolean
+          slug: string
+          sort_order: number
+          starts_at: string | null
+          subheading: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          auto_categories?: string[]
+          auto_tags?: string[]
+          banner_url?: string | null
+          created_at?: string
+          cta_href?: string | null
+          cta_label?: string | null
+          description?: string | null
+          enabled?: boolean
+          ends_at?: string | null
+          eyebrow?: string | null
+          headline?: string | null
+          id?: string
+          mobile_banner_url?: string | null
+          mode?: string
+          product_ids?: string[]
+          show_in_menu?: boolean
+          slug: string
+          sort_order?: number
+          starts_at?: string | null
+          subheading?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          auto_categories?: string[]
+          auto_tags?: string[]
+          banner_url?: string | null
+          created_at?: string
+          cta_href?: string | null
+          cta_label?: string | null
+          description?: string | null
+          enabled?: boolean
+          ends_at?: string | null
+          eyebrow?: string | null
+          headline?: string | null
+          id?: string
+          mobile_banner_url?: string | null
+          mode?: string
+          product_ids?: string[]
+          show_in_menu?: boolean
+          slug?: string
+          sort_order?: number
+          starts_at?: string | null
+          subheading?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       category_banners: {
         Row: {
           category: string
