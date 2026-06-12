@@ -14,6 +14,8 @@ import {
   isCampaignLive,
 } from '@/hooks/useCampaigns';
 import { useAdminProducts } from '@/hooks/useCatalog';
+import { useTags, useFabrics, ensureTagsExist } from '@/hooks/useTaxonomy';
+import { ChipInput } from '@/components/admin/ChipInput';
 
 const slugify = (s: string) =>
   s
