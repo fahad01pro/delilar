@@ -1798,7 +1798,10 @@ const ProductEditor = ({ draft, setDraft, categories, save, uploading, onUpload,
       <Field label="Stock" type="number" value={draft.stock} onChange={(v) => setDraft({ ...draft, stock: v })} />
       <Field label="Badge" value={draft.badge} onChange={(v) => setDraft({ ...draft, badge: v })} placeholder="Best Seller, Premium, New" />
       <Field label="Sort Order" type="number" value={draft.sort_order} onChange={(v) => setDraft({ ...draft, sort_order: v })} />
-      <Field label="Tags" value={draft.tagsText} onChange={(v) => setDraft({ ...draft, tagsText: v })} placeholder="jubba, eid, premium" />
+      <TagsChipField draft={draft} setDraft={setDraft} />
+    </div>
+    <div className="mt-4">
+      <FabricsChipField draft={draft} setDraft={setDraft} />
     </div>
     <div className="grid lg:grid-cols-2 gap-4 mt-4">
       <Field label="Description" value={draft.description} onChange={(v) => setDraft({ ...draft, description: v })} rows={5} />
@@ -1822,7 +1825,6 @@ const ProductEditor = ({ draft, setDraft, categories, save, uploading, onUpload,
     </div>
     <div className="grid md:grid-cols-2 xl:grid-cols-4 gap-4 mt-4">
       <Field label="Colors" value={draft.colorsText} onChange={(v) => setDraft({ ...draft, colorsText: v })} />
-      <Field label="Fabric" value={draft.fabricText} onChange={(v) => setDraft({ ...draft, fabricText: v })} />
       <Field label="Fit Type" value={draft.fitType} onChange={(v) => setDraft({ ...draft, fitType: v })} />
       <Field label="Material" value={draft.material} onChange={(v) => setDraft({ ...draft, material: v })} />
       <Field label="Volume Options" value={draft.volumeOptionsText} onChange={(v) => setDraft({ ...draft, volumeOptionsText: v })} placeholder="3ml, 6ml, 50ml" />
