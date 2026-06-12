@@ -47,7 +47,11 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { CampaignsPanel } from '@/components/admin/CampaignsPanel';
-import { Megaphone } from 'lucide-react';
+import { TagsPanel } from '@/components/admin/TagsPanel';
+import { FabricsPanel } from '@/components/admin/FabricsPanel';
+import { ChipInput } from '@/components/admin/ChipInput';
+import { useTags, useFabrics, ensureTagsExist, ensureFabricsExist } from '@/hooks/useTaxonomy';
+import { Megaphone, Tag as TagIcon, Shirt } from 'lucide-react';
 
 
 type AdminTab = 'overview' | 'products' | 'orders' | 'payments' | 'customers' | 'subscribers' | 'inventory' | 'outlets' | 'content' | 'campaigns' | 'admins' | 'settings';
