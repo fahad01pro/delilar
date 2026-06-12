@@ -52,6 +52,7 @@ const toDateInput = (iso?: string | null) => (iso ? new Date(iso).toISOString().
 export const CampaignsPanel = ({ uploadFn }: { uploadFn: (file: File) => Promise<string | null> }) => {
   const { data: campaigns = [], refetch } = useAdminCampaigns();
   const { data: products = [] } = useAdminProducts();
+  const { data: tagLibrary = [] } = useTags();
   const saveCampaign = useSaveCampaign();
   const deleteCampaign = useDeleteCampaign();
 
