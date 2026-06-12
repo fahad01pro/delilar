@@ -1780,6 +1780,43 @@ const ProductImagePair = ({ draft, setDraft, uploading, onUpload, uploadFn }: { 
 
 
 
+const TagsChipField = ({ draft, setDraft }: { draft: ProductDraft; setDraft: (draft: ProductDraft) => void }) => {
+  const { data: tags = [] } = useTags();
+  const values = splitList(draft.tagsText);
+  return (
+    <div className="space-y-1 md:col-span-2 xl:col-span-2">
+      <label className="text-xs uppercase tracking-[0.18em] text-muted-foreground font-body">Tags</label>
+      <ChipInput
+        values={values}
+        onChange={(next) => setDraft({ ...draft, tagsText: next.join(', ') })}
+        options={tags.map((t) => ({ name: t.name, label: t.label, usage_count: t.usage_count }))}
+        placeholder="Type a tag and press Enter"
+        emptyHint="No tags yet — start typing to create one."
+      />
+    </div>
+  );
+};
+
+const FabricsChipField = ({ draft, setDraft }: { draft: ProductDraft; setDraft: (draft: ProductDraft) => void }) => {
+  const { data: fabrics = [] } = useFabrics();
+  const values = splitList(draft.fabricText);
+  return (
+    <div className="space-y-1">
+      <label className="text-xs uppercase tracking-[0.18em] text-muted-foreground font-body">Fabric (multi-select)</label>
+      <ChipInput
+        values={values}
+        onChange={(next) => setDraft({ ...draft, fabricText: next.join(', ') })}
+        options={fabrics.map((f) => ({ name: f.name, label: f.label, usage_count: f.usage_count }))}
+        placeholder="Type a fabric and press Enter (e.g. Cotton, Linen)"
+        emptyHint="No fabrics yet — start typing to create one."
+      />
+      <p className="text-[11px] text-muted-foreground font-body">
+        Press Enter or comma to add. Pick from the library or create new fabrics — they save to the Fabrics tab automatically.
+      </p>
+    </div>
+  );
+};
+
 const ProductEditor = ({ draft, setDraft, categories, save, uploading, onUpload, uploadFn }: { draft: ProductDraft; setDraft: (draft: ProductDraft | null | ((draft: ProductDraft | null) => ProductDraft | null)) => void; categories: { id: string; name: string }[]; save: () => void; uploading: boolean; onUpload: (file: File) => void; uploadFn: (file: File) => Promise<string | null> }) => (
   <AdminCard>
     <div className="flex items-start justify-between gap-4 mb-5">
