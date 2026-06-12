@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState } from 'react';
-import { Plus, Trash2, Search, Upload, Calendar, Tag, Eye, EyeOff } from 'lucide-react';
+import { useMemo, useState } from 'react';
+import { Plus, Trash2, Search, Upload, Calendar, Tag } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -168,13 +168,6 @@ export const CampaignsPanel = ({ uploadFn }: { uploadFn: (file: File) => Promise
     });
   };
 
-  const toggleTag = (tag: string) => {
-    setDraft((d) => {
-      if (!d) return d;
-      const cur = d.auto_tags ?? [];
-      return { ...d, auto_tags: cur.includes(tag) ? cur.filter((x) => x !== tag) : [...cur, tag] };
-    });
-  };
 
   return (
     <section className="space-y-6">
