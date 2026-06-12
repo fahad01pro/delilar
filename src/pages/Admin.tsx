@@ -641,6 +641,18 @@ const Admin = () => {
 
     const { error } = await db.from('products').upsert(payload);
     if (error) return toast.error(error.message);
+
+    // Auto-sync taxonomy libraries so new tags/fabrics typed in product editor
+    // become reusable across products and campaigns.
+    try {
+      await Promise.all([
+        ensureTagsExist(splitList(productDraft.tagsText)),
+        ensureFabricsExist(splitList(productDraft.fabricText)),
+      ]);
+    } catch {
+      // Non-fatal — admin permissions may filter library inserts
+    }
+
     toast.success('Product saved');
     setProductDraft(null);
     loadAdminData();
