@@ -75,17 +75,22 @@ export function useCampaignBySlug(slug: string | undefined) {
 
 export function resolveCampaignProducts(campaign: Campaign, catalog: Product[]): Product[] {
   if (campaign.mode === 'manual') {
-    const set = new Set(campaign.product_ids);
-    // Preserve admin ordering
     return campaign.product_ids
       .map((id) => catalog.find((p) => p.id === id))
       .filter((p): p is Product => !!p && (p as any).inStock !== false);
   }
-  // Auto mode: match by category OR tag
-  const cats = new Set(campaign.auto_categories.map((s) => s.toLowerCase()));
+  // Auto mode: match by category, product type (`type:` prefix), or tag
+  const cats = new Set<string>();
+  const types = new Set<string>();
+  campaign.auto_categories.forEach((raw) => {
+    const v = String(raw).toLowerCase();
+    if (v.startsWith('type:')) types.add(v.slice(5));
+    else cats.add(v);
+  });
   const tags = new Set(campaign.auto_tags.map((s) => s.toLowerCase()));
   return catalog.filter((p) => {
     if (cats.size && cats.has(String(p.category ?? '').toLowerCase())) return true;
+    if (types.size && types.has(String((p as any).productType ?? '').toLowerCase())) return true;
     if (tags.size && (p.tags ?? []).some((t) => tags.has(String(t).toLowerCase()))) return true;
     return false;
   });
