@@ -54,7 +54,7 @@ import { useTags, useFabrics, ensureTagsExist, ensureFabricsExist } from '@/hook
 import { Megaphone, Tag as TagIcon, Shirt } from 'lucide-react';
 
 
-type AdminTab = 'overview' | 'products' | 'orders' | 'payments' | 'customers' | 'subscribers' | 'inventory' | 'outlets' | 'content' | 'campaigns' | 'admins' | 'settings';
+type AdminTab = 'overview' | 'products' | 'orders' | 'payments' | 'customers' | 'subscribers' | 'inventory' | 'outlets' | 'content' | 'campaigns' | 'tags' | 'fabrics' | 'admins' | 'settings';
 type ProductType = 'clothing' | 'accessories' | 'perfume';
 
 type ColorVariantDraft = { name: string; hex: string; sku?: string; stock?: string; images: [string, string] };
@@ -435,7 +435,7 @@ const Admin = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const segment = location.pathname.split('/')[2] as AdminTab | undefined;
-  const activeTab: AdminTab = segment && ['overview', 'products', 'orders', 'payments', 'customers', 'subscribers', 'inventory', 'outlets', 'content', 'campaigns', 'admins', 'settings'].includes(segment) ? segment : 'overview';
+  const activeTab: AdminTab = segment && ['overview', 'products', 'orders', 'payments', 'customers', 'subscribers', 'inventory', 'outlets', 'content', 'campaigns', 'tags', 'fabrics', 'admins', 'settings'].includes(segment) ? segment : 'overview';
 
   const [checkingAdmin, setCheckingAdmin] = useState(true);
   const [hasAdminAccess, setHasAdminAccess] = useState(false);
