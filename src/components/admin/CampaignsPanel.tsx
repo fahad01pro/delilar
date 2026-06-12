@@ -79,11 +79,18 @@ export const CampaignsPanel = ({ uploadFn }: { uploadFn: (file: File) => Promise
     return [...set].sort();
   }, [products]);
 
-  const allTags = useMemo(() => {
-    const set = new Set<string>();
-    products.forEach((p) => (p.tags ?? []).forEach((t: string) => t && set.add(t)));
-    return [...set].sort();
-  }, [products]);
+  const allTagOptions = useMemo(() => {
+    const map = new Map<string, { name: string; label: string; usage_count?: number }>();
+    tagLibrary.forEach((t) => map.set(t.name, { name: t.name, label: t.label, usage_count: t.usage_count }));
+    products.forEach((p) =>
+      (p.tags ?? []).forEach((t: string) => {
+        const key = t.trim().toLowerCase();
+        if (!key || map.has(key)) return;
+        map.set(key, { name: key, label: t });
+      }),
+    );
+    return [...map.values()].sort((a, b) => a.label.localeCompare(b.label));
+  }, [products, tagLibrary]);
 
   const openNew = () => setDraft(emptyDraft());
   const openEdit = (c: Campaign) => setDraft({ ...c });
@@ -114,12 +121,17 @@ export const CampaignsPanel = ({ uploadFn }: { uploadFn: (file: File) => Promise
         ...draft,
         slug,
         title: draft.title.trim(),
+        // CTA is optional — coerce empty strings to null
+        cta_label: draft.cta_label?.trim() || null,
+        cta_href: draft.cta_href?.trim() || null,
         starts_at: draft.starts_at ? new Date(draft.starts_at).toISOString() : null,
         ends_at: draft.ends_at ? new Date(draft.ends_at).toISOString() : null,
         product_ids: draft.product_ids ?? [],
         auto_categories: draft.auto_categories ?? [],
         auto_tags: draft.auto_tags ?? [],
       } as any);
+      // Sync newly typed tags into the library so they become reusable
+      try { await ensureTagsExist(draft.auto_tags ?? []); } catch {}
       toast.success('Campaign saved');
       close();
       refetch();
