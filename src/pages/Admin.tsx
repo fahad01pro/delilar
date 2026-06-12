@@ -47,10 +47,14 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { CampaignsPanel } from '@/components/admin/CampaignsPanel';
-import { Megaphone } from 'lucide-react';
+import { TagsPanel } from '@/components/admin/TagsPanel';
+import { FabricsPanel } from '@/components/admin/FabricsPanel';
+import { ChipInput } from '@/components/admin/ChipInput';
+import { useTags, useFabrics, ensureTagsExist, ensureFabricsExist } from '@/hooks/useTaxonomy';
+import { Megaphone, Tag as TagIcon, Shirt } from 'lucide-react';
 
 
-type AdminTab = 'overview' | 'products' | 'orders' | 'payments' | 'customers' | 'subscribers' | 'inventory' | 'outlets' | 'content' | 'campaigns' | 'admins' | 'settings';
+type AdminTab = 'overview' | 'products' | 'orders' | 'payments' | 'customers' | 'subscribers' | 'inventory' | 'outlets' | 'content' | 'campaigns' | 'tags' | 'fabrics' | 'admins' | 'settings';
 type ProductType = 'clothing' | 'accessories' | 'perfume';
 
 type ColorVariantDraft = { name: string; hex: string; sku?: string; stock?: string; images: [string, string] };
@@ -431,7 +435,7 @@ const Admin = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const segment = location.pathname.split('/')[2] as AdminTab | undefined;
-  const activeTab: AdminTab = segment && ['overview', 'products', 'orders', 'payments', 'customers', 'subscribers', 'inventory', 'outlets', 'content', 'campaigns', 'admins', 'settings'].includes(segment) ? segment : 'overview';
+  const activeTab: AdminTab = segment && ['overview', 'products', 'orders', 'payments', 'customers', 'subscribers', 'inventory', 'outlets', 'content', 'campaigns', 'tags', 'fabrics', 'admins', 'settings'].includes(segment) ? segment : 'overview';
 
   const [checkingAdmin, setCheckingAdmin] = useState(true);
   const [hasAdminAccess, setHasAdminAccess] = useState(false);
@@ -641,6 +645,18 @@ const Admin = () => {
 
     const { error } = await db.from('products').upsert(payload);
     if (error) return toast.error(error.message);
+
+    // Auto-sync taxonomy libraries so new tags/fabrics typed in product editor
+    // become reusable across products and campaigns.
+    try {
+      await Promise.all([
+        ensureTagsExist(splitList(productDraft.tagsText)),
+        ensureFabricsExist(splitList(productDraft.fabricText)),
+      ]);
+    } catch {
+      // Non-fatal — admin permissions may filter library inserts
+    }
+
     toast.success('Product saved');
     setProductDraft(null);
     loadAdminData();
@@ -1125,6 +1141,10 @@ const Admin = () => {
               <CampaignsPanel uploadFn={uploadImage} />
             )}
 
+            {activeTab === 'tags' && <TagsPanel />}
+
+            {activeTab === 'fabrics' && <FabricsPanel />}
+
             {activeTab === 'inventory' && (
               <InventoryPanel products={products} />
             )}
@@ -1161,6 +1181,8 @@ const adminTabs: { key: AdminTab; label: string; title: string; icon: any }[] = 
   { key: 'outlets', label: 'Outlets', title: 'Outlet & Store Locations', icon: MapPin },
   { key: 'content', label: 'Content', title: 'Website Content', icon: ImageIcon },
   { key: 'campaigns', label: 'Campaigns', title: 'Featured Campaign Collections', icon: Megaphone },
+  { key: 'tags', label: 'Tags', title: 'Tags Library', icon: TagIcon },
+  { key: 'fabrics', label: 'Fabrics', title: 'Fabrics Library', icon: Shirt },
   { key: 'admins', label: 'Admin Management', title: 'Administrators & Access Control', icon: ShieldCheck },
   { key: 'settings', label: 'Settings', title: 'Authentication & Settings', icon: Settings },
 ];
@@ -1758,6 +1780,43 @@ const ProductImagePair = ({ draft, setDraft, uploading, onUpload, uploadFn }: { 
 
 
 
+const TagsChipField = ({ draft, setDraft }: { draft: ProductDraft; setDraft: (draft: ProductDraft) => void }) => {
+  const { data: tags = [] } = useTags();
+  const values = splitList(draft.tagsText);
+  return (
+    <div className="space-y-1 md:col-span-2 xl:col-span-2">
+      <label className="text-xs uppercase tracking-[0.18em] text-muted-foreground font-body">Tags</label>
+      <ChipInput
+        values={values}
+        onChange={(next) => setDraft({ ...draft, tagsText: next.join(', ') })}
+        options={tags.map((t) => ({ name: t.name, label: t.label, usage_count: t.usage_count }))}
+        placeholder="Type a tag and press Enter"
+        emptyHint="No tags yet — start typing to create one."
+      />
+    </div>
+  );
+};
+
+const FabricsChipField = ({ draft, setDraft }: { draft: ProductDraft; setDraft: (draft: ProductDraft) => void }) => {
+  const { data: fabrics = [] } = useFabrics();
+  const values = splitList(draft.fabricText);
+  return (
+    <div className="space-y-1">
+      <label className="text-xs uppercase tracking-[0.18em] text-muted-foreground font-body">Fabric (multi-select)</label>
+      <ChipInput
+        values={values}
+        onChange={(next) => setDraft({ ...draft, fabricText: next.join(', ') })}
+        options={fabrics.map((f) => ({ name: f.name, label: f.label, usage_count: f.usage_count }))}
+        placeholder="Type a fabric and press Enter (e.g. Cotton, Linen)"
+        emptyHint="No fabrics yet — start typing to create one."
+      />
+      <p className="text-[11px] text-muted-foreground font-body">
+        Press Enter or comma to add. Pick from the library or create new fabrics — they save to the Fabrics tab automatically.
+      </p>
+    </div>
+  );
+};
+
 const ProductEditor = ({ draft, setDraft, categories, save, uploading, onUpload, uploadFn }: { draft: ProductDraft; setDraft: (draft: ProductDraft | null | ((draft: ProductDraft | null) => ProductDraft | null)) => void; categories: { id: string; name: string }[]; save: () => void; uploading: boolean; onUpload: (file: File) => void; uploadFn: (file: File) => Promise<string | null> }) => (
   <AdminCard>
     <div className="flex items-start justify-between gap-4 mb-5">
@@ -1776,7 +1835,10 @@ const ProductEditor = ({ draft, setDraft, categories, save, uploading, onUpload,
       <Field label="Stock" type="number" value={draft.stock} onChange={(v) => setDraft({ ...draft, stock: v })} />
       <Field label="Badge" value={draft.badge} onChange={(v) => setDraft({ ...draft, badge: v })} placeholder="Best Seller, Premium, New" />
       <Field label="Sort Order" type="number" value={draft.sort_order} onChange={(v) => setDraft({ ...draft, sort_order: v })} />
-      <Field label="Tags" value={draft.tagsText} onChange={(v) => setDraft({ ...draft, tagsText: v })} placeholder="jubba, eid, premium" />
+      <TagsChipField draft={draft} setDraft={setDraft} />
+    </div>
+    <div className="mt-4">
+      <FabricsChipField draft={draft} setDraft={setDraft} />
     </div>
     <div className="grid lg:grid-cols-2 gap-4 mt-4">
       <Field label="Description" value={draft.description} onChange={(v) => setDraft({ ...draft, description: v })} rows={5} />
@@ -1800,7 +1862,6 @@ const ProductEditor = ({ draft, setDraft, categories, save, uploading, onUpload,
     </div>
     <div className="grid md:grid-cols-2 xl:grid-cols-4 gap-4 mt-4">
       <Field label="Colors" value={draft.colorsText} onChange={(v) => setDraft({ ...draft, colorsText: v })} />
-      <Field label="Fabric" value={draft.fabricText} onChange={(v) => setDraft({ ...draft, fabricText: v })} />
       <Field label="Fit Type" value={draft.fitType} onChange={(v) => setDraft({ ...draft, fitType: v })} />
       <Field label="Material" value={draft.material} onChange={(v) => setDraft({ ...draft, material: v })} />
       <Field label="Volume Options" value={draft.volumeOptionsText} onChange={(v) => setDraft({ ...draft, volumeOptionsText: v })} placeholder="3ml, 6ml, 50ml" />

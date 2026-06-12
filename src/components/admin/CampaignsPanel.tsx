@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState } from 'react';
-import { Plus, Trash2, Search, Upload, Calendar, Tag, Eye, EyeOff } from 'lucide-react';
+import { useMemo, useState } from 'react';
+import { Plus, Trash2, Search, Upload, Calendar, Tag } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -14,6 +14,8 @@ import {
   isCampaignLive,
 } from '@/hooks/useCampaigns';
 import { useAdminProducts } from '@/hooks/useCatalog';
+import { useTags, useFabrics, ensureTagsExist } from '@/hooks/useTaxonomy';
+import { ChipInput } from '@/components/admin/ChipInput';
 
 const slugify = (s: string) =>
   s
@@ -50,6 +52,7 @@ const toDateInput = (iso?: string | null) => (iso ? new Date(iso).toISOString().
 export const CampaignsPanel = ({ uploadFn }: { uploadFn: (file: File) => Promise<string | null> }) => {
   const { data: campaigns = [], refetch } = useAdminCampaigns();
   const { data: products = [] } = useAdminProducts();
+  const { data: tagLibrary = [] } = useTags();
   const saveCampaign = useSaveCampaign();
   const deleteCampaign = useDeleteCampaign();
 
@@ -76,11 +79,18 @@ export const CampaignsPanel = ({ uploadFn }: { uploadFn: (file: File) => Promise
     return [...set].sort();
   }, [products]);
 
-  const allTags = useMemo(() => {
-    const set = new Set<string>();
-    products.forEach((p) => (p.tags ?? []).forEach((t: string) => t && set.add(t)));
-    return [...set].sort();
-  }, [products]);
+  const allTagOptions = useMemo(() => {
+    const map = new Map<string, { name: string; label: string; usage_count?: number }>();
+    tagLibrary.forEach((t) => map.set(t.name, { name: t.name, label: t.label, usage_count: t.usage_count }));
+    products.forEach((p) =>
+      (p.tags ?? []).forEach((t: string) => {
+        const key = t.trim().toLowerCase();
+        if (!key || map.has(key)) return;
+        map.set(key, { name: key, label: t });
+      }),
+    );
+    return [...map.values()].sort((a, b) => a.label.localeCompare(b.label));
+  }, [products, tagLibrary]);
 
   const openNew = () => setDraft(emptyDraft());
   const openEdit = (c: Campaign) => setDraft({ ...c });
@@ -111,12 +121,17 @@ export const CampaignsPanel = ({ uploadFn }: { uploadFn: (file: File) => Promise
         ...draft,
         slug,
         title: draft.title.trim(),
+        // CTA is optional — coerce empty strings to null
+        cta_label: draft.cta_label?.trim() || null,
+        cta_href: draft.cta_href?.trim() || null,
         starts_at: draft.starts_at ? new Date(draft.starts_at).toISOString() : null,
         ends_at: draft.ends_at ? new Date(draft.ends_at).toISOString() : null,
         product_ids: draft.product_ids ?? [],
         auto_categories: draft.auto_categories ?? [],
         auto_tags: draft.auto_tags ?? [],
       } as any);
+      // Sync newly typed tags into the library so they become reusable
+      try { await ensureTagsExist(draft.auto_tags ?? []); } catch {}
       toast.success('Campaign saved');
       close();
       refetch();
@@ -153,13 +168,6 @@ export const CampaignsPanel = ({ uploadFn }: { uploadFn: (file: File) => Promise
     });
   };
 
-  const toggleTag = (tag: string) => {
-    setDraft((d) => {
-      if (!d) return d;
-      const cur = d.auto_tags ?? [];
-      return { ...d, auto_tags: cur.includes(tag) ? cur.filter((x) => x !== tag) : [...cur, tag] };
-    });
-  };
 
   return (
     <section className="space-y-6">
@@ -403,35 +411,40 @@ export const CampaignsPanel = ({ uploadFn }: { uploadFn: (file: File) => Promise
                     </div>
                   </div>
                   <div className="space-y-2">
-                    <Label className="flex items-center gap-2"><Tag size={13} /> Tags</Label>
+                    <Label className="flex items-center gap-2"><Tag size={13} /> Tags (auto-include products carrying any of these tags)</Label>
+                    <ChipInput
+                      values={draft.auto_tags ?? []}
+                      onChange={(next) => setDraft({ ...draft, auto_tags: next })}
+                      options={allTagOptions}
+                      placeholder="Type a tag and press Enter (e.g. winter, eid, sale)"
+                      emptyHint="No tags yet — start typing to create one."
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Product Types</Label>
                     <div className="flex flex-wrap gap-2">
-                      {allTags.length === 0 && <p className="text-xs text-muted-foreground font-body">No tags found on products yet.</p>}
-                      {allTags.map((tag) => {
-                        const sel = (draft.auto_tags ?? []).includes(tag);
+                      {(['clothing', 'accessories', 'perfume'] as const).map((pt) => {
+                        const cur = draft.auto_categories ?? [];
+                        const key = `type:${pt}`;
+                        const sel = cur.includes(key);
                         return (
                           <button
-                            key={tag}
+                            key={pt}
                             type="button"
-                            onClick={() => toggleTag(tag)}
-                            className={`px-3 py-1.5 text-xs rounded-full border font-body ${sel ? 'bg-accent text-foreground border-accent' : 'border-border hover:border-primary'}`}
+                            onClick={() =>
+                              setDraft({
+                                ...draft,
+                                auto_categories: sel ? cur.filter((x) => x !== key) : [...cur, key],
+                              })
+                            }
+                            className={`px-3 py-1.5 text-xs rounded-full border font-body capitalize ${sel ? 'bg-primary text-primary-foreground border-primary' : 'border-border hover:border-primary'}`}
                           >
-                            #{tag}
+                            {pt}
                           </button>
                         );
                       })}
                     </div>
-                    <Input
-                      placeholder="Add custom tags (comma-separated)"
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter') {
-                          e.preventDefault();
-                          const value = (e.target as HTMLInputElement).value;
-                          const tags = value.split(',').map((t) => t.trim()).filter(Boolean);
-                          setDraft({ ...draft, auto_tags: [...new Set([...(draft.auto_tags ?? []), ...tags])] });
-                          (e.target as HTMLInputElement).value = '';
-                        }
-                      }}
-                    />
+                    <p className="text-[11px] text-muted-foreground font-body">Stored alongside category filters with a <code>type:</code> prefix.</p>
                   </div>
                 </div>
               )}
