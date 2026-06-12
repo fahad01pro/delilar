@@ -418,35 +418,40 @@ export const CampaignsPanel = ({ uploadFn }: { uploadFn: (file: File) => Promise
                     </div>
                   </div>
                   <div className="space-y-2">
-                    <Label className="flex items-center gap-2"><Tag size={13} /> Tags</Label>
+                    <Label className="flex items-center gap-2"><Tag size={13} /> Tags (auto-include products carrying any of these tags)</Label>
+                    <ChipInput
+                      values={draft.auto_tags ?? []}
+                      onChange={(next) => setDraft({ ...draft, auto_tags: next })}
+                      options={allTagOptions}
+                      placeholder="Type a tag and press Enter (e.g. winter, eid, sale)"
+                      emptyHint="No tags yet — start typing to create one."
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Product Types</Label>
                     <div className="flex flex-wrap gap-2">
-                      {allTags.length === 0 && <p className="text-xs text-muted-foreground font-body">No tags found on products yet.</p>}
-                      {allTags.map((tag) => {
-                        const sel = (draft.auto_tags ?? []).includes(tag);
+                      {(['clothing', 'accessories', 'perfume'] as const).map((pt) => {
+                        const cur = draft.auto_categories ?? [];
+                        const key = `type:${pt}`;
+                        const sel = cur.includes(key);
                         return (
                           <button
-                            key={tag}
+                            key={pt}
                             type="button"
-                            onClick={() => toggleTag(tag)}
-                            className={`px-3 py-1.5 text-xs rounded-full border font-body ${sel ? 'bg-accent text-foreground border-accent' : 'border-border hover:border-primary'}`}
+                            onClick={() =>
+                              setDraft({
+                                ...draft,
+                                auto_categories: sel ? cur.filter((x) => x !== key) : [...cur, key],
+                              })
+                            }
+                            className={`px-3 py-1.5 text-xs rounded-full border font-body capitalize ${sel ? 'bg-primary text-primary-foreground border-primary' : 'border-border hover:border-primary'}`}
                           >
-                            #{tag}
+                            {pt}
                           </button>
                         );
                       })}
                     </div>
-                    <Input
-                      placeholder="Add custom tags (comma-separated)"
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter') {
-                          e.preventDefault();
-                          const value = (e.target as HTMLInputElement).value;
-                          const tags = value.split(',').map((t) => t.trim()).filter(Boolean);
-                          setDraft({ ...draft, auto_tags: [...new Set([...(draft.auto_tags ?? []), ...tags])] });
-                          (e.target as HTMLInputElement).value = '';
-                        }
-                      }}
-                    />
+                    <p className="text-[11px] text-muted-foreground font-body">Stored alongside category filters with a <code>type:</code> prefix.</p>
                   </div>
                 </div>
               )}
