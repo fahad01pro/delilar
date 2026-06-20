@@ -635,6 +635,16 @@ const Admin = () => {
     if (variants.length) data.colorVariants = variants;
     if (productDraft.new_until) data.newUntil = productDraft.new_until;
 
+    // Fragrance details — only persist when there is meaningful data.
+    const top = splitList(productDraft.topNotesText);
+    const heart = splitList(productDraft.heartNotesText);
+    const base = splitList(productDraft.baseNotesText);
+    if (top.length || heart.length || base.length) {
+      data.fragranceNotes = { top, heart, base };
+    }
+    if (productDraft.longevity.trim()) data.longevity = productDraft.longevity.trim();
+    if (productDraft.projection.trim()) data.projection = productDraft.projection.trim();
+
     const payload = {
       id,
       name: productDraft.name.trim(),
