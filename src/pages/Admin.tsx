@@ -108,6 +108,12 @@ type ProductDraft = {
   material: string;
   fitType: string;
   volumeOptionsText: string;
+  // Fragrance (perfume / attar)
+  topNotesText: string;
+  heartNotesText: string;
+  baseNotesText: string;
+  longevity: string;
+  projection: string;
   fabricInfo: string;
   careInfo: string;
   shippingInfo: string;
