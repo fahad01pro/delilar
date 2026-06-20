@@ -1987,6 +1987,7 @@ const ProductEditor = ({ draft, setDraft, categories, save, uploading, onUpload,
       setVariants={(next) => setDraft({ ...draft, colorVariants: next })}
       uploadFn={uploadFn}
     />
+    <FragranceDetailsEditor draft={draft} setDraft={setDraft as (d: ProductDraft) => void} />
     <InfoSectionsEditor draft={draft} setDraft={(updater) => setDraft(updater)} />
     <div className="mt-5 flex flex-wrap items-center justify-between gap-4">
       <div className="flex flex-wrap gap-2">
