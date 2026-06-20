@@ -376,6 +376,11 @@ const productToDraft = (product: ProductRow): ProductDraft => ({
   material: product.data?.material ?? '',
   fitType: product.data?.fitType ?? '',
   volumeOptionsText: (product.data?.volumeOptions ?? []).join(', '),
+  topNotesText: (product.data?.fragranceNotes?.top ?? []).join(', '),
+  heartNotesText: (product.data?.fragranceNotes?.heart ?? []).join(', '),
+  baseNotesText: (product.data?.fragranceNotes?.base ?? []).join(', '),
+  longevity: product.data?.longevity ?? '',
+  projection: product.data?.projection ?? '',
   ...(() => {
     const info = mergeInfoSections(product.data?.infoSections);
     return {
