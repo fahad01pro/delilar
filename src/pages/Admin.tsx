@@ -108,6 +108,12 @@ type ProductDraft = {
   material: string;
   fitType: string;
   volumeOptionsText: string;
+  // Fragrance (perfume / attar)
+  topNotesText: string;
+  heartNotesText: string;
+  baseNotesText: string;
+  longevity: string;
+  projection: string;
   fabricInfo: string;
   careInfo: string;
   shippingInfo: string;
@@ -299,6 +305,11 @@ const emptyProductDraft = (category = 'jubba'): ProductDraft => ({
   material: '',
   fitType: '',
   volumeOptionsText: '',
+  topNotesText: '',
+  heartNotesText: '',
+  baseNotesText: '',
+  longevity: '',
+  projection: '',
   fabricInfo: defaultInfoSections().fabric,
   careInfo: defaultInfoSections().care,
   shippingInfo: defaultInfoSections().shipping,
@@ -365,6 +376,11 @@ const productToDraft = (product: ProductRow): ProductDraft => ({
   material: product.data?.material ?? '',
   fitType: product.data?.fitType ?? '',
   volumeOptionsText: (product.data?.volumeOptions ?? []).join(', '),
+  topNotesText: (product.data?.fragranceNotes?.top ?? []).join(', '),
+  heartNotesText: (product.data?.fragranceNotes?.heart ?? []).join(', '),
+  baseNotesText: (product.data?.fragranceNotes?.base ?? []).join(', '),
+  longevity: product.data?.longevity ?? '',
+  projection: product.data?.projection ?? '',
   ...(() => {
     const info = mergeInfoSections(product.data?.infoSections);
     return {
@@ -618,6 +634,16 @@ const Admin = () => {
     };
     if (variants.length) data.colorVariants = variants;
     if (productDraft.new_until) data.newUntil = productDraft.new_until;
+
+    // Fragrance details — only persist when there is meaningful data.
+    const top = splitList(productDraft.topNotesText);
+    const heart = splitList(productDraft.heartNotesText);
+    const base = splitList(productDraft.baseNotesText);
+    if (top.length || heart.length || base.length) {
+      data.fragranceNotes = { top, heart, base };
+    }
+    if (productDraft.longevity.trim()) data.longevity = productDraft.longevity.trim();
+    if (productDraft.projection.trim()) data.projection = productDraft.projection.trim();
 
     const payload = {
       id,
@@ -1801,18 +1827,108 @@ const FabricsChipField = ({ draft, setDraft }: { draft: ProductDraft; setDraft: 
   const { data: fabrics = [] } = useFabrics();
   const values = splitList(draft.fabricText);
   return (
-    <div className="space-y-1">
-      <label className="text-xs uppercase tracking-[0.18em] text-muted-foreground font-body">Fabric (multi-select)</label>
+    <div className="rounded-2xl border border-accent/30 bg-gradient-to-br from-accent/5 to-transparent p-4 space-y-2">
+      <div className="flex items-center justify-between gap-2">
+        <div>
+          <p className="text-[11px] uppercase tracking-[0.22em] text-accent font-body font-semibold">Fabric</p>
+          <p className="text-[11px] text-muted-foreground font-body">
+            Multi-select. Type a new fabric and press Enter to add it to the reusable library.
+          </p>
+        </div>
+        <span className="text-[10px] uppercase tracking-wider text-muted-foreground font-body bg-secondary/60 px-2 py-1 rounded-full">
+          {values.length} selected
+        </span>
+      </div>
       <ChipInput
         values={values}
         onChange={(next) => setDraft({ ...draft, fabricText: next.join(', ') })}
         options={fabrics.map((f) => ({ name: f.name, label: f.label, usage_count: f.usage_count }))}
-        placeholder="Type a fabric and press Enter (e.g. Cotton, Linen)"
+        placeholder="e.g. Cotton, Linen, Premium Cotton, Saudi Premium Cotton…"
         emptyHint="No fabrics yet — start typing to create one."
       />
-      <p className="text-[11px] text-muted-foreground font-body">
-        Press Enter or comma to add. Pick from the library or create new fabrics — they save to the Fabrics tab automatically.
-      </p>
+    </div>
+  );
+};
+
+const FragranceDetailsEditor = ({ draft, setDraft }: { draft: ProductDraft; setDraft: (draft: ProductDraft) => void }) => {
+  const isFragrance =
+    draft.product_type === 'perfume' ||
+    /perfume|attar|fragrance/i.test(draft.category || '');
+  if (!isFragrance) return null;
+  return (
+    <div className="mt-4 rounded-2xl border border-[hsl(var(--gold)/0.4)] bg-[hsl(var(--burgundy))] text-[hsl(var(--cream))] p-5 space-y-4">
+      <div>
+        <p className="text-[10px] tracking-[0.3em] uppercase text-[hsl(var(--gold))] font-body">Fragrance Details</p>
+        <p className="text-xs font-body text-[hsl(var(--cream)/0.75)] mt-1">
+          Only shown for Perfume / Attar products. Comma-separate each note. Leave any field blank to hide it on the storefront.
+        </p>
+      </div>
+      <div className="grid md:grid-cols-3 gap-3">
+        <div className="space-y-1">
+          <label className="text-[10px] tracking-[0.25em] uppercase text-[hsl(var(--gold))] font-body">Top Notes</label>
+          <textarea
+            rows={2}
+            value={draft.topNotesText}
+            onChange={(e) => setDraft({ ...draft, topNotesText: e.target.value })}
+            placeholder="Bergamot, Saffron, Pink Pepper"
+            className="w-full rounded-lg bg-[hsl(var(--cream))] text-foreground text-sm font-body px-3 py-2 outline-none focus:ring-2 focus:ring-[hsl(var(--gold))]"
+          />
+        </div>
+        <div className="space-y-1">
+          <label className="text-[10px] tracking-[0.25em] uppercase text-[hsl(var(--gold))] font-body">Heart Notes</label>
+          <textarea
+            rows={2}
+            value={draft.heartNotesText}
+            onChange={(e) => setDraft({ ...draft, heartNotesText: e.target.value })}
+            placeholder="Aged Oud, Damask Rose, Smoky Cedar"
+            className="w-full rounded-lg bg-[hsl(var(--cream))] text-foreground text-sm font-body px-3 py-2 outline-none focus:ring-2 focus:ring-[hsl(var(--gold))]"
+          />
+        </div>
+        <div className="space-y-1">
+          <label className="text-[10px] tracking-[0.25em] uppercase text-[hsl(var(--gold))] font-body">Base Notes</label>
+          <textarea
+            rows={2}
+            value={draft.baseNotesText}
+            onChange={(e) => setDraft({ ...draft, baseNotesText: e.target.value })}
+            placeholder="Amber, Sandalwood, Vanilla"
+            className="w-full rounded-lg bg-[hsl(var(--cream))] text-foreground text-sm font-body px-3 py-2 outline-none focus:ring-2 focus:ring-[hsl(var(--gold))]"
+          />
+        </div>
+      </div>
+      <div className="grid md:grid-cols-2 gap-3 pt-3 border-t border-[hsl(var(--gold)/0.25)]">
+        <div className="space-y-1">
+          <label className="text-[10px] tracking-[0.25em] uppercase text-[hsl(var(--gold))] font-body">Longevity</label>
+          <input
+            value={draft.longevity}
+            onChange={(e) => setDraft({ ...draft, longevity: e.target.value })}
+            placeholder="8-10 hours"
+            list="fragrance-longevity"
+            className="w-full rounded-lg bg-[hsl(var(--cream))] text-foreground text-sm font-body px-3 py-2 outline-none focus:ring-2 focus:ring-[hsl(var(--gold))]"
+          />
+          <datalist id="fragrance-longevity">
+            <option value="4-6 hours" />
+            <option value="6-8 hours" />
+            <option value="8-10 hours" />
+            <option value="12+ hours" />
+          </datalist>
+        </div>
+        <div className="space-y-1">
+          <label className="text-[10px] tracking-[0.25em] uppercase text-[hsl(var(--gold))] font-body">Projection</label>
+          <input
+            value={draft.projection}
+            onChange={(e) => setDraft({ ...draft, projection: e.target.value })}
+            placeholder="Strong"
+            list="fragrance-projection"
+            className="w-full rounded-lg bg-[hsl(var(--cream))] text-foreground text-sm font-body px-3 py-2 outline-none focus:ring-2 focus:ring-[hsl(var(--gold))]"
+          />
+          <datalist id="fragrance-projection">
+            <option value="Soft" />
+            <option value="Moderate" />
+            <option value="Strong" />
+            <option value="Room Filling" />
+          </datalist>
+        </div>
+      </div>
     </div>
   );
 };
@@ -1871,6 +1987,7 @@ const ProductEditor = ({ draft, setDraft, categories, save, uploading, onUpload,
       setVariants={(next) => setDraft({ ...draft, colorVariants: next })}
       uploadFn={uploadFn}
     />
+    <FragranceDetailsEditor draft={draft} setDraft={setDraft as (d: ProductDraft) => void} />
     <InfoSectionsEditor draft={draft} setDraft={(updater) => setDraft(updater)} />
     <div className="mt-5 flex flex-wrap items-center justify-between gap-4">
       <div className="flex flex-wrap gap-2">
