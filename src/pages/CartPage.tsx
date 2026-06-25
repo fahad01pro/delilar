@@ -1,6 +1,6 @@
 import { useCart } from '@/context/CartContext';
 import { Link, useNavigate } from 'react-router-dom';
-import { Minus, Plus, X, ArrowLeft, ShieldCheck, Truck } from 'lucide-react';
+import { Minus, Plus, X, ArrowLeft, ShieldCheck, Gift } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 const CartPage = () => {
@@ -75,7 +75,7 @@ const CartPage = () => {
           </div>
           {totalPrice < 5000 && (
             <div className="mt-4 p-3 rounded-xl bg-accent/10 flex items-center gap-2 text-xs font-body text-accent">
-              <Truck size={14} /> Add ৳{(5000 - totalPrice).toLocaleString()} more for free shipping
+              <Gift size={14} /> Add ৳{(5000 - totalPrice).toLocaleString()} more to unlock a FREE Fragrance Gift
             </div>
           )}
           <button onClick={() => navigate('/checkout')} className="w-full btn-primary py-4 text-sm font-body tracking-widest uppercase mt-6 font-semibold">

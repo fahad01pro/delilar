@@ -82,7 +82,7 @@ const Navbar = () => {
         {/* Top bar */}
         <div className="bg-foreground py-1.5 overflow-hidden">
           <p className="text-center text-background text-[10px] font-body tracking-[0.25em] uppercase">
-            ✦ Free Shipping on Orders Over ৳5,000 ✦{' '}
+            ✦ Free Fragrance Gift Over ৳5,000 ✦{' '}
             <AnimatePresence mode="wait" initial={false}>
               <motion.span
                 key={eid.name}

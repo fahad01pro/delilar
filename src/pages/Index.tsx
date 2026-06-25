@@ -244,7 +244,7 @@ const Index = () => {
       <section className="bg-primary py-4">
         <div className="container mx-auto px-4 flex flex-wrap justify-center gap-6 md:gap-14">
           {[
-            { icon: Truck, label: 'Free Shipping ৳5,000+' },
+            { icon: Gift, label: 'Free Fragrance Gift ৳5,000+' },
             { icon: Shield, label: '100% Authentic' },
             { icon: RotateCcw, label: 'Easy Returns' },
             { icon: Sparkles, label: 'Premium Crafted' },

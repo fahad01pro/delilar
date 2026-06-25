@@ -14,7 +14,7 @@ export const DEFAULT_CARE = `- Gentle machine wash cold with similar colors
 - Store folded in a cool, dry place away from sunlight`;
 
 export const DEFAULT_SHIPPING = `- Flat delivery charge ৳150 across Bangladesh
-- FREE shipping on every order above ৳5,000
+- FREE Fragrance Gift on every order above ৳5,000
 - Estimated delivery: 3–5 business days nationwide
 - Orders are processed within 24 hours (excluding Fridays)
 - Cash on Delivery available across Bangladesh`;
