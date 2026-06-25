@@ -111,6 +111,13 @@ const Navbar = () => {
   const [searchOpen, setSearchOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [expandedMobile, setExpandedMobile] = useState<string | null>(null);
+  const [showAnnouncement, setShowAnnouncement] = useState(() => {
+    if (typeof window === 'undefined') return true;
+    return sessionStorage.getItem('delilar_announcement_dismissed') !== '1';
+  });
+  useEffect(() => {
+    if (!showAnnouncement) sessionStorage.setItem('delilar_announcement_dismissed', '1');
+  }, [showAnnouncement]);
   const { totalItems, setIsCartOpen } = useCart();
   const { count: wishlistCount } = useWishlist();
   const { user, openAuthModal } = useAuth();
