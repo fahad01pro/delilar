@@ -147,25 +147,9 @@ const Navbar = () => {
           WebkitBackdropFilter: 'blur(24px) saturate(150%)',
         }}
       >
-        {/* Top bar */}
-        <div className="bg-foreground py-1.5 overflow-hidden">
-          <p className="text-center text-background text-[10px] font-body tracking-[0.25em] uppercase">
-            ✦ Free Fragrance Gift Over ৳5,000 ✦{' '}
-            <AnimatePresence mode="wait" initial={false}>
-              <motion.span
-                key={eid.name}
-                initial={{ opacity: 0, y: -6 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: 6 }}
-                transition={{ duration: 0.4 }}
-                className="inline-block"
-              >
-                {eid.name} Collection {eid.isCurrent ? 'Live Now' : 'Now Live'}
-              </motion.span>
-            </AnimatePresence>{' '}
-            ✦
-          </p>
-        </div>
+        {/* Top bar - continuous marquee */}
+        {showAnnouncement && <AnnouncementMarquee onClose={() => setShowAnnouncement(false)} />}
+
 
         <nav className="container mx-auto px-4 lg:px-8">
           <div className="flex items-center justify-between h-14 lg:h-16">
