@@ -5,7 +5,7 @@ import { useProduct, useProductsByCategory } from '@/hooks/useCatalog';
 import { useCart } from '@/context/CartContext';
 import { useWishlist } from '@/context/WishlistContext';
 import {
-  Minus, Plus, Truck, RotateCcw, Shield, Heart, Share2,
+  Minus, Plus, Truck, RotateCcw, Shield, Heart, Share2, Gift,
   ChevronLeft, ChevronRight, ZoomIn, X, BadgeCheck,
   Headphones, CreditCard, Ruler, MapPin, Clock, Copy, Facebook,
   Twitter, MessageCircle, Sparkles,
