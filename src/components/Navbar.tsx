@@ -1,6 +1,74 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef, useLayoutEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Search, ShoppingBag, User, Menu, X, Heart, ChevronDown } from 'lucide-react';
+
+const ANNOUNCEMENT_TEXT = '✦ Free Fragrance Gift Over ৳5,000';
+
+const AnnouncementMarquee = ({ onClose }: { onClose: () => void }) => {
+  const measureRef = useRef<HTMLSpanElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [repeatCount, setRepeatCount] = useState(8);
+  const [duration, setDuration] = useState(40);
+
+  useLayoutEffect(() => {
+    const calc = () => {
+      const itemW = measureRef.current?.offsetWidth ?? 0;
+      const containerW = containerRef.current?.offsetWidth ?? window.innerWidth;
+      if (!itemW) return;
+      // Need enough copies to fill twice the container width (for seamless -50% loop)
+      const needed = Math.max(4, Math.ceil((containerW * 2) / itemW));
+      setRepeatCount(needed);
+      // Speed: ~80px per second
+      setDuration(Math.max(15, (itemW * needed) / 2 / 60));
+    };
+    calc();
+    window.addEventListener('resize', calc);
+    return () => window.removeEventListener('resize', calc);
+  }, []);
+
+  const items = Array.from({ length: repeatCount });
+
+  return (
+    <div className="bg-foreground py-1.5 relative overflow-hidden">
+      <div ref={containerRef} className="overflow-hidden pr-10">
+        {/* Hidden measure */}
+        <span
+          ref={measureRef}
+          aria-hidden
+          className="invisible absolute whitespace-nowrap text-[10px] font-body tracking-[0.25em] uppercase"
+        >
+          {ANNOUNCEMENT_TEXT}&nbsp;&nbsp;
+        </span>
+        <div
+          className="flex whitespace-nowrap will-change-transform"
+          style={{ animation: `marquee-scroll ${duration}s linear infinite` }}
+        >
+          {items.map((_, i) => (
+            <span
+              key={i}
+              className="text-background text-[10px] font-body tracking-[0.25em] uppercase shrink-0 pr-8"
+            >
+              {ANNOUNCEMENT_TEXT}
+            </span>
+          ))}
+        </div>
+      </div>
+      <button
+        onClick={onClose}
+        aria-label="Dismiss announcement"
+        className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-background/70 hover:text-accent transition-colors z-10"
+      >
+        <X size={12} />
+      </button>
+      <style>{`
+        @keyframes marquee-scroll {
+          0% { transform: translateX(0); }
+          100% { transform: translateX(-50%); }
+        }
+      `}</style>
+    </div>
+  );
+};
 import { useCart } from '@/context/CartContext';
 import { useWishlist } from '@/context/WishlistContext';
 import { useAuth } from '@/context/AuthContext';
@@ -43,6 +111,13 @@ const Navbar = () => {
   const [searchOpen, setSearchOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [expandedMobile, setExpandedMobile] = useState<string | null>(null);
+  const [showAnnouncement, setShowAnnouncement] = useState(() => {
+    if (typeof window === 'undefined') return true;
+    return sessionStorage.getItem('delilar_announcement_dismissed') !== '1';
+  });
+  useEffect(() => {
+    if (!showAnnouncement) sessionStorage.setItem('delilar_announcement_dismissed', '1');
+  }, [showAnnouncement]);
   const { totalItems, setIsCartOpen } = useCart();
   const { count: wishlistCount } = useWishlist();
   const { user, openAuthModal } = useAuth();
@@ -79,25 +154,9 @@ const Navbar = () => {
           WebkitBackdropFilter: 'blur(24px) saturate(150%)',
         }}
       >
-        {/* Top bar */}
-        <div className="bg-foreground py-1.5 overflow-hidden">
-          <p className="text-center text-background text-[10px] font-body tracking-[0.25em] uppercase">
-            ✦ Free Fragrance Gift Over ৳5,000 ✦{' '}
-            <AnimatePresence mode="wait" initial={false}>
-              <motion.span
-                key={eid.name}
-                initial={{ opacity: 0, y: -6 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: 6 }}
-                transition={{ duration: 0.4 }}
-                className="inline-block"
-              >
-                {eid.name} Collection {eid.isCurrent ? 'Live Now' : 'Now Live'}
-              </motion.span>
-            </AnimatePresence>{' '}
-            ✦
-          </p>
-        </div>
+        {/* Top bar - continuous marquee */}
+        {showAnnouncement && <AnnouncementMarquee onClose={() => setShowAnnouncement(false)} />}
+
 
         <nav className="container mx-auto px-4 lg:px-8">
           <div className="flex items-center justify-between h-14 lg:h-16">
