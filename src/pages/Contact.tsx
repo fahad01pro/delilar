@@ -1,33 +1,85 @@
 import { motion } from 'framer-motion';
-import { Mail, Phone, MapPin, MessageCircle, Clock, Sparkles, Store } from 'lucide-react';
+import { useState } from 'react';
+import { Mail, Phone, MapPin, MessageCircle, Clock, Sparkles, Store, Loader2, CheckCircle2 } from 'lucide-react';
 import { useOutlets, type Outlet } from '@/hooks/useCatalog';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
-const ContactForm = () => (
-  <div className="glass rounded-2xl p-6 lg:p-8 shadow-premium">
-    <p className="text-xs font-body tracking-[0.3em] uppercase text-accent mb-2">Send a Message</p>
-    <h2 className="font-heading text-2xl mb-5 text-[hsl(var(--charcoal))]">We typically reply within 24 hours</h2>
-    <form className="space-y-4">
-      <input type="text" placeholder="Your name" className="w-full border border-border bg-background/50 px-4 py-3.5 text-sm font-body outline-none rounded-xl focus:border-accent focus:ring-2 focus:ring-accent/20" />
-      <input type="email" placeholder="Email address" className="w-full border border-border bg-background/50 px-4 py-3.5 text-sm font-body outline-none rounded-xl focus:border-accent focus:ring-2 focus:ring-accent/20" />
-      <input type="tel" placeholder="Phone (optional)" className="w-full border border-border bg-background/50 px-4 py-3.5 text-sm font-body outline-none rounded-xl focus:border-accent focus:ring-2 focus:ring-accent/20" />
-      <textarea rows={5} placeholder="How can Delilar serve you?" className="w-full border border-border bg-background/50 px-4 py-3.5 text-sm font-body outline-none rounded-xl focus:border-accent focus:ring-2 focus:ring-accent/20 resize-none" />
-      <button type="button" className="w-full btn-primary py-4 text-sm font-body tracking-widest uppercase font-semibold">
-        Send Message
-      </button>
-    </form>
-  </div>
-);
+const ContactForm = () => {
+  const [form, setForm] = useState({ name: '', phone: '', email: '', subject: '', message: '' });
+  const [submitting, setSubmitting] = useState(false);
+  const [sent, setSent] = useState(false);
+
+  const set = (k: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
+    setForm((f) => ({ ...f, [k]: e.target.value }));
+
+  const submit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!form.name.trim() || !form.phone.trim() || !form.subject.trim() || !form.message.trim()) {
+      toast.error('Please fill in your name, phone, subject, and message.');
+      return;
+    }
+    if (!/^01[3-9]\d{8}$/.test(form.phone.trim())) {
+      toast.error('Please enter a valid Bangladeshi phone number (11 digits starting with 01).');
+      return;
+    }
+    setSubmitting(true);
+    const { error } = await supabase.from('contact_messages').insert({
+      name: form.name.trim(),
+      phone: form.phone.trim(),
+      email: form.email.trim() || null,
+      subject: form.subject.trim(),
+      message: form.message.trim(),
+      status: 'unread',
+    });
+    setSubmitting(false);
+    if (error) {
+      toast.error('Could not send your message. Please try again.');
+      return;
+    }
+    toast.success('Message sent — we will reply within 24 hours.');
+    setSent(true);
+    setForm({ name: '', phone: '', email: '', subject: '', message: '' });
+  };
+
+  return (
+    <div className="glass rounded-2xl p-6 lg:p-8 shadow-premium">
+      <p className="text-xs font-body tracking-[0.3em] uppercase text-accent mb-2">Send a Message</p>
+      <h2 className="font-heading text-2xl mb-5 text-[hsl(var(--charcoal))]">We typically reply within 24 hours</h2>
+
+      {sent && (
+        <div className="mb-4 flex items-start gap-3 rounded-xl border border-green-500/30 bg-green-500/10 p-4 text-green-800">
+          <CheckCircle2 size={18} className="mt-0.5 shrink-0" />
+          <div>
+            <p className="text-sm font-medium">Message received</p>
+            <p className="text-xs opacity-80 mt-0.5">Our team will get back to you shortly. You can send another message any time.</p>
+          </div>
+        </div>
+      )}
+
+      <form className="space-y-4" onSubmit={submit}>
+        <input value={form.name} onChange={set('name')} required type="text" placeholder="Your name *" className="w-full border border-border bg-background/50 px-4 py-3.5 text-sm font-body outline-none rounded-xl focus:border-accent focus:ring-2 focus:ring-accent/20" />
+        <div className="grid sm:grid-cols-2 gap-4">
+          <input value={form.phone} onChange={set('phone')} required type="tel" placeholder="Phone number *" className="w-full border border-border bg-background/50 px-4 py-3.5 text-sm font-body outline-none rounded-xl focus:border-accent focus:ring-2 focus:ring-accent/20" />
+          <input value={form.email} onChange={set('email')} type="email" placeholder="Email address (optional)" className="w-full border border-border bg-background/50 px-4 py-3.5 text-sm font-body outline-none rounded-xl focus:border-accent focus:ring-2 focus:ring-accent/20" />
+        </div>
+        <input value={form.subject} onChange={set('subject')} required type="text" placeholder="Subject *" className="w-full border border-border bg-background/50 px-4 py-3.5 text-sm font-body outline-none rounded-xl focus:border-accent focus:ring-2 focus:ring-accent/20" />
+        <textarea value={form.message} onChange={set('message')} required rows={5} placeholder="How can Delilar serve you? *" className="w-full border border-border bg-background/50 px-4 py-3.5 text-sm font-body outline-none rounded-xl focus:border-accent focus:ring-2 focus:ring-accent/20 resize-none" />
+        <button type="submit" disabled={submitting} className="w-full btn-primary py-4 text-sm font-body tracking-widest uppercase font-semibold inline-flex items-center justify-center gap-2 disabled:opacity-60">
+          {submitting ? (<><Loader2 size={15} className="animate-spin" /> Sending…</>) : 'Send Message'}
+        </button>
+      </form>
+    </div>
+  );
+};
 
 const toEmbedSrc = (raw?: string | null): string | null => {
   if (!raw) return null;
   const v = raw.trim();
   if (!v) return null;
-  // Extract from pasted <iframe ...> HTML
   const iframeMatch = v.match(/<iframe[^>]*\ssrc=["']([^"']+)["']/i);
   if (iframeMatch) return iframeMatch[1];
-  // Already a Google embed URL
   if (/google\.[^/]+\/maps\/embed/i.test(v)) return v;
-  // Plain google maps link or any address → use embeddable search
   return `https://www.google.com/maps?q=${encodeURIComponent(v)}&output=embed`;
 };
 
