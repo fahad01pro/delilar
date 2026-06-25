@@ -50,6 +50,7 @@ import { CampaignsPanel } from '@/components/admin/CampaignsPanel';
 import { TagsPanel } from '@/components/admin/TagsPanel';
 import { FabricsPanel } from '@/components/admin/FabricsPanel';
 import { MessagesPanel } from '@/components/admin/MessagesPanel';
+import { MessagesBadge } from '@/components/admin/MessagesBadge';
 import { ChipInput } from '@/components/admin/ChipInput';
 import { useTags, useFabrics, ensureTagsExist, ensureFabricsExist } from '@/hooks/useTaxonomy';
 import { Megaphone, Tag as TagIcon, Shirt, MessageSquare } from 'lucide-react';
@@ -961,7 +962,10 @@ const Admin = () => {
                   className={`w-full flex items-center justify-between rounded-xl px-4 py-3 text-sm font-body transition-all ${active ? 'bg-primary text-primary-foreground shadow-premium' : 'text-muted-foreground hover:bg-secondary hover:text-foreground'}`}
                 >
                   <span className="flex items-center gap-3"><Icon size={17} /> {item.label}</span>
-                  {active && <ChevronRight size={15} className="text-accent" />}
+                  <span className="flex items-center gap-2">
+                    {item.key === 'messages' && <MessagesBadge />}
+                    {active && <ChevronRight size={15} className="text-accent" />}
+                  </span>
                 </button>
               );
             })}
