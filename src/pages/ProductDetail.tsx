@@ -5,7 +5,7 @@ import { useProduct, useProductsByCategory } from '@/hooks/useCatalog';
 import { useCart } from '@/context/CartContext';
 import { useWishlist } from '@/context/WishlistContext';
 import {
-  Minus, Plus, Truck, RotateCcw, Shield, Heart, Share2,
+  Minus, Plus, Truck, RotateCcw, Shield, Heart, Share2, Gift,
   ChevronLeft, ChevronRight, ZoomIn, X, BadgeCheck,
   Headphones, CreditCard, Ruler, MapPin, Clock, Copy, Facebook,
   Twitter, MessageCircle, Sparkles,
@@ -331,7 +331,7 @@ const ProductDetail = () => {
               )}
             </div>
             <p className="text-xs font-body text-muted-foreground mb-6">
-              Inclusive of VAT. Free shipping on orders over ৳5,000.
+              Inclusive of VAT. Free Fragrance Gift on orders over ৳5,000.
             </p>
 
             {/* Stock badge — never expose exact quantities */}
@@ -561,7 +561,7 @@ const ProductDetail = () => {
             <div className="grid grid-cols-2 gap-3">
               {[
                 { icon: BadgeCheck, text: '100% Authentic' },
-                { icon: Truck, text: 'Fast Delivery' },
+                { icon: Gift, text: 'Free Fragrance Gift' },
                 { icon: RotateCcw, text: 'Easy Replacement' },
                 { icon: Headphones, text: '24/7 Support' },
               ].map(({ icon: Icon, text }) => (

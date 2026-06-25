@@ -32,7 +32,7 @@ const policies: Record<string, Policy> = {
         heading: 'Shipping Charges',
         body: [
           'Flat Delivery Charge: ৳150 across Bangladesh.',
-          'FREE shipping on every order above ৳5,000.',
+          'Complimentary FREE Fragrance Gift on every order above ৳5,000.',
         ],
       },
       {
